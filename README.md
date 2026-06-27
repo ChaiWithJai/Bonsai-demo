@@ -18,6 +18,10 @@
   <b>Whitepapers:</b>
   <a href="1-bit-bonsai-8b-whitepaper.pdf">1-bit Bonsai 8B</a> ·
   <a href="ternary-bonsai-8b-whitepaper.pdf">Ternary-Bonsai 8B</a>
+  &nbsp;|&nbsp;
+  <b>Deep Wiki:</b>
+  <a href="docs/deep-wiki/00-whitepaper-overview.md">Whitepaper Overview</a> ·
+  <a href="docs/deep-wiki/01-founders-proof-timeline.md">Founders & Proof Timeline</a>
 </p>
 
 <p align="center">
