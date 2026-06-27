@@ -30,6 +30,11 @@
 
 ---
 
+## Deep Dive: The Bonsai Whitepapers
+
+> **New to Bonsai?** Start here: **[The Bonsai Whitepapers](docs/whitepaper.md)** --- a structured breakdown of the core thesis, quantization schemes (Q1_0 and Q2_0), intelligence density analysis, cross-platform throughput results, and how every part of this demo repo maps back to the whitepaper concepts. It is the conceptual foundation for everything below.
+
+---
 
 Using this demo repository you can run **Bonsai** (1-bit) and **Ternary-Bonsai** language models locally on Mac (Metal), Linux/Windows (CUDA, Vulkan, ROCm), or CPU.
 
@@ -95,7 +100,7 @@ Set `BONSAI_MODEL` to choose which size to download and run (default: `8B`).
 
 ### Ternary-Bonsai (1.58-bit)
 
-Available in GGUF (`Q2_0`) and MLX (2-bit) formats. See the [Ternary-Bonsai HF collection](https://huggingface.co/collections/prism-ml/ternary-bonsai) and the [whitepaper](ternary-bonsai-8b-whitepaper.pdf).
+Available in GGUF (`Q2_0`) and MLX (2-bit) formats. See the [Ternary-Bonsai HF collection](https://huggingface.co/collections/prism-ml/ternary-bonsai), the [whitepaper PDF](ternary-bonsai-8b-whitepaper.pdf), and the [deep-dive breakdown](docs/whitepaper.md).
 
 | Model                  | Format        | HuggingFace Repo                                                                                        |
 |------------------------|---------------|---------------------------------------------------------------------------------------------------------|
