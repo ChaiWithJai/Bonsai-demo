@@ -46,9 +46,11 @@ class ReplayHooksTest(unittest.TestCase):
             with patch('comparison_api.urlopen', side_effect=lambda *a, **k: comparison_tests.ComparisonTest().stream()):
                 summary=api.run({'prompt':'shared'}, lambda *a: None)
             self.assertEqual(summary['status'], 'completed')
-            self.assertEqual([c[1] for c in calls], ['bonsai','qwen'])
+            self.assertEqual([c[1] for c in calls], ['bonsai'])
+            status=json.loads((Path(tmp)/('a'*32)/'qwen/turn-1/activation-replay-status.json').read_text())
+            self.assertEqual(status['status'],'unavailable')
             self.assertTrue(all(c[0].name == 'turn-1' for c in calls))
-            self.assertNotEqual(calls[0][2]['rendered_prompt_sha256'],calls[1][2]['rendered_prompt_sha256'])
+            self.assertEqual(calls[0][2]['model'],'bonsai')
 
     def test_incomplete_stream_does_not_enqueue(self):
         with tempfile.TemporaryDirectory() as tmp:

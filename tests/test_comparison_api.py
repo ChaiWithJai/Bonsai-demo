@@ -28,6 +28,18 @@ class FakeClient:
 
 
 class ComparisonTest(unittest.TestCase):
+    def test_shared_context_and_settings_are_forwarded(self):
+        settings=ComparisonAPI.validate({'prompt':'Explain this','project_context':'Shared facts',
+            'max_tokens':4096,'temperature':.7,'top_p':.8,'top_k':12,'min_p':.1,'seed':73,'repeat_penalty':1.1})
+        request=ComparisonAPI._request('model',settings)
+        self.assertEqual(request['messages'],[{'role':'system','content':'Shared facts'},{'role':'user','content':'Explain this'}])
+        for key in ('temperature','top_p','top_k','min_p','seed','repeat_penalty','max_tokens'):
+            self.assertEqual(request[key],settings[key])
+
+    def test_rejects_invalid_sampling(self):
+        for key,value in [('top_p',0),('min_p',float('nan')),('top_k',1.5),('seed',True),('repeat_penalty',0)]:
+            with self.assertRaises(ValueError):ComparisonAPI.validate({'prompt':'x',key:value})
+
     def make_api(self, folder):
         api = ComparisonAPI('unused', folder, client=FakeClient())
         api._identity = lambda model: {'id': model, 'model_id': model, 'available': True}
@@ -42,7 +54,7 @@ class ComparisonTest(unittest.TestCase):
             calls = []
             def posted(endpoint, path, payload):
                 calls.append((endpoint, path, payload))
-                return {'prompt': 'rendered template'} if path == '/apply-template' else {'tokens': [1] * (8000 if ':8082' in endpoint else 20)}
+                return {'prompt': 'rendered template'} if path == '/apply-template' else {'tokens': [1] * (8000 if ':8083' in endpoint else 20)}
             api._post = posted
             with self.assertRaisesRegex(ValueError, 'qwen: rendered prompt'):
                 api.preflight(api.validate({'prompt': 'short Unicode source'}))
@@ -103,7 +115,7 @@ class ComparisonTest(unittest.TestCase):
             self.assertEqual(api.client.terminated, ['FAILED'])
 
     def test_validation_and_single_inflight_guard(self):
-        for body in ({'prompt': 'x', 'max_tokens': 513}, {'prompt': 'x', 'endpoint': 'http://evil'},
+        for body in ({'prompt': 'x', 'max_tokens': 4097}, {'prompt': 'x', 'endpoint': 'http://evil'},
                      {'prompt': 'x', 'thinking_budget_tokens': 129}, {'prompt': 'x', 'temperature': float('nan')},
                      {'prompt': 'x', 'max_tokens': True}):
             with self.assertRaises(ValueError):

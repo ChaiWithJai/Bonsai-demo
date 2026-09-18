@@ -31,7 +31,7 @@ def title_generation(request):
     return False
 
 class Observability:
-    def __init__(self, recorder, model_info, manifest=None, comparison_directory=None, mlflow_base_url='http://127.0.0.1:5210'):
+    def __init__(self, recorder, model_info, manifest=None, comparison_directory=None):
         self.recorder = recorder
         self.model_info = model_info
         self.manifest = Path(manifest) if manifest else None
@@ -39,7 +39,6 @@ class Observability:
         self.comparison_directory = Path(comparison_directory) if comparison_directory else self.recorder.directory.parent / 'comparison-records'
         self.comparison_trace_cache = {}
         self.research_directory = self.recorder.directory.parent / 'research-records'
-        self.mlflow_base_url = mlflow_base_url.rstrip('/')
 
     @staticmethod
     def json_file(path, default=None):
@@ -265,7 +264,7 @@ class Observability:
                 'MCP initialization is protocol setup and is not presented as a generation step.',
                 'Tool wrapper spans can include more than one underlying BrowserOS HTTP call.',
                 'Artifact timestamp fallbacks are labeled and are not measured request start times.'],
-            'mlflow_url': session.get('mlflow_url') or (f'{self.mlflow_base_url}/#/experiments/{session["experiment_id"]}' if session.get('experiment_id') else None)}
+            'mlflow_url': session.get('mlflow_url') or (f'http://127.0.0.1:5210/#/experiments/{session["experiment_id"]}' if session.get('experiment_id') else None)}
 
     def attach_comparison_replay(self, folder, model, nodes, edges):
         attached = set()
@@ -277,6 +276,34 @@ class Observability:
             raw = request_path.read_bytes() if request_path.is_file() else b''
             expected = hashlib.sha256(raw).hexdigest()
             node['request_sha256'] = expected
+            result = self.json_file(turn_folder / 'result.json')
+            live = result.get('activation_capture') or {}
+            rid = live.get('research_id', '')
+            if re.fullmatch(r'[a-f0-9]{32}', str(rid)):
+                research_folder = self.research_directory / rid
+                record = self.json_file(research_folder / 'research.json')
+                research_request = self.json_file(research_folder / 'request.json')
+                capture = self.json_file(research_folder / 'activation-capture.json')
+                identity = record.get('model_identity') or {}
+                provenance = result.get('identity', {}).get('identity', {}).get('checkpoint_provenance', {})
+                content = ((record.get('response', {}).get('choices') or [{}])[0].get('message') or {}).get('content')
+                source = capture.get('source') or {}
+                valid = ((research_folder / 'request.json').is_file() and request_path.is_file()
+                    and record.get('status') == 'completed' and research_request == self.json_file(request_path)
+                    and content == result.get('content') and capture.get('generated_text') == content and capture.get('passed') is True
+                    and capture.get('kind') == 'live_instrumented_inference' and source.get('research_id') == rid
+                    and source.get('request_sha256') == hashlib.sha256((research_folder / 'request.json').read_bytes()).hexdigest()
+                    and capture.get('model') == identity and identity.get('repo') == provenance.get('repo')
+                    and identity.get('revision') == provenance.get('revision')
+                    and identity.get('weight_dtype') == provenance.get('weight_dtype') == 'bfloat16'
+                    and identity.get('quantized') is provenance.get('quantized') is False)
+                if valid:
+                    node['activation_capture'] = capture
+                    node['activations'] = {'status':'captured','scope':'Measured during this original comparison inference'}
+                    node['research_id'] = rid
+                    continue
+                node['activation_replay_status'] = {'status':'error','error':'Same-execution comparison capture failed request, output or checkpoint binding'}
+                continue
             status = self.json_file(turn_folder / 'activation-replay-status.json')
             if status:
                 identity = status.get('source') or status
@@ -322,9 +349,9 @@ class Observability:
         replay_id = original['id'] + '_instrumented_replay'
         node = {'id': replay_id, 'request_id': replay_id, 'source': 'instrumented_replay', 'kind': 'completion',
             'category': 'instrumented_replay', 'generation_available': True,
-            'name': 'New instrumented replay of grant turn ' + str(turn), 'model': model, 'turn': turn,
+            'name': 'New instrumented replay of turn ' + str(turn), 'model': model, 'turn': turn,
             'run_id': meta.get('run_id'), 'trace_id': meta.get('trace_id'), 'experiment_id': meta.get('experiment_id'),
-            'span_id': None, 'trace_url': f'{self.mlflow_base_url}/#/experiments/{meta["experiment_id"]}/traces?traceId={meta["trace_id"]}' if meta.get('experiment_id') and meta.get('trace_id') else None,
+            'span_id': None, 'trace_url': f'http://127.0.0.1:5210/#/experiments/{meta["experiment_id"]}/traces?traceId={meta["trace_id"]}' if meta.get('experiment_id') and meta.get('trace_id') else None,
             'request': {'rendered_prompt': replay.get('rendered_prompt'), 'source': source, 'settings': replay.get('settings')},
             'response': {'choices': [{'message': {'content': replay.get('generated_text', '')}, 'finish_reason': None}], 'tokens': replay.get('tokens')},
             'server': {'model': replay.get('model'), 'runtime': replay.get('runtime')}, 'settings': replay.get('settings', {}),
@@ -379,7 +406,7 @@ class Observability:
                 'name': 'Instrumented replay of native model turn', 'original_request_id': original['id'],
                 'request_sha256': expected, 'session': row.get('session'),
                 'trace_id': meta.get('trace_id'), 'run_id': meta.get('run_id'), 'experiment_id': meta.get('experiment_id'),
-                'trace_url': f'{self.mlflow_base_url}/#/experiments/{meta["experiment_id"]}/traces?traceId={meta["trace_id"]}' if meta.get('experiment_id') and meta.get('trace_id') else None,
+                'trace_url': f'http://127.0.0.1:5210/#/experiments/{meta["experiment_id"]}/traces?traceId={meta["trace_id"]}' if meta.get('experiment_id') and meta.get('trace_id') else None,
                 'request': {'rendered_prompt': rendered, 'source': source, 'settings': replay.get('settings')},
                 'response': {'choices': [{'message': {'content': replay.get('generated_text', '')}, 'finish_reason': None}], 'tokens': replay.get('tokens')},
                 'server': {'model': replay.get('model'), 'runtime': replay.get('runtime')}, 'settings': replay.get('settings', {}),
@@ -511,7 +538,7 @@ class Observability:
             node['category'] = 'inference' if row.get('kind') == 'completion' else 'browser_tool' if request.get('method') == 'tools/call' else 'protocol'
             if node['category'] == 'protocol':
                 node['name'] = 'MCP protocol setup · ' + str(request.get('method', 'exchange'))
-            node['trace_url'] = f'{self.mlflow_base_url}/#/experiments/3/traces?traceId={row["trace_id"]}' if row.get('trace_id') else None
+            node['trace_url'] = f'http://127.0.0.1:5210/#/experiments/3/traces?traceId={row["trace_id"]}' if row.get('trace_id') else None
             if row.get('kind') == 'completion':
                 if calls:
                     node['name'] = 'Model → ' + ', '.join(c.get('function', {}).get('name', 'tool') for c in calls)
@@ -545,7 +572,7 @@ class Observability:
         self.attach_native_replays(rows, nodes, edges)
         return {'session': self.summary(sid, rows), 'nodes': nodes, 'edges': edges,
                 'model_evidence': self.model(), 'limitations': LIMITATIONS,
-                'mlflow_url': f'{self.mlflow_base_url}/#/experiments/3'}
+                'mlflow_url': 'http://127.0.0.1:5210/#/experiments/3'}
 
     def activation_vector(self, sid, node_id, step, layer):
         """Return one verified vector from the selected inference's attached replay."""

@@ -12,8 +12,8 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
 LIMITATIONS = [
-    'Same prompt, shared project context and requested settings. Text and public browser research are separate task types.',
-    'Sequential is the default. Concurrent runs contend for the shared GPU.',
+    'Same prompt, shared context and requested settings; model tokenizers and sampling implementations can differ.',
+    'Official BF16 comparisons run sequentially on the shared GPU.',
     'Sequential timing still includes other system workloads; production context pools and slots differ.',
     'One sample is not a benchmark or a quality ranking; cache and quantization differ.',
     'Reasoning text is generated output, not internal activation evidence.',
@@ -27,7 +27,7 @@ class ComparisonBusy(RuntimeError):
 
 class ComparisonAPI:
     def __init__(self, tracking_uri, records_dir, endpoints=None, client=None, browseros_url='http://127.0.0.1:19010/mcp', browser_view=None, replay_worker=None):
-        self.endpoints = endpoints or {'bonsai': 'http://127.0.0.1:8081', 'qwen': 'http://127.0.0.1:8082'}
+        self.endpoints = endpoints or {'bonsai': 'http://127.0.0.1:8081', 'qwen': 'http://127.0.0.1:8083'}
         if set(self.endpoints) != {'bonsai', 'qwen'}:
             raise ValueError('Exactly bonsai and qwen endpoints are required')
         for endpoint in self.endpoints.values():
@@ -96,6 +96,20 @@ class ComparisonAPI:
             if row['model_id']:
                 row['label'] = Path(row['model_id']).name.removesuffix('.gguf')
             model_path = props.get('model_path', '')
+            if model == 'qwen':
+                provenance = props.get('checkpoint_provenance', {})
+                if not (provenance.get('repo') == 'Qwen/Qwen3.8-27B'
+                        and provenance.get('revision') == '1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0'
+                        and provenance.get('verified') is True
+                        and provenance.get('weight_dtype') == 'bfloat16'
+                        and provenance.get('quantized') is False):
+                    row.update(available=False, error='Official verified Qwen3.8 BF16 server is not ready')
+                else:
+                    row['identity']['checkpoint_provenance'] = provenance
+                    row['quantization'] = 'BF16 · official, unquantized'
+                    row['label'] = 'Qwen3.8-27B · official BF16'
+                    row['capabilities'] = props.get('capabilities', {})
+                return row
             match = re.search(r'(PQ2_0|IQ2_XXS)', model_path)
             row['quantization'] = match.group(1) if match else 'Unverified'
             manifest_path = Path(__file__).resolve().parents[1] / '.cache/bonsai' / ('release-manifest.json' if model == 'bonsai' else 'qwen38-manifest.json')
@@ -136,16 +150,16 @@ class ComparisonAPI:
                 continue
             if len(recent) >= 5:
                 break
-        return {'models': models, 'modes': ['sequential', 'concurrent'], 'default_mode': 'sequential',
-            'tasks': ['pelican_svg', 'text', 'grant_research'],
-            'limits': {'pelican_max_tokens': 4096, 'max_tokens': 512, 'thinking_budget_tokens': 128, 'prompt_characters': 12000, 'research_tool_calls': 6, 'research_final_tokens': 1024},
+        return {'models': models, 'modes': ['sequential'], 'default_mode': 'sequential',
+            'tasks': ['text'], 'capabilities': {'thinking_budget': False},
+            'limits': {'pelican_max_tokens': 4096, 'max_tokens': 4096, 'thinking_budget_tokens': 0, 'prompt_characters': 12000, 'research_tool_calls': 6, 'research_final_tokens': 1024},
             'busy': self.run_lock.locked(), 'recent_runs': recent, 'limitations': LIMITATIONS}
 
     @staticmethod
     def validate(body):
         if not isinstance(body, dict):
             raise ValueError('Request must be an object')
-        allowed = {'prompt', 'mode', 'temperature', 'max_tokens', 'thinking_budget_tokens', 'task', 'project_context'}
+        allowed = {'prompt', 'mode', 'temperature', 'max_tokens', 'thinking_budget_tokens', 'task', 'project_context', 'top_p', 'top_k', 'min_p', 'seed', 'repeat_penalty'}
         if set(body) - allowed:
             raise ValueError('Unsupported comparison setting')
         prompt = body.get('prompt')
@@ -158,7 +172,7 @@ class ComparisonAPI:
         maximum = body.get('max_tokens', 4096 if task == 'pelican_svg' else 512)
         thinking = body.get('thinking_budget_tokens', 0)
         temp = body.get('temperature', 0.3)
-        limit = 4096 if task == 'pelican_svg' else 512
+        limit = 512 if task == 'grant_research' else 4096
         if type(maximum) is not int or not 1 <= maximum <= limit:
             raise ValueError(f'max_tokens must be between 1 and {limit}')
         if type(thinking) is not int or not 0 <= thinking <= 128:
@@ -171,8 +185,15 @@ class ComparisonAPI:
         context = body.get('project_context', '')
         if not isinstance(context, str) or len(context) > 4000:
             raise ValueError('Project context must be at most 4000 characters')
+        sampling = {k: body.get(k,v) for k,v in {'top_p':.95,'top_k':20,'min_p':0.,'seed':42,'repeat_penalty':1.}.items()}
+        for key,lo,hi in [('top_p',0.000001,1),('min_p',0,1),('repeat_penalty',0.1,2)]:
+            if type(sampling[key]) not in (int,float) or not math.isfinite(sampling[key]) or not lo <= sampling[key] <= hi:
+                raise ValueError(f'{key} must be between {lo} and {hi}')
+        for key,lo,hi in [('top_k',0,1000),('seed',0,2147483647)]:
+            if type(sampling[key]) is not int or not lo <= sampling[key] <= hi:
+                raise ValueError(f'{key} must be an integer between {lo} and {hi}')
         return {'prompt': prompt, 'mode': mode, 'temperature': temp, 'task': task, 'project_context': context,
-                'max_tokens': maximum, 'thinking_budget_tokens': thinking}
+                'max_tokens': maximum, 'thinking_budget_tokens': thinking, **sampling}
 
     def _experiment(self):
         experiment = self.client.get_experiment_by_name('bonsai-local-comparisons')
@@ -185,6 +206,9 @@ class ComparisonAPI:
             identity = self._identity(model)
             if not identity['available']:
                 raise ValueError(model + ': configured verified model is unavailable')
+            if model == 'qwen' and identity.get('identity', {}).get('checkpoint_provenance', {}).get('weight_dtype') == 'bfloat16':
+                if options['mode'] != 'sequential' or options['thinking_budget_tokens'] != 0 or options['task'] == 'grant_research':
+                    raise ValueError('Official BF16 comparison currently supports sequential text generation with thinking disabled')
             settings = identity['identity'].get('default_generation_settings', {})
             context = settings.get('n_ctx')
             slots = identity['identity'].get('total_slots', 1)
@@ -214,10 +238,12 @@ class ComparisonAPI:
     def _request(model_id, options):
         request = {'model': model_id, 'messages': [{'role': 'user', 'content': options['prompt']}],
             'stream': True, 'stream_options': {'include_usage': True},
-            'temperature': options['temperature'], 'top_p': 0.95, 'top_k': 20, 'min_p': 0,
-            'seed': 42, 'cache_prompt': False, 'repeat_penalty': 1.0,
+            'temperature': options['temperature'], 'top_p': options.get('top_p',.95), 'top_k': options.get('top_k',20), 'min_p': options.get('min_p',0),
+            'seed': options.get('seed',42), 'cache_prompt': False, 'repeat_penalty': options.get('repeat_penalty',1.0),
             'max_tokens': options['max_tokens'], 'thinking_budget_tokens': options['thinking_budget_tokens'],
             'chat_template_kwargs': {'enable_thinking': options['thinking_budget_tokens'] > 0}}
+        if options.get('project_context') and options.get('task') != 'grant_research':
+            request['messages'].insert(0, {'role':'system','content':options['project_context']})
         if options.get('task') == 'grant_research':
             from browser_research import TOOLS, research_messages
             request.update(messages=research_messages(options), tools=TOOLS, tool_choice='auto')
@@ -250,8 +276,7 @@ class ComparisonAPI:
             for key, value in options.items():
                 if key not in ('prompt', 'project_context'):
                     self.client.log_param(run_id, key, value)
-            for key, value in {'seed': 42, 'cache_prompt': False, 'top_p': 0.95,
-                               'top_k': 20, 'min_p': 0, 'repeat_penalty': 1.0}.items():
+            for key, value in {'cache_prompt': False}.items():
                 self.client.log_param(run_id, key, value)
             url = f'http://127.0.0.1:5210/#/experiments/{eid}/runs/{run_id}'
             root = self.client.start_trace('local-model-comparison', span_type='CHAIN', inputs=options,
@@ -321,7 +346,8 @@ class ComparisonAPI:
                 raise RuntimeError('Configured local model is unavailable')
             started = time.monotonic()
             http = Request(self.endpoints[model].rstrip('/') + '/v1/chat/completions',
-                data=json.dumps(request).encode(), headers={'Content-Type': 'application/json', 'Accept': 'text/event-stream'})
+                data=json.dumps(request).encode(), headers={'Content-Type': 'application/json', 'Accept': 'text/event-stream',
+                    'X-Comparison-Run-Id':run_id, 'X-Comparison-Model':model})
             # Socket timeout bounds stalled prefill/read; max_tokens bounds generation.
             with urlopen(http, timeout=60) as response, (path / 'response.sse').open('wb') as raw:
                 for line in response:
@@ -344,6 +370,8 @@ class ComparisonAPI:
                         result['timings'] = event['timings']
                     if event.get('usage'):
                         result['usage'] = event['usage']
+                    if event.get('activation_capture'):
+                        result['activation_capture'] = event['activation_capture']
                     for choice in event.get('choices', []):
                         if choice.get('finish_reason'):
                             result['finish_reason'] = choice['finish_reason']
@@ -362,7 +390,7 @@ class ComparisonAPI:
                         raise RuntimeError('Incomplete inference stream')
                     result['status'] = 'completed'
                     result['truncated'] = result['finish_reason'] == 'length'
-                    if options.get('task') == 'pelican_svg':
+                    if '<svg' in result['content']:
                         from svg_output import inspect_svg
                         result['svg'] = inspect_svg(result['content'])
                         if result['svg']['valid']:
@@ -384,7 +412,11 @@ class ComparisonAPI:
                 for filename in ('request.json', 'result.json'):
                     (replay_path / filename).write_bytes((path / filename).read_bytes())
                 (replay_path / 'preflight.json').write_text(json.dumps(preflight or {}, indent=2))
-                self.schedule_replay(model, replay_path, root.trace_id, 1)
+                if model == 'qwen' and not result.get('activation_capture'):
+                    (replay_path / 'activation-replay-status.json').write_text(json.dumps({'status':'unavailable',
+                        'message':'Official Qwen same-execution capture was not returned; no quantized substitute replay is permitted'}))
+                elif not result.get('activation_capture'):
+                    self.schedule_replay(model, replay_path, root.trace_id, 1)
             self.client.log_metric(run_id, model + '.elapsed_ms', result['elapsed_ms'])
             if result['time_to_first_token_ms'] is not None:
                 self.client.log_metric(run_id, model + '.time_to_first_token_ms', result['time_to_first_token_ms'])
