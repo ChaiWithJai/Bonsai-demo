@@ -1,18 +1,20 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import SvgPreview from '$lib/SvgPreview.svelte';
   import { ArrowUpRight, ArrowRightLeft, Play, RefreshCw, CircleAlert, Cpu, Timer, Activity, Globe, Link, Pause } from '@lucide/svelte';
   import MarkdownContent from '$lib/components/app/content/MarkdownContent/MarkdownContent.svelte';
   type Data = Record<string, any>;
   let status = $state<Data | null>(null);
   const grantPrompt = 'Find funding for a community data center that expands access to AI. Research current public sources with the browser. Verify the funder, program, purpose, eligibility, deadline or application status, and next action from source pages. Explain what is a potential fit and what remains unconfirmed. Unknown applicant details should lead to conditional findings, not invented eligibility. Do not submit an application or contact anyone.';
   const defaultContext = 'Project: A community data center providing accessible AI compute and education so communities can benefit from AI.\nLocation / jurisdiction: Unknown.\nApplicant entity and legal status: Unknown.\nBudget and requested funding: Unknown.\nCurrent stage, partners, and timeline: Unknown.\nTreat these unknowns as open questions; exploratory grant research can proceed.';
-  let task = $state('grant_research');
-  let projectContext = $state(defaultContext);
-  let prompt = $state(grantPrompt);
+  const pelicanPrompt = 'Generate an SVG of a pelican riding a bicycle';
+  let task = $state('pelican_svg');
+  let projectContext = $state('');
+  let prompt = $state(pelicanPrompt);
   let mode = $state('sequential');
   let thinking = $state(false);
   let temperature = $state(0.3);
-  let tokenLimit = $state(512);
+  let tokenLimit = $state(4096);
   let thinkingLimit = $state(128);
   let cancellationRequested = $state(false);
   let requestController: AbortController | null = null;
@@ -66,6 +68,8 @@
     thinkingLimit = saved.settings?.thinking_budget_tokens > 0 ? saved.settings.thinking_budget_tokens : 128;
     cancellationRequested = false; error = '';
   }
+  function newPelican() {task = 'pelican_svg'; projectContext = ''; prompt = pelicanPrompt; run = null; outputs = {}; browserViews = {}; pausedViews = {}; error = ''; mode = 'sequential'; temperature = 0.3; tokenLimit = 4096; thinking = false; cancellationRequested = false;}
+  const effectiveTokenLimit = $derived(task === 'pelican_svg' ? Math.min(tokenLimit, status?.limits?.pelican_max_tokens ?? 4096) : Math.min(status?.limits?.max_tokens ?? 512, tokenLimit));
   function newResearch() { task = 'grant_research'; projectContext = defaultContext; prompt = grantPrompt; run = null; outputs = {}; browserViews = {}; pausedViews = {}; error = ''; mode = 'sequential'; temperature = 0.3; tokenLimit = 512; thinking = false; cancellationRequested = false; }
   function timeline(result: Data | undefined) {return result?.live_timeline || result?.steps || [];}
   function observedTime(value: unknown) { const parsed = new Date(typeof value === 'number' ? value * 1000 : String(value)); return Number.isNaN(parsed.getTime()) ? 'Observation time unavailable' : parsed.toLocaleString(); }
@@ -128,7 +132,7 @@
     running = true; error = ''; run = null; browserViews = {}; pausedViews = {}; cancellationRequested = false; receivedRunFinished = false; requestController = new AbortController();
     outputs = Object.fromEntries(status!.models.map((model: Data) => [model.id, {status: 'queued', content: '', reasoning_content: ''}]));
     try {
-      const response = await fetch('/api/comparison/run', {method: 'POST', signal: requestController.signal, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({task, project_context: projectContext.trim(), prompt: prompt.trim(), mode, temperature, max_tokens: Math.min(status?.limits?.max_tokens ?? 512, tokenLimit), thinking_budget_tokens: thinking ? Math.min(status?.limits?.thinking_budget_tokens ?? 128, thinkingLimit) : 0})});
+      const response = await fetch('/api/comparison/run', {method: 'POST', signal: requestController.signal, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({task, project_context: projectContext.trim(), prompt: prompt.trim(), mode, temperature, max_tokens: effectiveTokenLimit, thinking_budget_tokens: thinking ? Math.min(status?.limits?.thinking_budget_tokens ?? 128, thinkingLimit) : 0})});
       if (!response.ok) { const body = await response.text(); throw new Error(`Comparison returned ${response.status}: ${body.slice(0, 600)}`); }
       if (!response.body) throw new Error('Response stream is unavailable');
       const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
@@ -154,21 +158,22 @@
 
 <svelte:head><title>Compare models · Prism ML</title></svelte:head>
 <div class="comparison-page">
-  <header><div><p class="eyebrow">PRISM ML / MODEL COMPARISON</p><h1>Find funding for a community data center that expands access to AI.</h1><p class="intro">Two models research the same project. Follow their browser work, sources, and recommendations.</p></div><button class="button" onclick={() => refresh()} disabled={loading || running}><RefreshCw size={15}/>{loading ? 'Checking…' : 'Refresh status'}</button></header>
+  <header><div><p class="eyebrow">PRISM ML / MODEL COMPARISON</p><h1>Can your model draw a pelican riding a bicycle?</h1><p class="intro">One prompt. Two original SVGs. Compare the drawings and inspect the inference behind each.</p></div><button class="button" onclick={() => refresh()} disabled={loading || running}><RefreshCw size={15}/>{loading ? 'Checking…' : 'Refresh status'}</button></header>
   {#if error}<div class="notice" role="alert"><CircleAlert size={18}/><span>{error}</span></div>{/if}
-  {#if status?.recent_runs?.length}<div class="recent-runs"><label for="comparison-history">Load a saved run</label><select id="comparison-history" value={run?.run_id || ''} disabled={running} onchange={(event) => restoreId(event.currentTarget.value)}><option value="" disabled>Select a recorded run</option>{#each status.recent_runs as saved}<option value={saved.run_id}>{saved.status} · {saved.mode} · {(saved.settings?.prompt || saved.run_id).slice(0,80)}</option>{/each}</select><button class="button" onclick={newResearch} disabled={running}>New grant research</button><span class="caption">Saved text comparisons remain available; loading one restores its original task.</span></div>{/if}
+  <div class="controls"><button class="button" onclick={newPelican} disabled={running}>New pelican SVG</button><button class="button" onclick={newResearch} disabled={running}>Grant research</button><a class="caption" href="https://github.com/simonw/pelican-bicycle" target="_blank" rel="noreferrer">Inspired by Simon Willison’s pelican-bicycle benchmark ↗</a></div>
+  {#if status?.recent_runs?.length}<div class="recent-runs"><label for="comparison-history">Load a saved run</label><select id="comparison-history" value={run?.run_id || ''} disabled={running} onchange={(event) => restoreId(event.currentTarget.value)}><option value="" disabled>Select a recorded run</option>{#each status.recent_runs as saved}<option value={saved.run_id}>{saved.status} · {saved.mode} · {(saved.settings?.prompt || saved.run_id).slice(0,80)}</option>{/each}</select><button class="button" onclick={newPelican} disabled={running}>New pelican SVG</button><span class="caption">Saved text comparisons remain available; loading one restores its original task.</span></div>{/if}
   <section class="prompt-card" aria-label="Shared comparison prompt">
-    <div class="section-title"><span class="eyebrow">SHARED INPUT</span><span class="pill">{task === 'grant_research' ? 'Public browser research · draft findings only' : 'Saved text comparison · no browser tools'}</span></div>
+    <div class="section-title"><span class="eyebrow">SHARED INPUT</span><span class="pill">{task === 'pelican_svg' ? 'Pelican SVG · no tools' : task === 'grant_research' ? 'Public browser research · draft findings only' : 'Saved text comparison · no browser tools'}</span></div>
     {#if task === 'grant_research'}
       <label class="prompt-label" for="project-context">Shared project context</label>
       <textarea id="project-context" bind:value={projectContext} disabled={running} rows="7" placeholder="Describe the project, location, applicant, and funding needs. Unknowns are welcome."></textarea>
       <p class="caption">Both models receive this same context and research independently. Location, applicant type, and budget can remain unknown; eligibility must then stay conditional.</p>
     {/if}
-    <label class="prompt-label" for="comparison-prompt">{task === 'grant_research' ? 'Research brief sent to both models' : 'Original text prompt'}</label>
+    <label class="prompt-label" for="comparison-prompt">{task === 'pelican_svg' ? 'Benchmark prompt sent to both models' : task === 'grant_research' ? 'Research brief sent to both models' : 'Original text prompt'}</label>
     <textarea id="comparison-prompt" bind:value={prompt} disabled={running} rows="5" placeholder="Enter one bounded task for both models…"></textarea>
     <div class="controls"><fieldset disabled={running}><legend>Execution mode</legend><label><input type="radio" name="comparison-mode" bind:group={mode} value="sequential"/> Sequential</label><label><input type="radio" name="comparison-mode" bind:group={mode} value="concurrent"/> Concurrent · shared hardware</label></fieldset><label class="thinking"><input type="checkbox" bind:checked={thinking} disabled={running}/> Enable bounded reasoning ({Math.min(status?.limits?.thinking_budget_tokens ?? 128,thinkingLimit)} tokens)</label></div>
     <p class="caption">{mode === 'concurrent' ? 'Both models run at once on shared hardware. Contention affects timings; this is a live contention experiment, not an isolated speed benchmark.' : 'Models run one after the other. This avoids overlapping these two requests; cache state, model format, and other machine activity can still affect timing.'}</p>
-    <div class="run-controls"><span class="caption">Temperature {temperature} · Up to {Math.min(status?.limits?.max_tokens ?? 512,tokenLimit)} {task === 'grant_research' ? 'tokens per research turn; up to 1,024 final tokens · Up to 6 browser tool calls per model' : 'generated tokens · Same prompt and request settings'}</span><button class="button primary" onclick={start} disabled={!ready || running || cancellationRequested || !prompt.trim()}><Play size={15}/>{running ? 'Research running…' : task === 'grant_research' ? 'Find grants with both models' : 'Run text comparison'}</button>{#if running}<button class="button" onclick={cancel} disabled={cancellationRequested}>{cancellationRequested ? 'Cancellation requested…' : 'Cancel comparison'}</button>{/if}</div>
+    <div class="run-controls"><span class="caption">Temperature {temperature} · Up to {effectiveTokenLimit} {task === 'grant_research' ? 'tokens per research turn; up to 1,024 final tokens · Up to 6 browser tool calls per model' : 'generated tokens · Same prompt and request settings'}</span><button class="button primary" onclick={start} disabled={!ready || running || cancellationRequested || !prompt.trim()}><Play size={15}/>{running ? 'Models running…' : task === 'pelican_svg' ? 'Draw with both models' : task === 'grant_research' ? 'Find grants with both models' : 'Run text comparison'}</button>{#if running}<button class="button" onclick={cancel} disabled={cancellationRequested}>{cancellationRequested ? 'Cancellation requested…' : 'Cancel comparison'}</button>{/if}</div>
     {#if !ready && !loading}<p class="caption">{status?.busy ? 'A comparison is still active on the server. Refresh status after it finishes or stops.' : 'Both model endpoints must be available before a comparison can run. Endpoint status is shown below.'}</p>{/if}
   </section>
   {#if run}<section class="run-banner" aria-label="Comparison run"><span><Activity size={15}/>{run.status || 'running'} · {run.mode || mode}{run.contention ? ' · hardware contention' : ''}</span><code>{run.run_id}</code>{#if safeLink(run.mlflow_url)}<a href={safeLink(run.mlflow_url)} target="_blank" rel="noreferrer">Open run in MLflow <ArrowUpRight size={14}/></a>{/if}</section>{/if}
@@ -201,17 +206,17 @@
         {/if}
         {#if result?.reasoning_content}<details class="reasoning" open={running}><summary>Emitted reasoning</summary><p class="caption">Model-generated text; not an activation measurement.</p><pre>{result.reasoning_content}</pre></details>{/if}
         <div class="answer" aria-label={`${model.label || model.id} output`}>
-          {#if result?.content}<MarkdownContent content={result.content}/>{:else}<p class="empty">{result?.status === 'running' ? 'Waiting for generated output…' : result?.status === 'queued' ? 'Queued for this run.' : 'The model’s live output will appear here.'}</p>{/if}
+          {#if task === 'pelican_svg'}<SvgPreview content={result?.content || ''} validation={result?.svg} complete={!!result && !['queued','running'].includes(result.status)}/>{:else if result?.content}<MarkdownContent content={result.content}/>{:else}<p class="empty">{result?.status === 'running' ? 'Waiting for generated output…' : result?.status === 'queued' ? 'Queued for this run.' : 'The model’s live output will appear here.'}</p>{/if}
         </div>
         {#if result?.finish_reason}<p class="caption">Finish reason: <code>{result.finish_reason}</code>{result.finish_reason === 'length' ? ' · Output reached its token limit and may be incomplete.' : ''}</p>{/if}
         {#if safeLink(result?.trace_url)}<a class="trace-link" href={safeLink(result.trace_url)} target="_blank" rel="noreferrer">Inspect this inference in MLflow <ArrowUpRight size={14}/></a>{/if}
         <details class="evidence"><summary>Model identity and captured runtime evidence</summary><pre>{pretty({endpoint:model.endpoint,identity:result?.identity || model.identity,model_id:result?.model_id || model.model_id,timings:result?.timings,elapsed_ms:result?.elapsed_ms,time_to_first_token_ms:result?.time_to_first_token_ms,finish_reason:result?.finish_reason,trace_id:result?.trace_id,settings:run?.settings})}</pre></details>
-        {#if result?.content}<details class="evidence"><summary>Raw output</summary><pre>{result.content}</pre></details>{/if}
+        {#if result?.content}<details class="evidence"><summary>{task === 'pelican_svg' ? 'Original SVG / model output' : 'Raw output'}</summary><pre>{result.content}</pre></details>{/if}
       </section>
     {/each}
   </div>
   {#if loading && !status}<div class="empty" role="status">Checking model endpoints…</div>{/if}
-  <div class="notice"><Activity size={18}/><span>Research records inference and browser exchanges, not internal activations. <a href="#/observability">Inspect the separate Bonsai activation diagnostic in Observability</a>; it does not explain either output in this comparison.</span></div>
+  <div class="notice"><Activity size={18}/><span>Inference traces are recorded and activation replays are queued automatically per inference. <a href="#/observability">Inspect the matching request, capture progress, and measured replay in Observability</a>. Replays are separate executions, not the original live activations.</span></div>
   <footer><ArrowRightLeft size={18}/><div><strong>Compare evidence, then judge usefulness.</strong><p>No winner is inferred from speed alone. These runs are bounded demonstrations, not quality or equivalence benchmarks. Unavailable measurements are not reported as zero.</p>{#if status?.limitations?.length}<details><summary>Comparison boundaries</summary><ul>{#each status.limitations as limitation}<li>{limitation}</li>{/each}</ul></details>{/if}</div></footer>
 </div>
 

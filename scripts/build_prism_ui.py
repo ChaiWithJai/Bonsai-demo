@@ -49,6 +49,7 @@ def main():
     comparison = stage / "src/routes/comparison"
     comparison.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(root / "scripts/prism-ui/Comparison.svelte", comparison / "+page.svelte")
+    shutil.copyfile(root / "scripts/prism-ui/SvgPreview.svelte", stage / "src/lib/SvgPreview.svelte")
     shutil.copyfile(root / "scripts/prism-ui/BrowserLiveView.svelte", stage / "src/lib/BrowserLiveView.svelte")
     layout = stage / "src/routes/+layout.svelte"
     layout_text = layout.read_text()

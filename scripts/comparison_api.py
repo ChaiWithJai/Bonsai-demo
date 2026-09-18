@@ -137,8 +137,8 @@ class ComparisonAPI:
             if len(recent) >= 5:
                 break
         return {'models': models, 'modes': ['sequential', 'concurrent'], 'default_mode': 'sequential',
-            'tasks': ['text', 'grant_research'],
-            'limits': {'max_tokens': 512, 'thinking_budget_tokens': 128, 'prompt_characters': 12000, 'research_tool_calls': 6, 'research_final_tokens': 1024},
+            'tasks': ['pelican_svg', 'text', 'grant_research'],
+            'limits': {'pelican_max_tokens': 4096, 'max_tokens': 512, 'thinking_budget_tokens': 128, 'prompt_characters': 12000, 'research_tool_calls': 6, 'research_final_tokens': 1024},
             'busy': self.run_lock.locked(), 'recent_runs': recent, 'limitations': LIMITATIONS}
 
     @staticmethod
@@ -154,17 +154,19 @@ class ComparisonAPI:
         mode = body.get('mode', 'sequential')
         if mode not in ('sequential', 'concurrent'):
             raise ValueError('Unknown comparison mode')
-        maximum = body.get('max_tokens', 512)
+        task = body.get('task', 'text')
+        maximum = body.get('max_tokens', 4096 if task == 'pelican_svg' else 512)
         thinking = body.get('thinking_budget_tokens', 0)
         temp = body.get('temperature', 0.3)
-        if type(maximum) is not int or not 1 <= maximum <= 512:
-            raise ValueError('max_tokens must be between 1 and 512')
+        limit = 4096 if task == 'pelican_svg' else 512
+        if type(maximum) is not int or not 1 <= maximum <= limit:
+            raise ValueError(f'max_tokens must be between 1 and {limit}')
         if type(thinking) is not int or not 0 <= thinking <= 128:
             raise ValueError('thinking_budget_tokens must be between 0 and 128')
         if type(temp) not in (int, float) or not math.isfinite(temp) or not 0 <= temp <= 2:
             raise ValueError('temperature must be between 0 and 2')
         task = body.get('task', 'text')
-        if task not in ('text', 'grant_research'):
+        if task not in ('text', 'grant_research', 'pelican_svg'):
             raise ValueError('Unknown comparison task')
         context = body.get('project_context', '')
         if not isinstance(context, str) or len(context) > 4000:
@@ -360,6 +362,11 @@ class ComparisonAPI:
                         raise RuntimeError('Incomplete inference stream')
                     result['status'] = 'completed'
                     result['truncated'] = result['finish_reason'] == 'length'
+                    if options.get('task') == 'pelican_svg':
+                        from svg_output import inspect_svg
+                        result['svg'] = inspect_svg(result['content'])
+                        if result['svg']['valid']:
+                            (path / 'output.svg').write_text(result['svg']['source'])
         except HTTPError as exc:
             (path / 'response-error.bin').write_bytes(exc.read(1024 * 1024))
             result['error'] = f'HTTP {exc.code}: inference server rejected the request'
