@@ -7,3 +7,5 @@ python3 scripts/research/pelican-explorer/build.py --records-root /path/to/resea
 ```
 
 The explorer compares original drawings, token neighborhoods, measured RMS from layers 0/31/63, and checkpoint recipes. Relative sequence positions are not aligned semantics or elapsed time. The optional repair changes exactly the known duplicate y2 attribute to y1 for illustration; it never modifies original output or activation records. The fragment uses the Codex visualization theme utilities. The visualization skill render.py can wrap it for standalone preview.
+
+Pass `--repair-dir /path/to/svg-repair` to include the MLflow-backed repair retrospective. The directory must contain repair-evidence.json and its hash-matched corrected.svg. The correction capture referenced by correction_record must exist in records-root. The optional illustrative preview remains distinct from the recorded model-assisted repair shown in the retrospective.

@@ -35,10 +35,11 @@
  </div>
  <div id="pel-recipe" class="pair" hidden></div>
  <div class="text-small" id="pel-summary" aria-live="polite"></div>
+ <section id="pel-retrospective" hidden></section>
  <script type="application/json" id="pel-data">__PELICAN_DATA__</script>
  <script>
  (()=>{
- const root=document.getElementById('pelican-lab'), $=id=>root.querySelector('#'+id), data=JSON.parse($('pel-data').textContent);
+ const root=document.getElementById('pelican-lab'), $=id=>root.querySelector('#'+id), bundle=JSON.parse($('pel-data').textContent), data=bundle.models;
  const safe=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  for(const id of ['pel-left','pel-right']) $(''+id).innerHTML=data.map((d,i)=>`<option value="${i}">${safe(d.name)}</option>`).join('');
  $('pel-left').value=data.length-1;$('pel-right').value=3;
@@ -58,6 +59,16 @@
  $('pel-repair').onchange=draw;$('pel-left').onchange=draw;$('pel-right').onchange=draw;$('pel-position').oninput=draw;
  root.querySelectorAll('[data-pair]').forEach(b=>b.onclick=()=>{const [a,z]=b.dataset.pair.split(',');$('pel-left').value=a;$('pel-right').value=z;draw()});
  $('pel-next').onclick=()=>{$('pel-position').value=Math.min(1000,+$('pel-position').value+10);draw()};$('pel-back').onclick=()=>{$('pel-position').value=Math.max(0,+$('pel-position').value-10);draw()};draw();
+ if(bundle.repair){
+ const r=bundle.repair, link=id=>`http://127.0.0.1:5210/#/experiments/5/runs/${encodeURIComponent(id)}`;
+ $('pel-retrospective').hidden=false;
+ $('pel-retrospective').innerHTML=`<hr><h2>Retrospective: one coordinate, a broken drawing, a measured fix</h2>
+ <div class="pair"><div><h3>What went wrong</h3><p>Bonsai 2 used <code>y2</code> twice on the bicycle fork. XML rejected the entire drawing at line 97, column 39. The same-seed rerun reproduced the exact output.</p><p>We retrieved that output from MLflow, gave Bonsai 2 the validator error and original SVG, and asked for only the corrected line. Sampling stayed unchanged; the task became a targeted correction with a 512-token output ceiling.</p><h3>The model’s correction</h3><div class="tokenbox"><div>Before: <code>${safe(r.before_element)}</code></div><div>After: <code>${safe(r.model_patch)}</code></div></div></div>
+ <div><h3>Validated repaired output</h3><img class="drawing" alt="Validated SVG after the recorded Bonsai2 correction" src="${r.image}"><div class="text-small">Separate model-assisted repair; original benchmark result remains failed.</div></div></div>
+ <h3>What proves the fix</h3><ul><li>The correction model emitted the replacement; a strict gate preserved coordinates and allowed only the expected line patch.</li><li>The full SVG passed XML and isolated-preview safety validation: 103 elements. Five regression tests reject changed geometry, extra content, ambiguous targets, and unsafe full documents.</li><li>The correction recorded ${r.tokens} tokens, ${r.vectors} real layer vectors, and ${r.seconds.toFixed(2)} instrumented seconds. Original and repaired artifact hashes are retained.</li></ul>
+ <p><a href="${link(r.source_mlflow_run)}" target="_blank" rel="noopener">Failed rerun in MLflow</a> · <a href="${link(r.correction_inference.run_id)}" target="_blank" rel="noopener">Correction inference + activations</a> · <a href="${link(r.pipeline_run_id)}" target="_blank" rel="noopener">Repair validation + artifacts</a></p>
+ <h3>What we learned</h3><p>Retrying the same input reproduced the same defect. Validator feedback plus a bounded patch fixed this output. This is a tested output-repair step—not a weight update, a fresh unassisted benchmark pass, or evidence that one activation caused the typo. Drawing quality still needs human review.</p>`;
+ }
  })();
  </script>
 </div>

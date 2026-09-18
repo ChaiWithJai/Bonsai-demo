@@ -4,6 +4,7 @@ from pathlib import Path
 parser=argparse.ArgumentParser(description='Build a self-contained explorer from five retained Pelican captures.')
 parser.add_argument('--records-root',type=Path,required=True)
 parser.add_argument('--output',type=Path,required=True)
+parser.add_argument('--repair-dir',type=Path)
 args=parser.parse_args();ROOT=args.records_root
 rows=[]
 for suffix,name in [('0101','Bonsai 1'),('0102','Bonsai 2 · original'),('0436','Qwen 3.6 · official BF16'),('0038','Qwen 3.8 · official BF16'),('0202','Bonsai 2 · rerun')]:
@@ -29,6 +30,16 @@ for suffix,name in [('0101','Bonsai 1'),('0102','Bonsai 2 · original'),('0436',
  if svg['valid']:shapes=dict(Counter(e.tag.split('}')[-1] for e in ET.fromstring(source).iter()))
  rows.append(dict(name=name,id=p.name,repo=ident['repo'],revision=ident['revision'],precision=ident.get('weight_format',ident.get('weight_dtype')),tokens=tokens,rms=rms,maxRms=max(max(x) for x in rms),seconds=r['seconds'],count=r['recorded_vectors'],svg=('data:image/svg+xml;base64,'+base64.b64encode(source.encode()).decode()) if svg['valid'] else None,repair=repair,error=svg.get('error',''),shapes=shapes,output=text))
 out=args.output;out.parent.mkdir(parents=True,exist_ok=True)
-payload=json.dumps(rows,separators=(',',':')).replace('<','\\u003c')
+repair=None
+if args.repair_dir:
+ import hashlib
+ repair=json.loads((args.repair_dir/'repair-evidence.json').read_text())
+ raw=(args.repair_dir/'corrected.svg').read_bytes()
+ assert hashlib.sha256(raw).hexdigest()==repair['files']['corrected.svg']
+ repair['image']='data:image/svg+xml;base64,'+base64.b64encode(raw).decode()
+ correction=ROOT/repair['correction_record']
+ result=json.loads((correction/'result.json').read_text())
+ repair['seconds']=result['seconds'];repair['tokens']=result['generated_tokens'];repair['vectors']=result['recorded_vectors']
+payload=json.dumps({'models':rows,'repair':repair},separators=(',',':')).replace('<','\\u003c')
 out.write_text(Path(__file__).with_name('explorer.html').read_text().replace('__PELICAN_DATA__',payload));assert out.stat().st_size<1_000_000
 print(out, out.stat().st_size)
