@@ -1,0 +1,63 @@
+<div id="pelican-lab">
+ <style>
+ #pelican-lab .pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+ #pelican-lab .drawing{width:100%;height:270px;object-fit:contain}
+ #pelican-lab .empty{min-height:270px;display:grid;place-content:center;color:var(--destructive);background:var(--muted);padding:16px}
+ #pelican-lab select{width:100%} #pelican-lab .tokenbox{overflow-wrap:anywhere;min-height:84px;padding:12px;background:var(--muted);border-radius:8px}
+ #pelican-lab mark{background:var(--accent);color:var(--accent-foreground)}
+ #pelican-lab .rmsrow{display:grid;grid-template-columns:65px 1fr 65px;align-items:center;gap:8px;margin:12px 0}
+ #pelican-lab .rmsbar{height:12px;background:var(--viz-series-1)}
+ #pelican-lab .right .rmsbar{background:var(--viz-series-2)}
+ #pelican-lab .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+ #pelican-lab .stats{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0}
+ #pelican-lab .recipe{overflow-wrap:anywhere} #pelican-lab [hidden]{display:none}
+ @media(max-width:580px){#pelican-lab .pair{grid-template-columns:1fr}#pelican-lab .drawing{height:230px}}
+ </style>
+ <h2>Pelican lab</h2>
+ <div class="toolbar" role="group" aria-label="Comparison shortcuts"><button class="btn" type="button" data-pair="0,2">Generation 1: ternary ↔ dense</button><button class="btn" type="button" data-pair="4,3">Generation 2: ternary ↔ dense</button><button class="btn" type="button" data-pair="1,4">Bonsai 2: original ↔ rerun</button></div>
+ <div class="pair">
+  <label class="form-label">Left specimen<select class="form-select" id="pel-left"></select></label>
+  <label class="form-label">Right specimen<select class="form-select" id="pel-right"></select></label>
+ </div>
+ <div class="toolbar" role="group" aria-label="Explore comparison">
+  <button class="btn btn-primary" type="button" data-mode="draw" aria-pressed="true">The drawings</button>
+  <button class="btn" type="button" data-mode="tokens" aria-pressed="false">Token microscope</button>
+  <button class="btn" type="button" data-mode="recipe" aria-pressed="false">Model recipes</button>
+ </div>
+ <label id="pel-repair-control" class="form-check"><input id="pel-repair" class="form-check-input" type="checkbox"> Show illustrative repair for invalid SVGs (first y2 → y1; not model output)</label>
+ <div id="pel-draw" class="pair"></div>
+ <div id="pel-tokens" hidden>
+  <label class="form-label" for="pel-position">Relative decode position <output id="pel-progress">0%</output></label>
+  <input class="form-range" id="pel-position" type="range" min="0" max="1000" value="0">
+  <div class="toolbar"><button class="btn" id="pel-back" type="button">← Earlier</button><button class="btn" id="pel-next" type="button">Later →</button></div>
+  <div class="pair" id="pel-micro"></div>
+  <div class="text-small">Layer RMS · shared scale · different token sequences, unaligned activation coordinates</div>
+ </div>
+ <div id="pel-recipe" class="pair" hidden></div>
+ <div class="text-small" id="pel-summary" aria-live="polite"></div>
+ <script type="application/json" id="pel-data">__PELICAN_DATA__</script>
+ <script>
+ (()=>{
+ const root=document.getElementById('pelican-lab'), $=id=>root.querySelector('#'+id), data=JSON.parse($('pel-data').textContent);
+ const safe=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ for(const id of ['pel-left','pel-right']) $(''+id).innerHTML=data.map((d,i)=>`<option value="${i}">${safe(d.name)}</option>`).join('');
+ $('pel-left').value=data.length-1;$('pel-right').value=3;
+ let mode='draw';
+ function draw(){
+ const pair=[$('pel-left').value,$('pel-right').value].map(i=>data[+i]);
+ $('pel-draw').innerHTML=pair.map(d=>`<section><h3>${safe(d.name)}</h3>${(d.svg||($('pel-repair').checked&&d.repair))?`${!d.svg?'<div class="text-destructive">Illustrative repair · not original model output</div>':''}<img class="drawing" alt="${d.svg?'Original':'Illustratively repaired'} ${safe(d.name)} pelican drawing" src="${d.svg||d.repair}">`:`<div class="empty">SVG did not parse<br>${safe(d.error)}</div>`}<div class="stats tabular-nums"><span>${d.tokens.length.toLocaleString()} decode steps</span><span>${d.count.toLocaleString()} vectors</span><span>${d.seconds.toFixed(1)} s with capture</span></div><details><summary>Drawing ingredients</summary><div>${Object.entries(d.shapes).map(([k,v])=>`${safe(k)} × ${v}`).join(' · ')||'Unavailable: invalid XML'}</div></details><details><summary>Original source</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${safe(d.output)}</pre></details></section>`).join('');
+ $('pel-recipe').innerHTML=pair.map(d=>`<section class="recipe"><h3>${safe(d.name)}</h3><dl><dt>Checkpoint</dt><dd>${safe(d.repo)}</dd><dt>Stored weights</dt><dd>${safe(d.precision)}</dd><dt>Revision</dt><dd><code>${safe(d.revision)}</code></dd><dt>Sampling</dt><dd>Temperature 0.3 · top-p 0.95 · top-k 20 · seed 42</dd><dt>Measured layer outputs</dt><dd>0, 31, 63 · 5,120 dimensions each</dd><dt>Captured during</dt><dd>Original inference</dd></dl></section>`).join('');
+ $('pel-repair-control').hidden=mode!=='draw';
+ const q=+$('pel-position').value/1000;$('pel-progress').textContent=(q*100).toFixed(1)+'%';
+ const selections=pair.map(d=>{const i=Math.round(q*(d.tokens.length-1));return {d,i,r:d.rms[i]}});
+ const scale=Math.max(...pair.map(d=>d.maxRms));
+ $('pel-micro').innerHTML=selections.map(({d,i,r},side)=>`<section class="${side?'right':'left'}"><h3>${safe(d.name)}</h3><div class="text-small">Decode step ${i+1} / ${d.tokens.length}</div><div class="tokenbox"><code>${safe(d.tokens.slice(Math.max(0,i-7),i).join(''))}<mark>${safe(d.tokens[i])||'∅'}</mark>${safe(d.tokens.slice(i+1,i+8).join(''))}</code></div>${r.map((v,j)=>`<div class="rmsrow"><span>Layer ${[0,31,63][j]}</span><div><div class="rmsbar" style="width:${100*v/scale}%"></div></div><span class="tabular-nums">${v.toFixed(3)}</span></div>`).join('')}</section>`).join('');
+ $('pel-summary').textContent=mode==='draw'?($('pel-repair').checked?'Repair preview is illustrative; original source and measured activations remain unchanged.':'Original outputs · one sample per original model; Bonsai 2 rerun retained separately'):mode==='tokens'?'Recorded sequence position, not elapsed time or a causal explanation. RMS summarizes vector magnitude.':'Same prompt and numeric sampling settings; different precisions, runtimes, and random-number implementations.';
+ }
+ root.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;root.querySelectorAll('[data-mode]').forEach(x=>{x.classList.toggle('btn-primary',x===b);x.setAttribute('aria-pressed',x===b)});for(const m of ['draw','tokens','recipe'])$('pel-'+m).hidden=m!==mode;draw()});
+ $('pel-repair').onchange=draw;$('pel-left').onchange=draw;$('pel-right').onchange=draw;$('pel-position').oninput=draw;
+ root.querySelectorAll('[data-pair]').forEach(b=>b.onclick=()=>{const [a,z]=b.dataset.pair.split(',');$('pel-left').value=a;$('pel-right').value=z;draw()});
+ $('pel-next').onclick=()=>{$('pel-position').value=Math.min(1000,+$('pel-position').value+10);draw()};$('pel-back').onclick=()=>{$('pel-position').value=Math.max(0,+$('pel-position').value-10);draw()};draw();
+ })();
+ </script>
+</div>
