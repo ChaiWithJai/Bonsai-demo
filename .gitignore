@@ -219,6 +219,17 @@ mlx/
 .venv-jupyter/
 .openwebui/
 .webui_secret_key
+.cache/
+mlruns/
+*.db
+*.sqlite
+*.sqlite3
+native-ui-records/
+comparison-records/
+activation-diagnostic/
+browser-screenshots/
+browser-content/
+replay-*.json
 .DS_Store
 *.tar.gz
 *.zip

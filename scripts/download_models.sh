@@ -3,13 +3,15 @@
 #
 # Usage:
 #   ./scripts/download_models.sh                                         # Bonsai 2 27B (default)
-#   BONSAI_FAMILY=ternary BONSAI_MODEL=4B ./scripts/download_models.sh   # Ternary-Bonsai 4B
+#   BONSAI_MODEL=4B ./scripts/download_models.sh                         # Ternary-Bonsai 4B
 #   BONSAI_FAMILY=bonsai ./scripts/download_models.sh                    # Bonsai (1-bit) 27B
 #   BONSAI_FAMILY=ternary BONSAI_MODEL=1.7B ./scripts/download_models.sh # Ternary-Bonsai 1.7B
-#   BONSAI_FAMILY=ternary BONSAI_MODEL=all ./scripts/download_models.sh  # All sizes of that family
-#   BONSAI_FAMILY=all ./scripts/download_models.sh                       # Every family, 27B size
-#   BONSAI_FAMILY=all BONSAI_MODEL=all ./scripts/download_models.sh      # Full matrix (sizes without a build are skipped)
+#   BONSAI_MODEL=all ./scripts/download_models.sh                        # All sizes of the selected family
+#   BONSAI_FAMILY=all ./scripts/download_models.sh                       # Both families, 27B size
+#   BONSAI_FAMILY=all BONSAI_MODEL=all ./scripts/download_models.sh      # Full matrix (8 downloads)
 #   BONSAI_SKIP_GGUF=1 ./scripts/download_models.sh                      # MLX only (macOS) — saves disk space
+#   BONSAI_MODELS_PLAN=1 ./scripts/download_models.sh                    # Preview reuse/downloads; no weights downloaded
+#   BONSAI_DOWNLOAD_DRAFTER=1 ./scripts/download_models.sh               # Include experimental DSpark sidecar
 #
 # Set BONSAI_TOKEN (a read-only HF token) if you need to pull a repo that is
 # still private; public repos download anonymously with no token.
@@ -68,18 +70,19 @@ hf_download() {
     _repo="$1"
     _dest="$2"
     _patterns="${3:-}"
-    "$PY" -c "
-import os
-from huggingface_hub import snapshot_download
-kwargs = {'repo_id': '$_repo', 'local_dir': '$_dest'}
-_p = '$_patterns'
-if _p:
-    kwargs['allow_patterns'] = [p for p in _p.split(',') if p]
-# Private-repo auth (27B until launch); falls back to anonymous when unset.
-if os.environ.get('BONSAI_TOKEN'):
-    kwargs['token'] = os.environ['BONSAI_TOKEN']
-snapshot_download(**kwargs)
-"
+    if [ "${BONSAI_MODELS_PLAN:-0}" = "1" ]; then
+        "$PY" "$SCRIPT_DIR/model_store.py" "$_repo" "$_dest" --patterns "$_patterns" --plan
+    else
+        "$PY" "$SCRIPT_DIR/model_store.py" "$_repo" "$_dest" --patterns "$_patterns"
+    fi
+}
+
+# Unlike `ls`, this rejects dangling symlinks and zero-byte interrupted files.
+model_file_present() {
+    for _model_file in "$1"/$2; do
+        [ -f "$_model_file" ] && [ -s "$_model_file" ] && return 0
+    done
+    return 1
 }
 
 # ── Download GGUF + MLX for one (family, size) pair ──
@@ -134,29 +137,31 @@ download_one() {
     esac
 
     # 27B extras: the mmproj (multimodal projector) for image input, and the
-    # paired dspark drafter GGUF for optional speculative decoding
-    # (BONSAI_SPECULATIVE=1 in start_llama_server.sh). The hqq4 Q4_1 drafter is
-    # the smallest/fastest variant and accepts identically to bf16.
+    # paired dspark drafter only when explicitly requested. The resolver keeps
+    # one installed projector or selects BF16, rather than downloading both.
     _dl_patterns="$_gguf_pattern"
     _mmproj_pattern=""
     _drafter_pattern=""
     if [ "$_family" = "bonsai2" ]; then
-        # the projector ships in the same repo; Bonsai 2 has no dspark drafter
-        _mmproj_pattern="*mmproj-Q8_0.gguf"
+        # Reuse the verified BF16 projector if already installed; no Bonsai 2 drafter.
+        _mmproj_pattern="*mmproj*.gguf"
         _dl_patterns="$_gguf_pattern,$_mmproj_pattern"
     elif [ "$_size" = "27B" ]; then
         _mmproj_pattern="*mmproj*.gguf"
         # the bf16 drafter is the input for the one-time gguf-dspark-to-dflash
         # conversion (see SPECULATIVE.md); the legacy Q4_1 sidecar cannot load on v7
-        _drafter_pattern="*dspark-bf16*.gguf"
-        _dl_patterns="$_gguf_pattern,$_mmproj_pattern,$_drafter_pattern"
+        if [ "${BONSAI_DOWNLOAD_DRAFTER:-${BONSAI_SPECULATIVE:-0}}" = "1" ]; then
+            _drafter_pattern="*dspark-bf16*.gguf"
+        fi
+        _dl_patterns="$_gguf_pattern,$_mmproj_pattern"
+        [ -z "$_drafter_pattern" ] || _dl_patterns="$_dl_patterns,$_drafter_pattern"
     fi
 
     # GGUF — stderr flows to the user so auth/network errors are visible.
     # Fast-path and post-download checks both filter on the target quant pattern
     # (not just any *.gguf) so a leftover F16 or other quant from an earlier
     # download doesn't get picked up at runtime. For 27B the fast-path also
-    # requires the mmproj and drafter so a re-run backfills vision + speculative.
+    # requires a projector and, only when opted in, the speculative drafter.
     if bonsai_should_skip_gguf; then
         info "Skipping GGUF ${_display} (BONSAI_SKIP_GGUF=1)."
     else
@@ -164,22 +169,24 @@ download_one() {
         _gguf_check_pattern="$(printf '%s' "$_gguf_pattern" | tr ',' ' ')"
         _gguf_any_present() {
             for _p in $_gguf_check_pattern; do
-                ls "$_gguf_dir"/$_p >/dev/null 2>&1 && return 0
+                model_file_present "$_gguf_dir" "$_p" && return 0
             done
             # a previous run that fell back to the plain official name marked the dir
-            [ -f "$_gguf_dir/.official-q2_0" ] && ls "$_gguf_dir"/*-Q2_0.gguf >/dev/null 2>&1 && return 0
+            [ -f "$_gguf_dir/.official-q2_0" ] && model_file_present "$_gguf_dir" "*-Q2_0.gguf" && return 0
             return 1
         }
         if [ -d "$_gguf_dir" ] && _gguf_any_present; then
-            if { [ -z "$_mmproj_pattern" ] || ls "$_gguf_dir"/$_mmproj_pattern >/dev/null 2>&1; } \
-                && { [ -z "$_drafter_pattern" ] || ls "$_gguf_dir"/$_drafter_pattern >/dev/null 2>&1; }; then
+            if { [ -z "$_mmproj_pattern" ] || model_file_present "$_gguf_dir" "$_mmproj_pattern"; } \
+                && { [ -z "$_drafter_pattern" ] || model_file_present "$_gguf_dir" "$_drafter_pattern"; }; then
                 _gguf_present=true
             fi
         fi
-        if [ "$_gguf_present" = true ]; then
+        if [ "${BONSAI_MODELS_PLAN:-0}" = "1" ]; then
+            hf_download "$_gguf_repo" "$_gguf_dir" "$_dl_patterns"
+        elif [ "$_gguf_present" = true ] && [ -z "${BONSAI_MODEL_REVISION:-}" ]; then
             info "GGUF ${_display} (${_gguf_pattern}) already present in ${_gguf_dir}/"
         else
-            step "Downloading GGUF ${_display} (${_dl_patterns}) from ${_gguf_repo} ..."
+            step "Resolving GGUF ${_display}: reuse verified local files, download only missing files ..."
             mkdir -p "$_gguf_dir"
             if ! hf_download "$_gguf_repo" "$_gguf_dir" "$_dl_patterns"; then
                 err "Failed to download GGUF ${_display} from ${_gguf_repo}."
@@ -209,17 +216,17 @@ download_one() {
 
     # MLX (macOS Apple Silicon only; skipped on Intel or when BONSAI_SKIP_MLX=1)
     if [ "$(uname -s)" = "Darwin" ] && ! bonsai_should_skip_mlx; then
-        if [ -d "$_mlx_dir" ] && [ -f "$_mlx_dir/config.json" ]; then
-            info "MLX ${_display} already present in ${_mlx_dir}/"
+        if [ "${BONSAI_MODELS_PLAN:-0}" = "1" ]; then
+            hf_download "$_mlx_repo" "$_mlx_dir"
         else
-            step "Downloading MLX ${_display} from ${_mlx_repo} ..."
+            step "Resolving MLX ${_display}: verify all files, reuse before download ..."
             hf_download "$_mlx_repo" "$_mlx_dir"
             info "MLX ${_display} downloaded to ${_mlx_dir}/"
         fi
     fi
 }
 
-mkdir -p models
+[ "${BONSAI_MODELS_PLAN:-0}" = "1" ] || mkdir -p models
 
 # Expand "all" for family and size into concrete lists, then iterate.
 case "$BONSAI_FAMILY" in
@@ -244,4 +251,8 @@ elif bonsai_should_skip_mlx; then
 fi
 
 echo ""
-info "Model download complete."
+if [ "${BONSAI_MODELS_PLAN:-0}" = "1" ]; then
+    info "Model plan complete — no weights downloaded or linked."
+else
+    info "Model setup complete."
+fi

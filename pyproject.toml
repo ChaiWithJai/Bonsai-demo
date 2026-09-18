@@ -14,6 +14,9 @@ dependencies = [
 # the CHAT_RESPONSE_MAX_TOOL_CALL_ITERATIONS loop cap the scripts rely on. Bump
 # deliberately (and re-run uv lock), not implicitly.
 webui = ["open-webui==0.10.2"]
+recording = [
+    "mlflow>=3.1,<4",
+]
 
 [tool.setuptools]
 packages = []

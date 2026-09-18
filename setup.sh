@@ -3,7 +3,8 @@
 # Installs all dependencies, downloads models and binaries.
 #
 # Usage:
-#   ./setup.sh                          (downloads 27B model by default)
+#   ./setup.sh                          (reuses or downloads 27B model by default)
+#   ./setup.sh --model-plan              (preview model reuse/downloads only)
 #   BONSAI_MODEL=4B ./setup.sh          (download a different model size)
 #   BONSAI_TOKEN=hf_xxx ./setup.sh      (read-only HF token; needed for 27B while private)
 set -e
@@ -13,6 +14,15 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 . "$SCRIPT_DIR/scripts/common.sh"
 assert_valid_model
+
+# Inspect only the model step, before dependency installs or binary changes.
+case "${1:-}" in
+    --model-plan)
+        BONSAI_MODELS_PLAN=1 exec sh "$SCRIPT_DIR/scripts/download_models.sh"
+        ;;
+    "") ;;
+    *) printf 'Usage: ./setup.sh [--model-plan]\n' >&2; exit 2 ;;
+esac
 
 VENV_DIR="$SCRIPT_DIR/.venv"
 VENV_PY="$VENV_DIR/bin/python"
@@ -270,7 +280,7 @@ sh "$SCRIPT_DIR/scripts/download_binaries.sh"
 # ────────────────────────────────────────────────────
 #  7. Download models from HuggingFace
 # ────────────────────────────────────────────────────
-step "Model download (BONSAI_FAMILY=${BONSAI_FAMILY} BONSAI_MODEL=${BONSAI_MODEL}) ..."
+step "Model setup: reuse before download (BONSAI_FAMILY=${BONSAI_FAMILY} BONSAI_MODEL=${BONSAI_MODEL}) ..."
 BONSAI_FAMILY="$BONSAI_FAMILY" BONSAI_MODEL="$BONSAI_MODEL" sh "$SCRIPT_DIR/scripts/download_models.sh"
 
 chmod +x "$SCRIPT_DIR"/scripts/*.sh 2>/dev/null || true
@@ -360,9 +370,7 @@ raise SystemExit(0 if v >= (0, 31) else 1)
     fi
 
     # mlx-vlm serves the 27B MLX packs WITH image input (the published packs
-    # ship the FP16 vision tower in mlx-vlm-native layout). Bonsai 2 runs here too:
-    # its pack carries a Hadamard-aware loader that sits on stock mlx-vlm. Pin
-    # mlx==0.32.0; 0.32.2 breaks mlx-vlm's vision path. It needs stock mlx,
+    # ship the FP16 vision tower in mlx-vlm-native layout). It needs stock mlx,
     # which conflicts with the PrismML fork in .venv (fork = 1-bit kernels), so
     # it gets its own venv. Ternary (2-bit) runs on stock mlx -> vision works;
     # binary (1-bit) still needs the fork -> text-only mlx_lm for now.
@@ -370,11 +378,10 @@ raise SystemExit(0 if v >= (0, 31) else 1)
     if [ "${BONSAI_MLX_VLM:-1}" != "0" ]; then
         step "Setting up mlx-vlm venv (MLX image input for the 27B) ..."
         VLM_VENV="$SCRIPT_DIR/.venv-vlm"
-        if [ -x "$VLM_VENV/bin/python" ] && "$VLM_VENV/bin/python" -c "import mlx_vlm" 2>/dev/null \
-            && [ "$("$VLM_VENV/bin/python" -c 'import mlx.core as mx; print(mx.__version__)' 2>/dev/null)" = "0.32.0" ]; then
+        if [ -x "$VLM_VENV/bin/python" ] && "$VLM_VENV/bin/python" -c "import mlx_vlm" 2>/dev/null; then
             info "mlx-vlm venv already present."
         elif uv venv "$VLM_VENV" --python "$PYTHON_VERSION" >/dev/null 2>&1 \
-            && uv pip install --python "$VLM_VENV/bin/python" "mlx==0.32.0" "mlx-vlm==0.6.3" "transformers==5.5.0" \
+            && uv pip install --python "$VLM_VENV/bin/python" "mlx-vlm==0.6.3" "transformers==5.5.0" \
             && "$VLM_VENV/bin/python" -c "import mlx_vlm" 2>/dev/null; then
             info "mlx-vlm venv ready (.venv-vlm)."
         else
