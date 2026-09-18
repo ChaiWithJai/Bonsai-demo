@@ -38,6 +38,7 @@ class Observability:
         self.trace_cache = {}
         self.comparison_directory = Path(comparison_directory) if comparison_directory else self.recorder.directory.parent / 'comparison-records'
         self.comparison_trace_cache = {}
+        self.research_directory = self.recorder.directory.parent / 'research-records'
         self.mlflow_base_url = mlflow_base_url.rstrip('/')
 
     @staticmethod
@@ -46,6 +47,78 @@ class Observability:
             return json.loads(path.read_text())
         except (OSError, ValueError):
             return {} if default is None else default
+
+    def research_summary(self, folder):
+        record = self.json_file(folder / 'research.json')
+        if not record or not (folder / 'request.json').is_file():
+            return None
+        identity = record.get('model_identity') or {}
+        response = record.get('response') or {}
+        output = '\n'.join(choice.get('message', {}).get('content', '') for choice in response.get('choices', [])
+                           if isinstance(choice.get('message', {}).get('content'), str))
+        return {'id': 'research_' + folder.name, 'source': 'research', 'research_id': folder.name, 'latest_output': output, 'last_output': output,
+            'title': record.get('title') or 'Pelican research · ' + str(identity.get('repo', folder.name)),
+            'label': identity.get('repo') or identity.get('label'),
+            'started_at': record.get('started_at', (folder / 'research.json').stat().st_mtime),
+            'updated_at': record.get('updated_at', (folder / 'research.json').stat().st_mtime),
+            'node_count': 1, 'completion_count': 1, 'tool_count': 0,
+            'error_count': int(record.get('status') == 'error'), 'status': record.get('status'),
+            'experiment_id': record.get('experiment_id'), 'mlflow_url': record.get('mlflow_url')}
+
+    def research_detail(self, sid):
+        if not re.fullmatch(r'research_[a-f0-9]{32}', sid):
+            raise KeyError(sid)
+        folder = self.research_directory / sid[9:]
+        session = self.research_summary(folder)
+        if session is None:
+            raise KeyError(sid)
+        record = self.json_file(folder / 'research.json')
+        raw = (folder / 'request.json').read_bytes()
+        request = json.loads(raw)
+        expected = hashlib.sha256(raw).hexdigest()
+        identity = record.get('model_identity') or {}
+        node = {'id': sid + '_inference', 'request_id': sid + '_inference', 'source': 'research',
+            'research_id': folder.name, 'kind': 'completion', 'category': 'inference',
+            'generation_available': True, 'name': 'Instrumented research inference',
+            'request': request, 'request_sha256': expected, 'response': record.get('response', {}),
+            'server': identity, 'model_identity': identity, 'settings': {k: v for k, v in request.items() if k not in ('messages', 'tools')},
+            'complete': record.get('status') == 'completed', 'execution_status': record.get('status'),
+            'error': record.get('error'), 'elapsed_ms': record.get('elapsed_ms'),
+            'timings': [record['timings']] if record.get('timings') else [],
+            'started_at': record.get('started_at'), 'timestamp_source': 'research_record',
+            'trace_id': record.get('trace_id'), 'trace_url': record.get('trace_url'),
+            'experiment_id': record.get('experiment_id'), 'run_id': record.get('run_id'),
+            'tool_calls': [], 'tool_results': [], 'assessments': [],
+            'activations': {'status': 'not_captured', 'scope': 'Original research inference'}}
+        result = self.json_file(folder / 'result.json')
+        if (identity and result.get('identity') == identity
+                and result.get('source_request_sha256') == expected):
+            metrics = {key: result.get(key) for key in ('seconds', 'generated_tokens', 'recorded_vectors')}
+            metrics = {key: value for key, value in metrics.items()
+                       if isinstance(value, (int, float)) and not isinstance(value, bool)
+                       and math.isfinite(value) and value >= 0}
+            if metrics:
+                seconds = metrics.get('seconds')
+                tokens = metrics.get('generated_tokens')
+                if seconds and tokens is not None:
+                    metrics['output_tokens_per_total_second'] = tokens / seconds
+                metrics['scope'] = 'Prefill + decode including activation capture; not decode-only throughput'
+                node['research_metrics'] = metrics
+        capture = self.json_file(folder / 'activation-capture.json')
+        source = capture.get('source') or {}
+        if capture:
+            valid = (capture.get('kind') == 'live_instrumented_inference' and capture.get('passed') is True
+                     and source.get('research_id') == folder.name and source.get('request_sha256') == expected
+                     and capture.get('model') == identity)
+            if valid:
+                node['activation_capture'] = capture
+                node['activations'] = {'status': 'captured', 'scope': 'Measured during this original inference; not a replay'}
+            else:
+                node['activation_replay_status'] = {'status': 'error', 'error': 'Live capture provenance does not match this research request and model.'}
+        return {'session': session, 'nodes': [node], 'edges': [], 'model_evidence': self.model(),
+            'historical_model_evidence': identity, 'mlflow_url': record.get('mlflow_url'),
+            'limitations': ['Activations were sampled during the recorded original research execution, not reconstructed from HTTP.',
+                'Activation dimensions across models are not aligned semantic features; measurements alone do not establish causal explanations.']}
 
     def comparison_folders(self):
         if not self.comparison_directory.is_dir():
@@ -391,7 +464,9 @@ class Observability:
         self.comparison_trace_cache.clear()
         comparisons = [summary for folder in self.comparison_folders() for model in ('bonsai', 'qwen')
                        if (summary := self.comparison_summary(folder, model)) is not None]
-        return {'sessions': sorted([self.summary(s, r) for s, r in groups.items()] + comparisons,
+        research = [summary for folder in self.research_directory.glob('*') if folder.is_dir() and re.fullmatch(r'[a-f0-9]{32}', folder.name)
+                    if (summary := self.research_summary(folder)) is not None]
+        return {'sessions': sorted([self.summary(s, r) for s, r in groups.items()] + comparisons + research,
                                    key=lambda r: r['updated_at'], reverse=True), 'limitations': LIMITATIONS}
 
     def trace_server(self, trace_id):
@@ -411,6 +486,8 @@ class Observability:
     def detail(self, sid):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,128}', sid):
             raise ValueError('Invalid session ID')
+        if sid.startswith('research_'):
+            return self.research_detail(sid)
         if sid.startswith('comparison_'):
             return self.comparison_detail(sid)
         rows = [r for r in self.records() if (r.get('session') or 'unassigned') == sid]
@@ -474,12 +551,12 @@ class Observability:
         """Return one verified vector from the selected inference's attached replay."""
         detail = self.detail(sid)
         node = next((n for n in detail['nodes'] if n['id'] == node_id), None)
-        replay = (node or {}).get('activation_replay') or {}
+        replay = (node or {}).get('activation_capture') or (node or {}).get('activation_replay') or {}
         sample = next((s for s in replay.get('samples', []) if s.get('step') == step and s.get('layer') == layer), None)
         if not sample:
             raise KeyError('Measured vector unavailable')
         path = Path(sample['vector_file']).resolve()
-        roots = [self.recorder.directory.resolve(), (self.recorder.directory.parent / 'comparison-records').resolve()]
+        roots = [self.research_directory.resolve(), self.recorder.directory.resolve(), (self.recorder.directory.parent / 'comparison-records').resolve()]
         if self.manifest:
             roots.append((self.manifest.parent / 'activation-diagnostic').resolve())
         if not any(path.is_relative_to(root) for root in roots):
@@ -495,7 +572,7 @@ class Observability:
             raise ValueError('Nonfinite vector')
         return {'node_id': node_id, 'step': step, 'layer': layer, 'values': values,
                 'vector_sha256': sample['vector_sha256'], 'length': length,
-                'scope': 'Measured residual stream of this separate instrumented replay'}
+                'scope': 'Measured residual stream during the original inference' if replay.get('kind') == 'live_instrumented_inference' else 'Measured residual stream of this separate instrumented replay'}
 
     def model(self):
         checkpoint = {'status': 'not_verified', 'explanation': 'Release verification has not yet been attached.'}

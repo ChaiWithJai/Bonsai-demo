@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import SvgPreview from '$lib/SvgPreview.svelte';
   import MarkdownContent from '$lib/components/app/content/MarkdownContent/MarkdownContent.svelte';
   import { Activity, ArrowUpRight, RefreshCw, GitBranch, CircleAlert, Cpu, Layers } from '@lucide/svelte';
   type RecordData = Record<string, any>;
@@ -36,6 +37,8 @@
   const checkpoint = $derived(manifest.checkpoint || {});
   const tensors = $derived(manifest.tensor_metadata || {});
   function attachedReplay(step: RecordData | undefined) {
+    const live = step?.activation_capture;
+    if (live?.kind === 'live_instrumented_inference' && live.passed === true && live.source?.research_id === detail?.session?.research_id && live.source?.request_sha256 === step?.request_sha256) return live;
     const replay = step?.activation_replay;
     const source = replay?.source;
     if (replay?.kind !== 'new_instrumented_real_request_replay') return null;
@@ -43,9 +46,12 @@
     return source?.comparison_run_id === detail?.session?.run_id && source?.model === detail?.session?.model && Number(source?.turn) === Number(step?.turn) ? replay : null;
   }
   const activationDiagnostic = $derived(attachedReplay(node));
+  const liveCapture = $derived(activationDiagnostic?.kind === 'live_instrumented_inference');
   const selectedModel = $derived(activationDiagnostic?.model || node?.server?.checkpoint_release || node?.model_identity?.identity?.checkpoint_provenance || node?.server || {});
   const selectedModelName = $derived(selectedModel.repo || selectedModel.path?.split('/').at(-1) || selectedModel.model_path?.split('/').at(-1) || node?.model_identity?.label || 'Identity not captured for this inference');
   const selectedModelHash = $derived(selectedModel.sha256 || selectedModel.verified_file?.sha256 || selectedModel.file?.sha256);
+  const selectedModelRevision = $derived(selectedModel.revision || selectedModel.checkpoint?.revision);
+  const selectedModelShards = $derived(Array.isArray(selectedModel.shards) ? selectedModel.shards : []);
 
   const replayStatus = $derived(node?.activation_replay_status);
   const replayPending = $derived(['queued', 'running'].includes(replayStatus?.status));
@@ -70,12 +76,12 @@
   const activationSamples = $derived((activationDiagnostic?.samples || []).filter((sample: RecordData) => typeof sample.stats?.rms === 'number' && Number.isFinite(sample.stats.rms)));
   const activationLayers = $derived([...new Set<number>(activationSamples.map((sample: RecordData) => sample.layer))].sort((a, b) => a - b));
   const activationSteps = $derived([...new Set<number>(activationSamples.map((sample: RecordData) => sample.step))].sort((a, b) => a - b));
-  const activationMax = $derived(Math.max(0, ...activationSamples.map((sample: RecordData) => sample.stats.rms)));
+  const activationMax = $derived(activationSamples.reduce((maximum: number, sample: RecordData) => Math.max(maximum, sample.stats.rms), 0));
   let activationSelection = $state('');
   const activationSample = $derived(activationSamples.find((sample: RecordData) => `${sample.layer}:${sample.step}` === activationSelection) || activationSamples[0]);
   let playingActivations = $state(false);
   const activationStepIndex = $derived(Math.max(0, activationSteps.indexOf(activationSample?.step)));
-  const vectorScale = $derived(Math.max(0.000001, ...activationSamples.flatMap((sample: RecordData) => (sample.sample || []).filter((value: unknown) => typeof value === 'number' && Number.isFinite(value)).map((value: number) => Math.abs(value)))));
+  const vectorScale = $derived(activationSamples.reduce((maximum: number, sample: RecordData) => (sample.sample || []).reduce((inner: number, value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(inner, Math.abs(value)) : inner, maximum), 0.000001));
   function selectActivationStep(index: number) {const step = activationSteps[Math.max(0, Math.min(index, activationSteps.length - 1))]; activationSelection = `${activationSample?.layer ?? activationLayers[0]}:${step}`;}
   $effect(() => {void node?.id; activationSelection = ''; playingActivations = false;});
   $effect(() => {
@@ -89,7 +95,7 @@
   let vectorError = $state('');
   let vectorDimension = $state(0);
   const vectorKey = $derived(`${node?.id}:${activationSample?.step}:${activationSample?.layer}`);
-  const fullVectorScale = $derived(Math.max(.000001, ...(fullVector?.values || []).map((value: number) => Math.abs(value))));
+  const fullVectorScale = $derived((fullVector?.values || []).reduce((maximum: number, value: number) => Math.max(maximum, Math.abs(value)), .000001));
   const fullVectorPoints = $derived((fullVector?.values || []).map((value: number, index: number) => `${20 + index / Math.max(1, fullVector!.length - 1) * 600},${85 - value / fullVectorScale * 68}`).join(' '));
   $effect(() => {void vectorKey; fullVector = null; vectorError = ''; vectorDimension = 0; loadingVector = false;});
   async function loadFullVector() {
@@ -107,7 +113,8 @@
     } catch (failure) {if (key === vectorKey) vectorError = String(failure);}
     finally {if (key === vectorKey) loadingVector = false;}
   }
-  function activationCell(layer: number, step: number) { return activationSamples.find((sample: RecordData) => sample.layer === layer && sample.step === step); }
+  const activationByCell = $derived(new Map<string, RecordData>(activationSamples.map((sample: RecordData): [string, RecordData] => [`${sample.layer}:${sample.step}`, sample])));
+  function activationCell(layer: number, step: number) { return activationByCell.get(`${layer}:${step}`); }
   function activationColor(value: number) { return `color-mix(in srgb, var(--ring) ${activationMax > 0 ? Math.round(value / activationMax * 80) : 0}%, var(--card))`; }
   function diagnosticLink(value: unknown) { if (typeof value !== 'string') return undefined; try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? value : undefined; } catch { return undefined; } }
 
@@ -181,8 +188,9 @@
       <div class="obs-view-panel" role="tabpanel" id="obs-panel-chain" aria-labelledby="obs-tab-chain" tabindex="0">
       {#if detail}
         <section class="obs-card obs-output">
-          <div class="obs-card-heading"><div><p class="obs-section-label">01 / OBSERVED OUTPUT</p><h2>{detail.session?.title || 'Recorded conversation'}</h2></div>{#if detail.session?.source === 'comparison'}<a class="obs-link" href="#/comparison">Open comparison <ArrowUpRight size={15}/></a>{:else if detail.session?.id && detail.session.id !== 'unassigned'}<a class="obs-link" href={`#/chat/${encodeURIComponent(detail.session?.id || '')}`}>Open chat <ArrowUpRight size={15}/></a>{/if}</div>
+          <div class="obs-card-heading"><div><p class="obs-section-label">01 / OBSERVED OUTPUT</p><h2>{detail.session?.title || 'Recorded conversation'}</h2></div>{#if detail.session?.source === 'comparison'}<a class="obs-link" href="#/comparison">Open comparison <ArrowUpRight size={15}/></a>{:else if detail.session?.source !== 'research' && detail.session?.id && detail.session.id !== 'unassigned'}<a class="obs-link" href={`#/chat/${encodeURIComponent(detail.session?.id || '')}`}>Open chat <ArrowUpRight size={15}/></a>{/if}</div>
           {#if detail.session?.source === 'comparison'}<p class="obs-caption">Actual {detail.session.label || detail.session.model} run · {detail.session.run_id} · {detail.session.status}. {#if diagnosticLink(detail.session.trace_url)}<a class="obs-link" href={diagnosticLink(detail.session.trace_url)} target="_blank" rel="noreferrer">Open recorded comparison trace <ArrowUpRight size={13}/></a>{/if}</p>{/if}
+          {#if detail.session?.source === 'research' && typeof output === 'string' && /<svg\b/i.test(output)}<SvgPreview content={output} complete={detail.session.status === 'completed'} />{/if}
           <details open><summary>Latest captured answer</summary><div class="obs-answer obs-answer-rendered"><MarkdownContent content={typeof output === 'string' ? output : json(output)} /></div></details><details><summary>Raw captured answer</summary><pre class="obs-answer">{typeof output === 'string' ? output : json(output)}</pre></details>
           <p class="obs-caption">Captured output is evidence of what was generated, not a quality or factuality assessment.</p>
         </section>
@@ -213,11 +221,20 @@
             {#if node.auxiliary || node.category === 'title_generation'}<p class="obs-caption">Auxiliary UI request: generates the chat title, not the answer to the user’s task.</p>{/if}
             {#if isProtocol(node)}<div class="obs-notice"><CircleAlert size={17}/><span>This is an MCP connection handshake or protocol request. It is not model inference: no prompt was evaluated and no model tokens were generated by this exchange. Select a model inference step to inspect generation.</span></div>{/if}
             {#if traceLink(node)}<p class="obs-caption">MLflow trace <code>{node.trace_id}</code> · <a class="obs-link" href={traceLink(node)} target="_blank" rel="noreferrer">Open MLflow <ArrowUpRight size={13}/></a></p>{/if}
-            {#if attachedReplay(node)}<div class="obs-notice"><Activity size={17}/><span>Measured activations from a replay of this exact recorded request are ready. <button class="obs-link" onclick={() => view = 'weights'}>Inspect measured replay activations <ArrowUpRight size={13}/></button></span></div>{/if}
+            {#if attachedReplay(node)}<div class="obs-notice"><Activity size={17}/><span>{node.activation_capture ? 'Activations measured during this original inference are ready.' : 'Measured activations from a replay of this exact recorded request are ready.'} <button class="obs-link" onclick={() => view = 'weights'}>Inspect measured activations <ArrowUpRight size={13}/></button></span></div>{/if}
             {#if replayStatus && !attachedReplay(node)}<div class="obs-notice" role="status"><Activity size={17}/><span>Activation capture: {replayStatus.status}. {replayPending ? 'The replay is processing automatically; this view refreshes every 4 seconds.' : replayStatus.error || ''}</span></div>{/if}
             {#if isInference(node) && !attachedReplay(node) && !replayPending}<button class="obs-button" onclick={captureInference} disabled={requestingCapture}>{requestingCapture ? 'Requesting capture…' : 'Capture this inference'}</button>{/if}
             <div class="obs-tabs" aria-label="Inspect exchange">{#each inspectTabs as name}<button class:active={tab === name} onclick={() => tab = name} aria-pressed={tab === name}>{name}</button>{/each}</div>
-            {#if tab === 'runtime' && isInference(node)}
+            {#if tab === 'runtime' && node.source === 'research'}
+              <div class="obs-metrics">
+                <div><small>Instrumented inference</small><strong>{typeof node.research_metrics?.seconds === 'number' ? duration(node.research_metrics.seconds * 1000) : 'Not captured'}</strong><span>Prefill + decode including activation capture</span></div>
+                <div><small>Generated tokens</small><strong>{number(node.research_metrics?.generated_tokens)}</strong><span>Recorded original execution</span></div>
+                <div><small>Captured vectors</small><strong>{number(node.research_metrics?.recorded_vectors)}</strong><span>Includes captured prefill vectors</span></div>
+                <div><small>Output tokens / total elapsed</small><strong>{number(node.research_metrics?.output_tokens_per_total_second, ' tok/s')}</strong><span>Not decode-only throughput</span></div>
+              </div>
+              <p class="obs-caption">Research metrics come from the request- and model-matched result artifact. Total elapsed includes prefill and activation instrumentation; it is not a server decode-speed benchmark.</p>
+            {/if}
+            {#if tab === 'runtime' && isInference(node) && node.source !== 'research'}
               <div class="obs-metrics">
                 <div><small>Recorded exchange</small><strong>{duration(node.elapsed_ms)}</strong><span>Wall-clock duration</span></div>
                 <div><small>Generation rate</small><strong>{number(timing?.predicted_per_second, ' tok/s')}</strong><span>Server timing, if emitted</span></div>
@@ -228,7 +245,7 @@
               <p class="obs-caption">Summary uses the last emitted timing snapshot. Streaming snapshots are not added together.</p>
             {/if}
             {#if tab === 'runtime' && !isInference(node)}<div class="obs-metrics"><div><small>{isProtocol(node) ? 'Protocol round trip' : 'Tool exchange duration'}</small><strong>{duration(node.elapsed_ms)}</strong><span>Observed wall-clock time, not generation latency</span></div></div><p class="obs-caption">Generation metrics do not apply to this exchange.</p>{/if}
-            <pre class="obs-json">{tab === 'context' ? json(node.request) : tab === 'response' ? json(node.response) : tab === 'configuration' ? json({settings: node.settings, server: node.server}) : tab === 'runtime' ? json({...(isInference(node) ? {timings: node.timings} : {}), elapsed_ms: node.elapsed_ms, status: node.status, execution_status: node.execution_status, timestamp_source: node.timestamp_source, complete: node.complete, error: node.error}) : json({tool_calls: node.tool_calls, tool_results: node.tool_results})}</pre>
+            <pre class="obs-json">{tab === 'context' ? json(node.request) : tab === 'response' ? json(node.response) : tab === 'configuration' ? json({settings: node.settings, server: node.server}) : tab === 'runtime' ? json({...(isInference(node) ? {timings: node.timings, research_metrics: node.research_metrics} : {}), elapsed_ms: node.elapsed_ms, status: node.status, execution_status: node.execution_status, timestamp_source: node.timestamp_source, complete: node.complete, error: node.error}) : json({tool_calls: node.tool_calls, tool_results: node.tool_results})}</pre>
             {#if isInference(node)}<p class="obs-caption">Captured reasoning, when present, is model-generated text; it is not a measurement of internal activations.</p>{/if}
             {#if node.citation_audit}<section class="obs-experiment" aria-label="Recorded citation URL audit"><div class="obs-card-heading"><strong>Citation URL check</strong><span class="obs-pill">{node.citation_audit.status || 'Status not recorded'}</span></div><p class="obs-caption">Checks recorded URL provenance only. A pass does not verify claims, current grant availability, or applicant eligibility.</p><dl class="obs-facts"><div><dt>Matched URLs</dt><dd>{node.citation_audit.matched_urls?.length ?? 'Not recorded'}</dd></div><div><dt>Unsupported URLs</dt><dd>{node.citation_audit.unsupported_urls?.length ?? 'Not recorded'}</dd></div><div><dt>Opened-page citation</dt><dd>{node.citation_audit.missing_citations === true ? 'Missing — check failed' : node.citation_audit.missing_citations === false ? 'Present' : 'Not recorded'}</dd></div></dl><details><summary>Recorded URLs and audit scope</summary><pre class="obs-json">{json(node.citation_audit)}</pre></details></section>{/if}
             {#if node.assessments?.length}<details class="obs-reviews"><summary>Recorded reviews ({node.assessments.length})</summary><p class="obs-caption">Reviews retain their recorded judge and source. Automated feedback is not human approval.</p>{#each node.assessments as assessment}<div class="obs-experiment"><strong>{assessment.name || 'Recorded assessment'}</strong><p>Source: {assessment.source?.source_type || assessment.source?.type || 'Not captured'} · {assessment.source?.source_id || 'Judge identity not captured'}</p><pre class="obs-json">{json(assessment)}</pre></div>{/each}</details>{/if}
@@ -239,15 +256,15 @@
       <div class="obs-view-panel" role="tabpanel" id="obs-panel-weights" aria-labelledby="obs-tab-weights" tabindex="0">
       <section class="obs-card">
         <div class="obs-card-heading"><div><p class="obs-section-label">04 / MODEL EVIDENCE</p><h2>Inside the selected inference.</h2></div><Layers size={22}/></div>
-        <p class="obs-caption"><strong>{selectedModelName}</strong><br/>Checkpoint SHA-256: <code>{selectedModelHash || 'Not captured'}</code></p>
-        <details><summary>Selected inference checkpoint identity</summary><p class="obs-caption">SHA-256: <code>{selectedModelHash || 'Not captured'}</code></p><pre class="obs-json">{json(selectedModel)}</pre></details>
-        <div class="obs-activation"><CircleAlert size={20}/><div><strong>{activationDiagnostic ? 'Measured activations for the selected request' : replayPending ? `Activation capture ${replayStatus.status}` : replayStatus?.status === 'error' || replayStatus?.status === 'failed' ? 'Activation capture failed' : 'Capture not requested for this historical inference'}</strong><p>{activationDiagnostic ? 'These measurements replay the exact recorded request in a separate execution. They belong to that replay, not the original live generation.' : replayPending ? 'Processing automatically. This view refreshes every 4 seconds while capture is queued or running.' : replayStatus?.error || 'Select a recent model turn to inspect its automatically recorded activation replay.'}</p></div></div>
+        <p class="obs-caption"><strong>{selectedModelName}</strong><br/>{#if selectedModelRevision}Pinned checkpoint revision: <code>{selectedModelRevision}</code>{:else}Checkpoint SHA-256: <code>{selectedModelHash || 'Not captured'}</code>{/if}{#if selectedModelShards.length}<br/>{selectedModelShards.length} checkpoint shards · {selectedModel.weight_dtype || 'Recorded weight dtype unavailable'}{#if selectedModel.quantized === false} · unquantized{/if}{/if}</p>
+        <details><summary>Selected inference checkpoint identity</summary><p class="obs-caption">{#if selectedModelRevision}Repository revision: <code>{selectedModelRevision}</code><br/>{/if}{#if selectedModelHash}Checkpoint file SHA-256: <code>{selectedModelHash}</code>{:else if selectedModelShards.length}This checkpoint consists of multiple files; a repository revision identifies the snapshot, not a single-file SHA-256.{:else if !selectedModelRevision}Checkpoint identity was not captured.{/if}</p><pre class="obs-json">{json(selectedModel)}</pre></details>
+        <div class="obs-activation"><CircleAlert size={20}/><div><strong>{activationDiagnostic ? 'Measured activations for the selected request' : replayPending ? `Activation capture ${replayStatus.status}` : replayStatus?.status === 'error' || replayStatus?.status === 'failed' ? 'Activation capture failed' : 'Capture not requested for this historical inference'}</strong><p>{liveCapture ? 'These measurements were captured during the selected original inference, not a replay.' : activationDiagnostic ? 'These measurements replay the exact recorded request in a separate execution. They belong to that replay, not the original live generation.' : replayPending ? 'Processing automatically. This view refreshes every 4 seconds while capture is queued or running.' : replayStatus?.error || 'Select a recent model turn to inspect its automatically recorded activation replay.'}</p></div></div>
         {#if isInference(node) && !activationDiagnostic && !replayPending}<button class="obs-button" onclick={captureInference} disabled={requestingCapture}>{requestingCapture ? 'Requesting capture…' : 'Capture this inference'}</button>{/if}
         {#if node}<p class="obs-caption">Selected evidence: {detail?.session?.label || detail?.session?.model || 'Native chat'} · {nodeLabel(node)}{node.turn ? ` · turn ${node.turn}` : ''} · {node.id}</p>{/if}
         {#if activationDiagnostic}
-          <section class="obs-activation-diagnostic" aria-label="Instrumented replay of recorded request">
-            <div class="obs-card-heading"><div><p class="obs-section-label">ACTUAL REQUEST / INSTRUMENTED REPLAY</p><h3>Measured activations from this recorded request.</h3></div><span class="obs-pill">{activationDiagnostic.passed === true ? 'Capture passed' : 'Capture status not verified'}</span></div>
-            <p class="obs-caption">This new run replays the recorded rendered context from the selected model inference. The measurements belong to the replay, not to the original execution. They do not establish which activations caused a claim.</p>
+          <section class="obs-activation-diagnostic" aria-label={liveCapture ? "Original inference activation capture" : "Instrumented replay of recorded request"}>
+            <div class="obs-card-heading"><div><p class="obs-section-label">{liveCapture ? 'ACTUAL REQUEST / LIVE ACTIVATIONS' : 'ACTUAL REQUEST / INSTRUMENTED REPLAY'}</p><h3>Measured activations from this recorded request.</h3></div><span class="obs-pill">{activationDiagnostic.passed === true ? 'Capture passed' : 'Capture status not verified'}</span></div>
+            <p class="obs-caption">{liveCapture ? 'Measured during the original generation shown in this node. Sampled activations do not establish which values caused a particular output.' : 'This new run replays the recorded rendered context from the selected model inference. The measurements belong to the replay, not to the original execution. They do not establish which activations caused a claim.'}</p>
             <p class="obs-caption"><strong>{activationDiagnostic.settings?.decode_steps ?? 'Unrecorded'}-step capture limit · {activationLayers.length} sampled layers · {activationSteps.length} steps recorded</strong>. Selected layers: {activationLayers.join(', ')}. Generation may end before the limit.</p>
             {#if activationSamples.length && activationSample}
               <div class="activation-player">
@@ -274,9 +291,9 @@
                 <details><summary>Exact selected values and statistics</summary><pre class="obs-json">{json(activationSample)}</pre></details>
               </div>
             {:else}<p class="obs-caption">No measured activation samples are available yet.</p>{/if}
-            <details><summary>Recorded context and replay output</summary><p class="obs-caption">Prompt</p><pre class="obs-answer">{activationDiagnostic.prompt || activationDiagnostic.rendered_prompt || 'Not recorded'}</pre><p class="obs-caption">Generated text</p><pre class="obs-answer">{activationDiagnostic.generated_text || 'Not recorded'}</pre></details>
-            {#if diagnosticLink(activationDiagnostic.mlflow?.url)}<a class="obs-link" href={diagnosticLink(activationDiagnostic.mlflow.url)} target="_blank" rel="noreferrer">Open instrumented replay in MLflow <ArrowUpRight size={14}/></a>{/if}
-            <details><summary>Replay lineage, settings and all measurements</summary><pre class="obs-json">{json(activationDiagnostic)}</pre></details>
+            <details><summary>Recorded context and captured output</summary><p class="obs-caption">Prompt</p><pre class="obs-answer">{activationDiagnostic.prompt || activationDiagnostic.rendered_prompt || 'Not recorded'}</pre><p class="obs-caption">Generated text</p><pre class="obs-answer">{activationDiagnostic.generated_text || 'Not recorded'}</pre></details>
+            {#if diagnosticLink(activationDiagnostic.mlflow?.url)}<a class="obs-link" href={diagnosticLink(activationDiagnostic.mlflow.url)} target="_blank" rel="noreferrer">Open instrumented run in MLflow <ArrowUpRight size={14}/></a>{/if}
+            <details><summary>Capture lineage, settings and all measurements</summary><pre class="obs-json">{json(activationDiagnostic)}</pre></details>
           </section>
         {/if}
         <details><summary>Current deployment reference (separate from selected inference)</summary>
