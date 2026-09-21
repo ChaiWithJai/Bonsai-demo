@@ -1,0 +1,50 @@
+{
+  "scope": "One 8.45-second development video with synthetic speech and a cached table image",
+  "source_id": "6ebce59d7f89551c81eda7664a41d1f9a13d0e57dd90af98a6e66279235bf714",
+  "source_sha256": "b6e8d6834a7cf1aeed02441a30ec05d2c0750c41515a84fe0a1762fc0faa54f5",
+  "speech_segments": 2,
+  "visual_records": 3,
+  "visual_samples": 1,
+  "both_channels_retained": true,
+  "proposal_status": "awaiting_confirmation",
+  "proposal_confirmed": false,
+  "runs": [
+    {
+      "kind": "speech",
+      "run_id": "86fbddd87d0d4d80a91eb75d79c63f9e",
+      "status": "FINISHED",
+      "trace_id": null
+    },
+    {
+      "kind": "vision",
+      "run_id": "8c7c5f95d2964a81bca36e2e24b91785",
+      "status": "FINISHED",
+      "trace_id": null
+    },
+    {
+      "kind": "planning",
+      "run_id": "976516187b784225b19882ae12759060",
+      "status": "FINISHED",
+      "trace_id": "tr-b017be1c3d26f2939ca0990f41a5f082"
+    }
+  ],
+  "python_tests": 237,
+  "browser_checks": "desktop/mobile channel labels, timestamp seeks, decoded frame readiness",
+  "svelte_check": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "backup_status": "failed_unverified",
+  "analyst_observations": [
+    "Visible table cell values match the sampled frame; this is a development inspection, not a human review label.",
+    "The proposal calls repository observations release rows. Observation dates do not establish release dates.",
+    "The proposal table overview omits speech text; it remains in full record details."
+  ],
+  "limits": [
+    "English Whisper CPU speech, not native Bonsai audio",
+    "One frame per 15 seconds; no unsampled motion analysis",
+    "No speaker identity or proven link between speech and visual records",
+    "The first proposal failed uniform-field validation; one repair produced a valid unconfirmed proposal"
+  ],
+  "backup_error": "MongoDB refused connection on 127.0.0.1:27028; no new restore verified"
+}
