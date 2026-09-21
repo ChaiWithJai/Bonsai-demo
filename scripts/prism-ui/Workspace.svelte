@@ -22,8 +22,10 @@
   let draftKey = $state(0);
   let selectedRole = $state('Research analyst');
   let initialPanel = $state('conversation');
+  const editDrafts = new Map<string, {prompt:string;checks:typeof requestChecks}>();
+  function retainEditDraft() { if(project && !home) editDrafts.set(project.id,{prompt,checks:structuredClone($state.snapshot(requestChecks))}); }
   function roleStream(role:string) { selectedRole=role; initialPanel='conversation'; newStream(); }
-  function newStream() { home = true; selectedSource = ''; draftKey += 1; }
+  function newStream() { retainEditDraft(); home = true; selectedSource = ''; initialPanel='conversation'; draftKey += 1; }
   const visibleProjects = $derived((status?.workspaces ?? []).filter((item:Data) => item.title.toLowerCase().includes(streamSearch.toLowerCase())));
   const visibleSources = $derived(sourceStreams.filter((item:Data) => !item.workspace_id && item.status !== 'superseded' && item.filename.toLowerCase().includes(streamSearch.toLowerCase())).filter((item:Data,index:number,all:Data[]) => all.findIndex(other => other.source_id === item.source_id) === index));
   let comparison = $state<Data | null>(null);
@@ -71,9 +73,11 @@
   }
   async function refresh() { const [next, jobs] = await Promise.all([api(), api('/source-jobs')]); status = next; sourceStreams = jobs.jobs; }
   async function choose(id: string) {
+    retainEditDraft();
     project = await api('/' + id);
     home = false;
-    requestChecks = [];
+    prompt = editDrafts.get(id)?.prompt ?? '';
+    requestChecks = editDrafts.get(id)?.checks ?? [];
     reviews = await api('/' + id + '/reviews');
     reviewNote = ''; reviewError = ''; reviewExport = null;
     comparison = null; comparisonError = '';
@@ -154,7 +158,7 @@
     busy = true; error = '';
     try {
       const result = await api('/' + project.id + '/attempts', {request: prompt.trim(), base_revision: project.head, case: selectedCase, request_checks: requestChecks});
-      attempt = result.attempt_id; events = []; prompt = ''; requestChecks = []; selectedCase = 'baseline';
+      attempt = result.attempt_id; events = []; editDrafts.delete(project.id); prompt = ''; requestChecks = []; selectedCase = 'baseline';
       project = await api('/' + project.id); await refresh();
     } catch (e) { error = String(e); }
     finally { busy = false; }
@@ -191,9 +195,9 @@
     <label class="stream-search"><span class="sr-only">Search workstreams</span><input bind:value={streamSearch} placeholder="Search workstreams" /></label>
     <p class="sidebar-section">Roles</p><div class="role-choices">{#each ['Research analyst','Data analyst','Evidence reviewer'] as role (role)}<button class:selected={home && selectedRole===role} onclick={()=>roleStream(role)}>{role}</button>{/each}</div><p class="sidebar-section">Workstreams</p>
     <button class="stream-row" class:selected={home && !selectedSource} onclick={newStream}><span class="stream-avatar">＋</span><span><strong>New workstream</strong><small>A question, your files, a shared view</small></span></button>
-    {#each visibleSources as item (item.id)}<button class="stream-row" class:selected={home && selectedSource === item.source_id} onclick={() => {selectedSource=item.source_id;home=true;}}><span class="stream-avatar">B</span><span><strong>{item.filename}</strong><small>{item.status === 'awaiting_confirmation' ? 'Your review needed' : item.stage}</small></span></button>{/each}
+    {#each visibleSources as item (item.id)}<button class="stream-row" class:selected={home && selectedSource === item.source_id} onclick={() => {retainEditDraft();selectedSource=item.source_id;home=true;initialPanel='conversation';}}><span class="stream-avatar">B</span><span><strong>{item.filename}</strong><small>{item.status === 'awaiting_confirmation' ? 'Your review needed' : item.stage}</small></span></button>{/each}
     {#each visibleProjects as item (item.id)}<button class="stream-row" class:selected={!home && project?.id===item.id} onclick={() => choose(item.id).catch(e => error=String(e))}><span class="stream-avatar">{item.title.slice(0,1)}</span><span><strong>{item.title}</strong><small>Continue the conversation</small></span></button>{/each}
-    <div class="shared-tools"><p class="sidebar-section">Shared tools</p><button onclick={()=>{initialPanel='files';newStream();}}>Search attached files</button><p>Available to every role</p></div><div class="stream-footer"><span class="dot"></span> Bonsai 2 · on this Mac</div>
+    <div class="shared-tools"><p class="sidebar-section">Shared tools</p><button onclick={()=>{if(home) initialPanel='files'; else tab='data';}}>Search attached files</button><p>Available to every role</p></div><div class="stream-footer"><span class="dot"></span> Bonsai 2 · on this Mac</div>
   </aside>
   <div class="stream-main">
   <header class="heading"><div><h2>{home ? selectedSource ? sourceStreams.find(item => item.source_id===selectedSource)?.filename ?? 'Workstream' : 'New workstream' : project?.title}</h2><p class="subtitle">Conversation, files, and a view you can work with.</p></div></header>
@@ -201,7 +205,7 @@
   {#if loading}<p role="status">Opening Workspace…</p>
   {:else if home || !project}
     <section class="start-layout" aria-label="New workstream conversation">
-      <div class="data-start">{#key selectedSource + ':' + draftKey}<WorkspaceData role={selectedRole} {initialPanel} initialSource={selectedSource} onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>{/key}</div>
+      <div class="data-start">{#key selectedSource + ':' + draftKey}<WorkspaceData role={selectedRole} bind:panel={initialPanel} initialSource={selectedSource} onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>{/key}</div>
 
     </section>
   {:else}

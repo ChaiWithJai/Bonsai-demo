@@ -4,7 +4,7 @@
   import WorkspaceProposal from '$lib/WorkspaceProposal.svelte';
   import { onMount } from 'svelte';
   import WorkspaceRecordReview from '$lib/WorkspaceRecordReview.svelte';
-  let { onProject = (_id: string) => {}, initialSource = '', role = 'Research analyst', initialPanel = 'conversation' } = $props<{onProject?: (id: string) => void; initialSource?:string; role?:string; initialPanel?:string}>();
+  let { onProject = (_id: string) => {}, initialSource = '', role = 'Research analyst', panel = $bindable('conversation') } = $props<{onProject?: (id: string) => void; initialSource?:string; role?:string; panel?:string}>();
   type Job = {kind?:string;run_id?:string;id:string; source_id:string; source_ids?:string[]; filename:string; request:string; status:string; stage:string; workspace_id?:string; error?:string; mlflow_url?:string; proposal?:any; proposal_sha256?:string; source_coverage?:any; source_examples?:any[]};
   function sourceLocation(locator: Record<string, unknown>, index: number) {
     if (locator.sheet != null && locator.cell != null) return String(locator.sheet) + ' · ' + locator.cell;
@@ -17,7 +17,6 @@
   }
   let jobs = $state<Job[]>([]);
   let intent = $state('');
-  let panel = $state('conversation');
   let fileSearch = $state('');
   let selectedRecord = $state('');
   let videoPlayer: HTMLVideoElement | undefined = $state();
@@ -105,7 +104,6 @@
     try { await jobRequest('/'+id+'/cancel',{}); } catch(e) { error=String(e); }
   }
   onMount(() => {
-    panel=initialPanel;
     if(initialSource) void choose(initialSource);
     let stopped=false;let timer:ReturnType<typeof setTimeout>;
     refresh().catch(e=>error=String(e));
