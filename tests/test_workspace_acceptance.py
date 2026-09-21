@@ -22,3 +22,12 @@ class AcceptanceTests(unittest.TestCase):
             {'target':{'role':'heading','name':''},'action':'visible','value':True},
         ]:
             with self.subTest(step=step), self.assertRaises(ValueError): validate_checks([step])
+
+    def test_selected_state_requires_a_boolean_and_counts_as_an_assertion(self):
+        target={'role':'button','name':'Measured observations'}
+        checks=[{'target':target,'action':'click','value':None},
+                {'target':target,'action':'pressed','value':True}]
+        self.assertEqual(validate_checks(checks),checks)
+        for invalid in ['true',1,None,'mixed']:
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                validate_checks([{'target':target,'action':'pressed','value':invalid}])

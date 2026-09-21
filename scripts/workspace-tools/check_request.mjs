@@ -18,6 +18,7 @@ try {
      if(step.action==='click')await target.click();
      else if(step.action==='visible')await expect(target)[step.value?'toBeVisible':'toBeHidden']();
      else if(step.action==='text')await expect(target).toHaveText(step.value);
+     else if(step.action==='pressed')await expect(target).toHaveAttribute('aria-pressed',String(step.value));
      else if(step.action==='count')await expect(target).toHaveCount(step.value);
      else throw new Error('Unknown request check action');
      result.steps.push({index,passed:true});

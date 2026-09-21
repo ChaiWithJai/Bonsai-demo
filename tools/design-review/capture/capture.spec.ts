@@ -915,3 +915,35 @@ test('Saved workstream reopens without browser draft storage',async({page},info)
  }
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/38-recovered-workstream.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Expected results captures ordered selection checks without inference',async({page},info)=>{
+ const id='32403b0a26bd447abcfebd26c9ef3b59';
+ const project=await (await page.request.get('/api/workspace/'+id)).json();
+ await page.goto('/#/workspace');
+ if(info.project.name==='mobile')await page.getByRole('button',{name:'Workstreams Choose a role or conversation'}).click();
+ await page.locator('.stream-row').filter({has:page.locator('strong',{hasText:project.title})}).click();
+ await page.getByLabel('Describe the next change').fill('Keep the measured-observations filter selected after clicking it.');
+ await page.locator('.expectations summary').click();
+ await page.getByRole('button',{name:'Add expected result',exact:true}).click();
+ await page.getByRole('combobox',{name:'Check 1',exact:true}).selectOption('click');
+ await page.getByLabel('Exact label',{exact:true}).fill('Measured observations');
+ await expect(page.getByRole('button',{name:'Send request',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'Add expected result',exact:true}).click();
+ await page.getByRole('combobox',{name:'Check 2',exact:true}).selectOption('pressed');
+ await page.getByLabel('Exact label',{exact:true}).nth(1).fill('Measured observations');
+ await page.getByRole('combobox',{name:'Expected selection',exact:true}).selectOption('false');
+ await page.getByRole('combobox',{name:'Expected selection',exact:true}).selectOption('true');
+ let submitted:any;
+ await page.route('**/api/workspace/'+id+'/attempts',async route=>{
+  submitted=route.request().postDataJSON();await route.fulfill({status:409,json:{error:'Development interception: no inference submitted'}});
+ });
+ await page.getByRole('button',{name:'Send request',exact:true}).click();
+ await expect(page.getByRole('alert')).toContainText('Development interception');
+ expect(submitted.request_checks).toEqual([
+  {target:{role:'button',name:'Measured observations'},action:'click',value:null},
+  {target:{role:'button',name:'Measured observations'},action:'pressed',value:true}
+ ]);
+ await expect(page.getByLabel('Exact label',{exact:true}).nth(1)).toHaveValue('Measured observations');
+ await page.locator('.expectations').scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/39-selection-checks.'+info.project.name+'.png'),fullPage:true});
+});

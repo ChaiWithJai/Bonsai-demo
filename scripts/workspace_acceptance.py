@@ -19,7 +19,7 @@ def validate_checks(value):
         action, expected = step['action'], step['value']
         if action == 'click':
             valid = expected is None
-        elif action == 'visible':
+        elif action in ('visible', 'pressed'):
             valid = type(expected) is bool
         elif action == 'text':
             valid = isinstance(expected, str) and len(expected) <= 2000
