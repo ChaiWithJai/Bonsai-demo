@@ -1,0 +1,25 @@
+{
+  "scope": "Development workbook; no human acceptance",
+  "job_id": "9626cb0ca71647b5be329b7766bbd695",
+  "source_id": "8b42e6d4f10f2dfd590585da6127d0ac7a63112ffee84075ec75ffbb6394b515",
+  "original_response_replay_passed": true,
+  "original_response_values_preserved": true,
+  "first_failure": "JSON false compared with Python False in citation validation",
+  "repair_run_used_original_validator": true,
+  "corrected_validator_sha256": "af43be6960e2faaf09e627c8cea952bd9e3e081b151298250b3e0b2346c1c313",
+  "workbook_cells": 9,
+  "formula_cache_recalculation": false,
+  "full_suite": "200 tests passed before two added regressions; all seven workbook tests and five source-job tests passed afterward",
+  "browser_intake": "desktop and mobile passed",
+  "workspace_id": "dd2d5489a35c4dbcac513abc81f96a83",
+  "planning_run_id": "cb0bef05f4f84babae163b1067075732",
+  "build_run_id": "ab9dff4081f84a73b86f28d4044964bd",
+  "build_and_browser_checks": "passed",
+  "human_acceptance": false,
+  "limitations": [
+    "Development fixture only, not broad workbook reliability.",
+    "Formula caches may be stale; no calculation engine is run.",
+    "Legacy XLS, XLSM, array formulas and data-table formulas are unsupported.",
+    "Blank cells and visual workbook objects are not interpreted."
+  ]
+}
