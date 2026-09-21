@@ -676,3 +676,33 @@ test('Generated view combines node selection and inclusive date windows',async({
  await expect(page.getByLabel('From date',{exact:true})).toHaveValue('');
  await expect(page.getByLabel('Through date',{exact:true})).toHaveValue('');
 });
+
+test('Generated view zooms nodes without losing selection or overflowing the page',async({page},info)=>{
+ test.skip(!process.env.DATE_PREVIEW_URL,'Requires isolated node exploration fixture');
+ await page.goto(process.env.DATE_PREVIEW_URL!);
+ const viewport=page.getByRole('region',{name:'Scrollable chart',exact:true});
+ const chart=page.getByRole('region',{name:'Data visualization',exact:true});
+ await expect(page.getByRole('button',{name:'Zoom out',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'Zoom in',exact:true}).click();
+ await page.getByRole('button',{name:'Zoom in',exact:true}).click();
+ expect(await chart.evaluate(element=>element.getBoundingClientRect().width)).toBe(1350);
+ expect(await viewport.evaluate(element=>element.scrollWidth>element.clientWidth)).toBe(true);
+ const node=page.getByRole('button',{name:'Explore size: 27B',exact:true});
+ await node.scrollIntoViewIfNeeded();
+ await node.click();
+ await expect(page.getByText('Selected group: size: 27B',{exact:true})).toBeVisible();
+ await expect(page.getByTestId('record-row')).toHaveCount(3);
+ const data=await page.request.get(process.env.DATE_PREVIEW_URL!+'api/desktop').then(response=>response.json());
+ const position=data.interaction.nodes.find((item:any)=>item.label==='size: 27B');
+ const imageBox=await chart.locator('img').boundingBox();
+ const nodeBox=await node.boundingBox();
+ expect(Math.abs(nodeBox!.x+nodeBox!.width/2-imageBox!.x-position.x*1.5)).toBeLessThan(1);
+ expect(Math.abs(nodeBox!.y+nodeBox!.height/2-imageBox!.y-position.y*1.5)).toBeLessThan(1);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/32-node-zoom.'+info.project.name+'.png'),fullPage:true});
+ await page.getByRole('button',{name:'Fit chart',exact:true}).click();
+ expect(await viewport.evaluate(element=>element.scrollWidth<=element.clientWidth+1)).toBe(true);
+ await expect(page.getByTestId('record-row')).toHaveCount(3);
+ await page.getByRole('button',{name:'Clear filters',exact:true}).click();
+ await expect(page.getByTestId('record-row')).toHaveCount(5);
+});
