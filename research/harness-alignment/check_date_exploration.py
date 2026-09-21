@@ -50,7 +50,7 @@ def main():
             preview = tools.preview(project, build)
             subprocess.run(['node', str(ROOT / 'scripts/workspace-tools/node_modules/@playwright/test/cli.js'), 'test',
                             '--config', 'tools/design-review/capture/playwright.config.ts', '--grep',
-                            'Generated view combines node selection'], cwd=ROOT, check=True,
+                            'Generated view (combines node selection|zooms nodes)'], cwd=ROOT, check=True,
                            env={**os.environ, 'DATE_PREVIEW_URL': preview['url'],
                                 'NODE_PATH': str(ROOT / 'scripts/workspace-tools/node_modules')})
         finally:

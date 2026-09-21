@@ -3,6 +3,7 @@
   let model = $state(null);
   let selected = $state(null);
   let group = $state('');
+  let chartScale = $state(0);
   let search = $state('');
   let dateField = $state('');
   let dateFrom = $state('');
@@ -66,7 +67,12 @@
       <div class="table-scroll" tabindex="0" role="region" aria-label="Source record table"><table><thead><tr>{#each model.chart.props.columns as column (column)}<th scope="col">{fieldLabel(column)}</th>{/each}<th scope="col">Evidence</th></tr></thead><tbody>{#each visible as row (row.id)}<tr data-table-record-id={row.id}>{#each model.chart.props.columns as column (column)}<td>{row.data[column] == null ? 'Missing' : String(row.data[column])}</td>{/each}<td><button onclick={()=>selected=row} aria-label={'Review table record '+row.id}>Review</button></td></tr>{/each}</tbody></table></div>
       <p class="provenance">Showing {model.chart.props.columns.length} overview fields. All fields and source passages remain in record details below.</p>
     {:else}
-    <section class="chart" aria-label="Data visualization"><img src="/api/chart.svg" alt={model.plan.title}/>{#each model.interaction?.nodes ?? [] as node (node.id)}<button class="node-target" class:chosen={group === node.id} style:left={(node.x / model.interaction.width * 100) + '%'} style:top={(node.y / model.interaction.height * 100) + '%'} aria-label={'Explore '+node.label} title={node.label} onclick={()=>group=node.id}></button>{/each}</section>
+    <div class="chart-controls" aria-label="Chart controls"><button aria-label="Zoom out" disabled={chartScale===0} onclick={()=>chartScale=chartScale<=1 ? 0 : chartScale-.5}>−</button><span aria-live="polite">{chartScale ? Math.round(chartScale*100)+'%' : 'Fit'}</span><button aria-label="Zoom in" disabled={chartScale>=3} onclick={()=>chartScale=chartScale ? Math.min(3,chartScale+.5) : 1}>＋</button><button onclick={()=>chartScale=0}>Fit chart</button></div>
+    <p class="provenance">Zoom in to read labels. Scroll inside the chart to explore it.</p>
+    <!-- Keyboard users can scroll the chart without selecting a node. -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <div class="chart-viewport" role="region" aria-label="Scrollable chart" tabindex="0"><section class="chart" aria-label="Data visualization" style:width={chartScale ? (model.chart.props.width*chartScale)+'px' : '100%'}><img src="/api/chart.svg" alt={model.plan.title}/>{#each model.interaction?.nodes ?? [] as node (node.id)}<button class="node-target" class:chosen={group === node.id} style:left={(node.x / model.interaction.width * 100) + '%'} style:top={(node.y / model.interaction.height * 100) + '%'} aria-label={'Explore '+node.label} title={node.label} onclick={()=>group=node.id}></button>{/each}</section></div>
+    {#if group}<p class="selected-context">Selected group: {model.chart.props.nodes?.find(node=>node.id===group)?.label}</p>{/if}
     {/if}
     <p class="provenance">{model.grouping_origin}. Model field types and view choices need review.</p>
     <div class="filters"><label>Search records<input bind:value={search} type="search"/></label>{#if model.chart.component === 'ForceDirectedGraph'}<label>Group<select aria-label="Group" bind:value={group}><option value="">All records</option>{#each model.chart.props.nodes as node (node.id)}<option value={node.id}>{node.label} ({model.node_membership[node.id].length})</option>{/each}</select></label>{/if}<button onclick={clearFilters}>Clear filters</button></div>
@@ -82,6 +88,7 @@
   {:else}<p role="status">Loading source records…</p>{/if}
 </main>
 <style>
+  .chart-viewport{max-width:100%;max-height:540px;overflow:auto;border:1px solid #d9ddd6;border-radius:14px;background:white}.chart-viewport .chart{border:0;border-radius:0;max-width:none}.chart-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.chart-controls span{min-width:45px;text-align:center;font-size:12px}.chart-controls button:disabled{opacity:.45;cursor:default}.chart-viewport:focus-visible{outline:2px solid #566f42;outline-offset:2px}
   .date-explorer{border:1px solid #d9ddd6;border-radius:10px;padding:12px 16px;margin-bottom:16px}.date-explorer .filters{margin:12px 0}.undated-option{display:flex;align-items:center;gap:8px;font-size:12px}.undated-option input{width:auto;margin:0}.date-explorer [role=alert]{color:#ac3434}
   .record-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.record-heading h3{margin:0;font-size:16px;font-weight:600;overflow-wrap:anywhere}.record-heading button{flex-shrink:0;white-space:nowrap}.record-fields{margin:18px 0}.record-fields>div{display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,2fr);gap:16px;padding:9px 0;border-bottom:1px solid #e5e7e0}.record-fields dt{color:#68736c;font-size:12px;overflow-wrap:anywhere}.record-fields dd{margin:0;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.record-fields .missing{color:#68736c;font-style:italic}.raw-data{margin:12px 0}summary{cursor:pointer;padding:5px 0}article.selected{border-color:#566f42;box-shadow:0 0 0 1px #566f42}.selected-context{padding:12px;background:#e5eadd;border-radius:7px}.table-scroll table{min-width:900px}
 
