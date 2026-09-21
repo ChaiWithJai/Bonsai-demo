@@ -6,8 +6,8 @@ test('Workspace screens',async({page},info)=>{
  await page.goto('/#/workspace');
  await expect(page.getByRole('heading',{name:'Build on what you know.'})).toBeVisible();
  await expect(page.getByRole('status',{name:'Opening Workspace…'})).toHaveCount(0);
- const empty=page.getByRole('button',{name:'Open source explorer'});
- if(await empty.isVisible())await empty.click();
+ await page.getByText(/Previous test projects/).click();
+ await page.locator('.saved-projects button').first().click();
  await expect(page.getByLabel('Describe the next change')).toBeVisible();
  const restore=page.getByRole('button',{name:'Build saved revision'});
  if(await restore.isVisible())await restore.click();
@@ -29,11 +29,15 @@ test('Workspace screens',async({page},info)=>{
  await expect(page.getByLabel('Describe the next change')).toHaveValue(/runtime/);
  // Compose only. Captures never start inference.
  await page.reload();
- await expect(page.getByLabel('Describe the next change')).toBeVisible();
+ await expect(page.getByRole('heading',{name:'What do you want to understand?'})).toBeVisible();
+ await expect(page.locator('iframe')).toHaveCount(0);
 });
 
 test('Workspace uploaded data and persisted review',async({page},info)=>{
- await page.goto('http://127.0.0.1:5258/#/workspace');
+ test.skip(!process.env.WORKSPACE_DATA_TEST_URL, 'Archived fixture server is intentionally stopped');
+ await page.goto(process.env.WORKSPACE_DATA_TEST_URL + '/#/workspace');
+ await page.getByText(/Previous test projects/).click();
+ await page.locator('.saved-projects button').first().click();
  await page.getByRole('button',{name:'Data',exact:true}).click();
  await page.getByLabel('Saved source').selectOption('9dda1f05e8cd19fa874f8ff8efb24704e5e582d14356b2c4fcadd5bbd033f4f6');
  await expect(page.getByRole('heading',{name:'synthetic-review.json'})).toBeVisible();
@@ -46,4 +50,19 @@ test('Workspace uploaded data and persisted review',async({page},info)=>{
  const source=await response.json();
  expect(source.records.map((r:any)=>r.data.value)).toEqual([0,null]);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/04-workspace-data.'+info.project.name+'.png'),fullPage:true});
+});
+
+test('Workspace starts with user data rather than a fixture preview',async({page},info)=>{
+ const before=await (await page.request.get('/api/workspace')).json();
+ await page.addInitScript(()=>localStorage.setItem('bonsai-workspace','9133f03e28d9407395f0f45829a780f9'));
+ await page.goto('/#/workspace');
+ await expect(page.getByRole('heading',{name:'What do you want to understand?'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Your source data'})).toBeVisible();
+ await expect(page.getByText(/Creating an editable visualization from these records is the next unfinished step/)).toBeVisible();
+ await expect(page.locator('iframe')).toHaveCount(0);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/05-workspace-start.'+info.project.name+'.png'),fullPage:true});
+ const after=await (await page.request.get('/api/workspace')).json();
+ expect(after.workspaces).toEqual(before.workspaces);
+ expect(after.running_attempts).toEqual([]);
 });
