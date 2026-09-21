@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "28-revised-workstream": ("workstreams", "Bonsai applies a proposal correction and builds the preserved evidence"),
     "26-role-composer": ("workstreams", "Role-based composer with tabs and explicit attachment requirement"),
     "27-role-attached-message": ("workstreams", "Attached draft persists across tabs and rejected submission"),
     "25-workstream-history": ("workstreams", "Original request and planning conversation remain beside the view"),

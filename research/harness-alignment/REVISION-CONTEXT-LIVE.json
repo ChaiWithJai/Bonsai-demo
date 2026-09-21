@@ -1,0 +1,14 @@
+{
+  "job_id": "6e83f104314444c88a3cb5b93fe79240",
+  "planning_run": "f26fef0f848240938e6a556f5b23ddad",
+  "build_run": "13c13f7b88b64d208a9b596d90dc9763",
+  "project_id": "9181446da63f4da5a486f8ce094df90b",
+  "status": "completed",
+  "title_matches": true,
+  "records_identical_to_parent": true,
+  "planning_repairs": 0,
+  "confirmation_actor": "codex-development-verification",
+  "human_acceptance": false,
+  "real_pdf_status": "awaiting_confirmation",
+  "limitation": "One development revision with existing conversation history. Not a controlled model reliability estimate."
+}
