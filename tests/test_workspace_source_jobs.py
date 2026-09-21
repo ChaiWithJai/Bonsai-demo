@@ -115,6 +115,21 @@ class SourceJobsTest(unittest.TestCase):
             self.assertEqual(confirmation['actor'],'test')
             self.assertEqual(confirmation['proposal_sha256'],proposal['proposal_sha256'])
 
+    def test_preview_includes_structure_only_citations_without_uncited_records(self):
+        packet = {'records':[{'id':'r1','data':{'value':0}},
+                             {'id':'r2','data':{'value':False}},
+                             {'id':'r3','data':{'value':'uncited'}}],
+                  'record_id_map':{'r1':'original:1','r2':'original:2','r3':'original:3'}}
+        proposal = {'interpretation':{'findings':[{'record_ids':['original:1']}]},
+                    'structure':{'records':[{'evidence':[{'record_id':'original:2'},
+                                                        {'record_id':'original:1'}]}]}}
+        examples = SourceJobs.proposal_examples(proposal, packet)
+        self.assertEqual([row['id'] for row in examples], ['original:1','original:2'])
+        self.assertIs(examples[1]['data']['value'], False)
+        self.assertEqual(packet['records'][1]['id'], 'r2')
+        proposal['structure'] = None
+        self.assertEqual(len(SourceJobs.proposal_examples(proposal, packet)), 1)
+
     def test_revision_preserves_exact_parent_proposal_and_source_snapshot(self):
         from unittest.mock import Mock
         with tempfile.TemporaryDirectory() as folder:

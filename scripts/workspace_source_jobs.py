@@ -34,6 +34,14 @@ class SourceJobs:
                 self.save(path.parent, 'status.json', value)
 
     @staticmethod
+    def proposal_examples(proposal, packet):
+        cited = {rid for finding in proposal['interpretation']['findings'] for rid in finding['record_ids']}
+        for record in (proposal.get('structure') or {}).get('records', []):
+            cited.update(item['record_id'] for item in record['evidence'])
+        return [{**row, 'id': packet['record_id_map'][row['id']]}
+                for row in packet['records'] if packet['record_id_map'][row['id']] in cited]
+
+    @staticmethod
     def save(folder, name, value):
         path = folder / name
         temp = path.with_suffix('.tmp')
@@ -46,10 +54,14 @@ class SourceJobs:
         path = self.root / jid / 'status.json'
         if not path.exists():
             raise ValueError('Source job not found')
-        return json.loads(path.read_text())
+        status = json.loads(path.read_text())
+        packet_path = path.parent / 'source-packet.json'
+        if status.get('proposal') and packet_path.is_file():
+            status['source_examples'] = self.proposal_examples(status['proposal'], json.loads(packet_path.read_text()))
+        return status
 
     def list(self):
-        return {'jobs': [json.loads(p.read_text()) for p in sorted(self.root.glob('*/status.json'), key=lambda p:p.stat().st_mtime, reverse=True)]}
+        return {'jobs': [self.get(p.parent.name) for p in sorted(self.root.glob('*/status.json'), key=lambda p:p.stat().st_mtime, reverse=True)]}
 
     def start(self, source_id, request, apply_reviews=False, revision=None):
         if not isinstance(request, str) or not 10 <= len(request.strip()) <= 4000:
@@ -239,7 +251,7 @@ class SourceJobs:
                 digest=hashlib.sha256(json.dumps(proposal,sort_keys=True).encode()).hexdigest()
                 update(status='awaiting_confirmation',proposal_contract='source-proposal-v2-structured',stage='Does this interpretation fit your question?',proposal=proposal,
                        proposal_sha256=digest,source_coverage={k:v for k,v in packet.items() if k not in ('records','record_id_map')},
-                       source_examples=[{**r,'id':packet['record_id_map'][r['id']]} for r in packet['records'] if any(packet['record_id_map'][r['id']] in f['record_ids'] for f in proposal['interpretation']['findings'])])
+                       source_examples=self.proposal_examples(proposal, packet))
                 return
             compiled=json.loads((folder/'compiled.json').read_text())
             if compiled.get('record_origin')=='model_structured_unreviewed':
