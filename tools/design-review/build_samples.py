@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    '16-readable-records': ('workspace', 'Mixed source records with readable values, raw data and selected evidence notes'),
     '01-workspace-preview': ('workspace', 'Existing source explorer inside the Bonsai Workspace'),
     '02-workspace-source': ('workspace', 'Saved project source'),
     '03-workspace-evidence': ('workspace', 'Attempt evidence and trace entrypoint'),
