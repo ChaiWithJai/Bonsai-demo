@@ -162,7 +162,7 @@ class WorkspaceSources:
     def download(self, source_id, export_id=None):
         manifest=self.manifest(source_id)
         if export_id is None:
-            return (self.root / source_id / 'source.bin').read_bytes(), {'.pdf':'application/pdf','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.wav':'audio/wav','.mp3':'audio/mpeg','.m4a':'audio/mp4'}.get(Path(manifest['filename']).suffix.lower(),'application/octet-stream')
+            return (self.root / source_id / 'source.bin').read_bytes(), {'.pdf':'application/pdf','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.wav':'audio/wav','.mp3':'audio/mpeg','.m4a':'audio/mp4','.mp4':'video/mp4','.mov':'video/quicktime','.webm':'video/webm'}.get(Path(manifest['filename']).suffix.lower(),'application/octet-stream')
         if not re.fullmatch('[a-f0-9]{32}', export_id):
             raise ValueError('Invalid export ID')
         path = self.root / source_id / 'exports' / export_id / 'record-reviews.json'

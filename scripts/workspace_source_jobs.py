@@ -98,6 +98,10 @@ class SourceJobs:
             thread.start()
             return status
 
+    def start_vision(self, source_id):
+        from workspace_vision_jobs import start_vision
+        return start_vision(self,source_id)
+
     def confirm(self, jid, proposal_sha256, actor='interactive-unattributed'):
         with self.worker.guard:
             status=self.get(jid)
