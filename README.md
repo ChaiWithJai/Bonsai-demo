@@ -2,6 +2,8 @@
 
 Backend and model format compatibility: [BACKEND-SUPPORT.md](BACKEND-SUPPORT.md).
 
+This branch includes a file-to-interface Workspace. See the [Workspace guide](docs/workspace-guide.md) for source review, generated views, and MLflow example curation.
+
 <p align="center">
   <img src="./assets/bonsai-logo.svg" width="280" alt="Bonsai">
 </p>
