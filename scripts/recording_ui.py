@@ -170,6 +170,30 @@ class Handler(BaseHTTPRequestHandler):
         if self.command != "HEAD":
             self.wfile.write(data)
 
+    def respond_file(self, raw, mime):
+        total=len(raw);start=0;end=total-1;status=200
+        requested=self.headers.get('Range')
+        if requested:
+            match=re.fullmatch(r'bytes=(\d*)-(\d*)',requested)
+            try:
+                if not match or not any(match.groups()):raise ValueError()
+                first,last=match.groups()
+                if first:
+                    start=int(first);end=min(int(last),total-1) if last else total-1
+                else:
+                    length=int(last)
+                    if length<=0:raise ValueError()
+                    start=max(0,total-length)
+                if not 0<=start<=end<total:raise ValueError()
+                status=206
+            except ValueError:
+                self.send_response(416);self.send_header('Content-Range',f'bytes */{total}');self.send_header('Content-Length','0');self.end_headers();return
+        self.send_response(status);self.send_header('Content-Type',mime)
+        self.send_header('Accept-Ranges','bytes');self.send_header('Cache-Control','no-store')
+        if status==206:self.send_header('Content-Range',f'bytes {start}-{end}/{total}')
+        self.send_header('Content-Length',str(end-start+1));self.end_headers()
+        if self.command!='HEAD':self.wfile.write(raw[start:end+1])
+
     def do_GET(self):
         path = urlsplit(self.path).path
         if path.startswith('/api/workspace'):
@@ -317,7 +341,7 @@ class Handler(BaseHTTPRequestHandler):
                     result = self.server.workspace_source_jobs.start(parts[3], payload.get('request'), payload.get('apply_reviews', False))
                 elif len(parts) == 5 and parts[4] == 'file' and self.command == 'GET':
                     raw, mime = sources.download(parts[3])
-                    return self.respond(200, raw, mime)
+                    return self.respond_file(raw, mime)
                 elif len(parts) == 5 and parts[4] == 'review' and self.command == 'POST':
                     if payload.get('source_id') != parts[3]:
                         raise ValueError('Review must belong to this source')

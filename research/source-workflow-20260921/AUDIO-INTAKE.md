@@ -1,0 +1,11 @@
+# Native Workspace audio intake
+
+The native Workspace reuses the frozen prototype's CPU Whisper pathway. Uploading WAV, MP3, or M4A creates timestamped, unreviewed transcript records. The original remains downloadable. Transcript buttons seek the audio and select the matching record for plain text correction. HTTP byte-range responses support browser seeking.
+
+Bonsai does not perform transcription in this pathway. Whisper base.en performs English ASR; Bonsai receives the transcript for structuring and visualization proposals. No diarization or noisy-speech reliability is established. Inputs are limited to five minutes and the existing 25 MiB upload limit. No automatic model download occurs.
+
+Configuration: set BONSAI_AUDIO_PYTHON to a Python executable with faster-whisper 1.2.1 and BONSAI_AUDIO_MODEL_DIR to the local Systran/faster-whisper-base.en snapshot at revision 3d3d5dee26484f91867d81cb899cfcf72b96be6c. The model.bin SHA256 is checked against 2a166925539a16005f14ff328359f9b9adb9dc4fb631bb3b227526862e93e2ef. The current local launcher reuses bonsai-generative-ui/.venv and ~/.cache/prismml/desktop-whisper-base-en. ffprobe must be on PATH. CPU INT8, four threads, beam size five, English, zero temperature, and no conditioning on previous text preserve the prototype configuration.
+
+The prior synthetic eight-second speech fixture produced two segments in the native pathway. This is not a recorded meeting or human-labeled evaluation. Extraction evidence is in experiment 32, run cf064df2210247f9a09e3871f48d57fa. Source bytes, segment timestamps, raw transcript, and runtime versions are preserved. The first browser check exposed missing range support; the corrected endpoint passed desktop and mobile playback and seek checks. No human review or visualization confirmation was submitted by automation.
+
+The Svelte bind:this advisory is retained intentionally: imperative seeking requires the bound audio element. Other autofixer checks have no issues. Svelte checks and production build passed. The new audio unit tests cover missing runtime, timestamp and original identity, and explicit transcription failure. Video extraction and actual recorded-audio quality remain incomplete.

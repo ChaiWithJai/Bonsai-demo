@@ -6,7 +6,7 @@
   let author = $state('');
   let reviewerKind = $state('human');
   let action = $state('accept');
-  let correction = $state(untrack(()=>source.kind==='image' ? String(source.records.find(row=>row.id===initialRecordId)?.data.text ?? '') : JSON.stringify(source.records.find(row=>row.id===initialRecordId)?.data ?? {},null,2)));
+  let correction = $state(untrack(()=>['image','audio'].includes(source.kind) ? String(source.records.find(row=>row.id===initialRecordId)?.data.text ?? '') : JSON.stringify(source.records.find(row=>row.id===initialRecordId)?.data ?? {},null,2)));
   let note = $state('');
   let error = $state('');
   let status = $state('');
@@ -17,7 +17,7 @@
   function chooseRecord(event: Event & {currentTarget: HTMLSelectElement}) {
     recordId = event.currentTarget.value;
     const row = source.records.find(item => item.id === recordId);
-    correction = row ? (source.kind==='image' ? String(row.data.text ?? '') : JSON.stringify(row.data, null, 2)) : '';
+    correction = row ? (['image','audio'].includes(source.kind) ? String(row.data.text ?? '') : JSON.stringify(row.data, null, 2)) : '';
     note = ''; error = ''; status = ''; exported = null;
   }
   async function request(path: string, body: Record<string, unknown>) {
@@ -31,7 +31,7 @@
     try {
       await request('/api/workspace/sources/' + source.source_id + '/review', {source_id:source.source_id,snapshot_id:source.review.snapshot_id,
         record_id:recordId,previous_event_id:previous?.event_id ?? null,author,reviewer_kind:reviewerKind,
-        action,note,corrected_data:action === 'correct' ? (source.kind==='image' ? {...record?.data,text:correction} : JSON.parse(correction)) : null});
+        action,note,corrected_data:action === 'correct' ? (['image','audio'].includes(source.kind) ? {...record?.data,text:correction} : JSON.parse(correction)) : null});
       await onSaved();
       status = 'Review saved. Original extraction and earlier reviews are preserved.';
     } catch(e) {error = String(e);}
@@ -51,16 +51,16 @@
   <label for="review-record">Source record</label>
   <select id="review-record" value={recordId} onchange={chooseRecord}>
     <option value="">Choose a sampled record</option>
-    {#each source.records as row, index (row.id)}<option value={row.id}>Record {index + 1} · {source.kind==='image' ? 'Passage '+row.locator.region : JSON.stringify(row.locator)}</option>{/each}
+    {#each source.records as row, index (row.id)}<option value={row.id}>Record {index + 1} · {['image','audio'].includes(source.kind) ? (source.kind==='audio' ? String(row.locator.start_seconds)+'s' : 'Passage '+row.locator.region) : JSON.stringify(row.locator)}</option>{/each}
   </select>
   <p class="fine">Showing the first {source.records.length} records. {Object.keys(source.review.latest).length} records reviewed in this extraction version.</p>
   {#if record}
-    {#if source.kind==='image'}<blockquote>{String(record.data.text)}</blockquote>{:else}<pre>{JSON.stringify(record.data, null, 2)}</pre>{/if}
+    {#if ['image','audio'].includes(source.kind)}<blockquote>{String(record.data.text)}</blockquote>{:else}<pre>{JSON.stringify(record.data, null, 2)}</pre>{/if}
     {#if previous}<p>Latest review: {previous.action} by {previous.author} ({previous.reviewer_kind}). {previous.note}</p>{/if}
     <label for="review-author">Reviewer name</label><input id="review-author" bind:value={author} maxlength="100" />
     <label for="review-kind">Reviewer type</label><select id="review-kind" bind:value={reviewerKind}><option value="human">Human review</option><option value="codex">Codex provisional review</option><option value="test">Automated test</option></select>
     <label for="review-action">Decision</label><select id="review-action" bind:value={action}><option value="accept">Accept source values</option><option value="correct">Correct values</option><option value="reject">Reject record</option></select>
-    {#if action === 'correct'}<label for="review-correction">{source.kind==='image' ? 'Corrected text' : 'Corrected record JSON'}</label><textarea id="review-correction" bind:value={correction} rows="8" spellcheck="false"></textarea>{/if}
+    {#if action === 'correct'}<label for="review-correction">{['image','audio'].includes(source.kind) ? 'Corrected text' : 'Corrected record JSON'}</label><textarea id="review-correction" bind:value={correction} rows="8" spellcheck="false"></textarea>{/if}
     <label for="review-note">Evidence and reason</label><textarea id="review-note" bind:value={note} rows="3" maxlength="4000" placeholder="Refer to the page, frame, speech interval or source link that supports your decision."></textarea>
     <button onclick={saveReview} disabled={busy || !author.trim() || !note.trim()}>Save record review</button>
   {/if}
