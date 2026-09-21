@@ -8,6 +8,7 @@ from pathlib import Path
 import signal
 import subprocess
 import time
+from urllib.request import urlopen
 from workspace_runtime import model_server
 
 parser=argparse.ArgumentParser(description=__doc__)
@@ -18,6 +19,11 @@ args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=False)
 config=json.loads(args.config.read_text());command=json.loads(args.proxy_command.read_text())
 def stop(*unused):raise KeyboardInterrupt()
 signal.signal(signal.SIGTERM,stop)
+reload_requested=False
+def reload_proxy(*unused):
+    global reload_requested
+    reload_requested=True
+signal.signal(signal.SIGUSR1,reload_proxy)
 with model_server(config,args.output) as (endpoint,identity):
     files=[{'path':config['model'],'sha256':config['model_sha256'],'verified':True}]
     if config.get('mmproj'):files.append({'path':config['mmproj'],'sha256':config['mmproj_sha256'],'verified':True})
@@ -30,7 +36,17 @@ with model_server(config,args.output) as (endpoint,identity):
         proxy=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT)
         try:
             print('MODEL READY '+endpoint+'; native Workspace PID '+str(proxy.pid),flush=True)
-            while proxy.poll() is None:time.sleep(1)
+            while proxy.poll() is None:
+                time.sleep(1)
+                if reload_requested:
+                    reload_requested=False
+                    port=command[command.index('--port')+1]
+                    with urlopen(f'http://127.0.0.1:{port}/api/workspace',timeout=5) as response:state=json.load(response)
+                    if state['running_attempts'] or state['running_source_jobs']:
+                        print('Proxy reload deferred: Workspace job active',flush=True);continue
+                    proxy.terminate();proxy.wait(timeout=20)
+                    proxy=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT)
+                    print('Reloaded idle Workspace proxy; model retained',flush=True)
             raise RuntimeError('Workspace proxy stopped: '+str(proxy.returncode))
         finally:
             if proxy.poll() is None:

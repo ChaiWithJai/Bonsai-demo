@@ -27,3 +27,9 @@ class SourcePacketTest(unittest.TestCase):
         packet=source_packet({'records':[{'id':'source','locator':{'line':1},'data':data}]})
         self.assertEqual(packet['records'][0]['data'],data)
         self.assertEqual(packet['coverage'],'all records and fields')
+
+    def test_excess_citations_have_actionable_feedback(self):
+        from workspace_data.proposal import validate_proposal
+        proposal={'interpretation':{'findings':[{'text':'Both frames repeat three records','record_ids':['r'+str(i) for i in range(1,7)]}],'rationale':'Compare duplicates','questions':['Group these records?'],'uncertainties':[]},'structure':None,'plan':{}}
+        with self.assertRaisesRegex(ValueError,'This finding has 6. Split a finding'):
+            validate_proposal({},proposal,{'r'+str(i):str(i) for i in range(1,7)})

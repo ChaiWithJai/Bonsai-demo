@@ -181,3 +181,19 @@ test('Audio upload exposes timestamped transcript and playback',async({page},inf
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/10-workspace-audio.'+info.project.name+'.png'),fullPage:true});
  // No review is saved and no model proposal or human confirmation is submitted.
 });
+
+test('Video evidence seeks to the selected sampled frame',async({page},info)=>{
+ const source='8cc403d0bfcc8e7140778b17ad52451ea587f47563192cf324535cb9242df2d3';
+ await page.goto('/#/workspace');
+ await page.getByLabel('Saved source').selectOption(source);
+ const evidence=page.getByRole('region',{name:'Video evidence'});
+ await expect(evidence).toBeVisible();const video=evidence.locator('video');
+ await expect.poll(()=>video.evaluate((node:HTMLVideoElement)=>node.readyState>=1)).toBe(true);
+ await evidence.getByRole('button',{name:/^15.0s/}).first().click();
+ await expect.poll(()=>video.evaluate((node:HTMLVideoElement)=>node.currentTime)).toBeGreaterThanOrEqual(14.9);
+ await expect(page.getByLabel('Source record')).not.toHaveValue('');
+ await expect(page.getByText(/One frame every 15 seconds; audio and unsampled motion were not read/)).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await evidence.scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/11-workspace-video.'+info.project.name+'.png'),fullPage:true});
+});

@@ -131,8 +131,10 @@ def validate_proposal(manifest, value, aliases):
         if not isinstance(finding,dict) or set(finding)!={'text','record_ids'} or not text(finding['text']):
             raise ValueError('Each finding requires text and supporting record_ids')
         ids=finding['record_ids']
-        if not isinstance(ids,list) or not 1<=len(ids)<=5 or any(not isinstance(i,str) or i not in aliases for i in ids):
-            raise ValueError('Findings must cite record IDs shown in the source packet')
+        if not isinstance(ids,list) or not 1<=len(ids)<=5:
+            raise ValueError('Each finding must cite 1 to 5 record IDs. This finding has '+str(len(ids) if isinstance(ids,list) else 'a non-list')+'. Split a finding that needs more references into separate findings; do not invent or drop relevant source facts.')
+        if any(not isinstance(i,str) or i not in aliases for i in ids):
+            raise ValueError('Findings must cite only record IDs shown in the source packet: '+', '.join(aliases))
     working=structured_manifest(manifest,value['structure'],aliases)
     compiled=compile_plan(working,value['plan'])
     compiled['record_origin']='model_structured_unreviewed' if value['structure'] is not None else 'original_source_records'

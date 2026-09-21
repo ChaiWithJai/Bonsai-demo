@@ -337,6 +337,8 @@ class Handler(BaseHTTPRequestHandler):
                     result = sources.get(parts[3])
                 elif len(parts) == 5 and parts[4] == 'extract' and self.command == 'POST':
                     result = sources.extract_media(parts[3])
+                elif len(parts) == 5 and parts[4] == 'vision' and self.command == 'POST':
+                    result = self.server.workspace_source_jobs.start_vision(parts[3])
                 elif len(parts) == 5 and parts[4] == 'generate' and self.command == 'POST':
                     result = self.server.workspace_source_jobs.start(parts[3], payload.get('request'), payload.get('apply_reviews', False))
                 elif len(parts) == 5 and parts[4] == 'file' and self.command == 'GET':
