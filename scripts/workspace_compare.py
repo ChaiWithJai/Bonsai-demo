@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 
-MATCH_FIELDS = ('dataset_sha256', 'base_revision', 'prompt_sha256', 'case_id')
+MATCH_FIELDS = ('dataset_sha256', 'base_revision', 'prompt_sha256', 'case_id', 'request_sha256', 'initial_model_input_sha256')
 CONFIG_FIELDS = ('model_revision', 'runtime_revision', 'harness_revision',
                  'sampling_profile', 'sampling_seed', 'hardware_id', 'cache_condition')
 

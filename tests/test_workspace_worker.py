@@ -25,6 +25,9 @@ class TraceClient:
         self.runs.append({'tags': tags})
         return SimpleNamespace(info=SimpleNamespace(run_id=str(len(self.runs))))
 
+    def set_tag(self, run_id, key, value):
+        self.runs[int(run_id) - 1]['tags'][key] = value
+
     def start_trace(self, name, **kwargs):
         self.spans.append({'name': name, **kwargs})
         return SimpleNamespace(trace_id='test-trace', span_id='root')
@@ -142,6 +145,11 @@ class WorkerTest(unittest.TestCase):
             self.assertIn(name, names)
         self.assertEqual(self.client.runs[-1]['status'], 'FINISHED')
         self.assertEqual(self.store.events(second)[-1]['kind'], 'attempt.completed')
+        first_tags, second_tags = (run['tags'] for run in self.client.runs)
+        self.assertNotEqual(first_tags['request_sha256'], second_tags['request_sha256'])
+        self.assertNotEqual(first_tags['initial_model_input_sha256'], second_tags['initial_model_input_sha256'])
+        hashes = json.loads((self.store.root / 'attempts' / second / 'source-hashes.json').read_text())
+        self.assertIn('workspace-tools/check_desktop.mjs', hashes)
 
     def test_cancel_closes_stream_and_service_does_not_start_duplicate_generation(self):
         self.provider.block = True
