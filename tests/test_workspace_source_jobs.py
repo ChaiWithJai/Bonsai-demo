@@ -189,6 +189,11 @@ class SourceJobsTest(unittest.TestCase):
         self.assertEqual(result['records'][0]['locator']['source_evidence'][0]['record_id'],'original:page:2')
         self.assertEqual(result['records'][0]['evidence_status'],'model_structured_unreviewed')
         self.assertNotEqual(result['records'][0]['id'],manifest['records'][0]['id'])
+        item=structure['records'][0]['evidence'][0]
+        item['field']='page'; item['quote']='2'
+        with self.assertRaisesRegex(ValueError,'Use one of: text'):
+            structured_manifest(manifest,structure,{'r1':'original:page:2'})
+        item['field']='text'
         structure['records'][0]['evidence'][0]['quote']='Invented speedup 100x'
         with self.assertRaisesRegex(ValueError,'not present'):structured_manifest(manifest,structure,{'r1':'original:page:2'})
         with self.assertRaisesRegex(ValueError,'explicit source-grounded'):structured_manifest(manifest,None,{'r1':'original:page:2'})

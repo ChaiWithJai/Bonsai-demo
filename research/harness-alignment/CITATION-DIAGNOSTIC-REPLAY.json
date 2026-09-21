@@ -1,0 +1,7 @@
+{
+  "original_run": "fdb1e82b75f048218122eecde9f75235",
+  "response_modified": false,
+  "new_diagnostic": "Evidence field source_filename is not a data field in r1. Use one of: text. Locator metadata is not content evidence.",
+  "new_prompt_sha256": "fa79056a09ee52f99d20d7602fcb8835944b9c7cc82368d44b8bbb828c04b5f1",
+  "fresh_model_success": false
+}

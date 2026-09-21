@@ -11,6 +11,7 @@ structure is null when original source fields already express the requested enti
 For documents whose page fields do not express the requested entities, structure MUST be an object with rationale and records. Keep it compact: use only the fields needed for the requested view. Put supporting detail in evidence quotes, not redundant description fields.
 Each structured record has exactly values (a flat object of scalar string/number/boolean/null fields) and evidence (one to five objects containing record_id, field, quote).
 Create at most 30 records. Each quote must occur verbatim in that source field, allowing whitespace normalization. Cite only supplied record IDs.
+Evidence field must be an exact key inside the cited record data object. locator contains provenance such as source_filename, page, sheet, or timestamps; locator keys are not data fields and cannot be quoted as content evidence. For document or transcript records with data.text, cite field text and quote the actual passage. Source locations are retained automatically with each citation.
 Use consistent field names across records. Separate different measurements and units. Do not mix an operation time with whole-training time. Leave unsupported values null; explain uncertain inferred classifications.
 For a bottleneck/fix question, extract actual bottleneck/fix records with evidence before proposing their relationships. Do not substitute page-title groups for these entities.
 The person will inspect and correct these model-structured records before confirming the view. They remain unreviewed, not verified facts.
@@ -102,7 +103,10 @@ def structured_manifest(manifest, structure, aliases):
             ref=item['record_id'];field=item['field'];quote=item['quote']
             if not isinstance(ref,str) or ref not in aliases or not isinstance(field,str) or not isinstance(quote,str) or not 1<=len(quote)<=2000:
                 raise ValueError('Cite a shown record and a nonempty source quote')
-            row=original[aliases[ref]];value=row['data'].get(field)
+            row=original[aliases[ref]]
+            if field not in row['data']:
+                raise ValueError(f'Evidence field {field} is not a data field in {ref}. Use one of: '+', '.join(row['data'])+'. Locator metadata is not content evidence.')
+            value=row['data'][field]
             matches = quote.strip() in (json.dumps(value), str(value)) if type(value) is bool else value is not None and ' '.join(quote.split()) in ' '.join(str(value).split())
             if not matches:
                 raise ValueError(f'Evidence quote is not present in {ref}, field {field}')
