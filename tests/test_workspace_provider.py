@@ -162,3 +162,20 @@ class SamplingProfileTest(unittest.TestCase):
             self.assertEqual((p['top_k'], p['min_p'], p['repeat_penalty'], p['seed']), (20, 0., 1., 7))
             self.assertEqual(p['max_tokens'], 512)
         with self.assertRaises(ValueError): payload('low')
+
+class IndependentConfigurationTest(unittest.TestCase):
+    def test_override_preserves_endpoint_limits_and_default(self):
+        default=LocalProvider('http://127.0.0.1:1234','fixture',timeout=90,max_bytes=12345)
+        trial=default.configured({'profile':'bonsai2-instruct','seed':43})
+        self.assertIsNot(default,trial)
+        self.assertEqual((default.profile,default.seed),('legacy-greedy',42))
+        self.assertEqual((trial.profile,trial.seed),('bonsai2-instruct',43))
+        self.assertEqual((trial.host,trial.port,trial.timeout,trial.max_bytes),('127.0.0.1',1234,90,12345))
+        self.assertTrue(trial.payload([],[],512)['cache_prompt'])
+
+    def test_override_cannot_change_model_endpoint_or_bounds(self):
+        default=LocalProvider('http://127.0.0.1:1234','fixture')
+        for config in ({'profile':'bonsai2-instruct'}, {'profile':'anything','seed':42},
+                       {'profile':'legacy-greedy','seed':True}, {'profile':'legacy-greedy','seed':-1},
+                       {'profile':'legacy-greedy','seed':42,'endpoint':'https://remote.example'}, []):
+            with self.subTest(config=config),self.assertRaises(ValueError):default.configured(config)

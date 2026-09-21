@@ -42,6 +42,14 @@ class LocalProvider:
             raise ValueError('Seed must be an unsigned 32-bit integer')
         self.profile, self.seed = profile, seed
 
+    def configured(self, settings):
+        """Return an independent provider; never mutate the workstream default."""
+        if not isinstance(settings, dict) or set(settings) != {'profile', 'seed'}:
+            raise ValueError('Generation configuration requires exactly profile and seed')
+        host = f'[{self.host}]' if ':' in self.host else self.host
+        return LocalProvider(f'http://{host}:{self.port}', self.model, timeout=self.timeout,
+                             max_bytes=self.max_bytes, profile=settings['profile'], seed=settings['seed'])
+
     def generate(self, messages, tools, session, cancel, emit, max_tokens):
         if not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}', session):
             raise ValueError('Invalid workspace conversation ID')

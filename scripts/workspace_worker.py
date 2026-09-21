@@ -127,6 +127,17 @@ class WorkspaceWorker:
         value = starter()
         return self.store.create(**value)
 
+    def copy_for_trial(self, key, base, title):
+        """Freeze current files and fixture into a fresh conversation and note namespace."""
+        with self.guard:
+            if self.running or self.source_jobs:
+                raise RevisionConflict('Wait for active work before preparing trial copies')
+            source = self.store.get(key)
+            if source['head'] != base:
+                raise RevisionConflict('Source revision changed before trial preparation')
+            trial = self.store.create(title, source['files'], source['fixture'])
+            return {'workspace': trial, 'source_workspace_id': key, 'source_revision': base}
+
     def status(self):
         with self.guard:
             return {'workspaces': self.store.list(), 'running_attempts': list(self.running), 'running_source_jobs': list(self.source_jobs),
@@ -202,8 +213,13 @@ class WorkspaceWorker:
             self.latest[key] = self.tools.preview(workspace, build)
             return {'ok': True, **self.latest[key]}
 
-    def start(self, key, base, request, case='baseline', request_checks=None):
+    def start(self, key, base, request, case='baseline', request_checks=None, generation_config=None):
         request_checks = validate_checks(request_checks)
+        provider = self.provider
+        if generation_config is not None:
+            if not hasattr(provider, 'configured'):
+                raise ValueError('This provider does not support per-attempt configuration')
+            provider = provider.configured(generation_config)
         if case not in ('baseline', 'W1', 'W2'):
             raise ValueError('Unknown acceptance case')
         with self.guard:
@@ -211,7 +227,7 @@ class WorkspaceWorker:
                 raise RevisionConflict('A Workspace attempt is already using the local model')
             aid = self.store.start_attempt(key, base, request)
             cancel = threading.Event()
-            thread = threading.Thread(target=self._run, args=(key, aid, request, case, cancel, request_checks), daemon=True)
+            thread = threading.Thread(target=self._run, args=(key, aid, request, case, cancel, request_checks, provider), daemon=True)
             self.running[aid] = (cancel, thread)
             thread.start()
         return {'attempt_id': aid, 'workspace_id': key}
@@ -239,7 +255,8 @@ class WorkspaceWorker:
         if not any(thread.is_alive() for _, (_, thread) in active):
             self.ownership.close()
 
-    def _run(self, key, aid, request, case, cancel, request_checks=None):
+    def _run(self, key, aid, request, case, cancel, request_checks=None, provider=None):
+        provider = self.provider if provider is None else provider
         request_checks = validate_checks(request_checks)
         folder = self.store.root / 'attempts' / aid
         folder.mkdir(parents=True)
@@ -342,9 +359,15 @@ class WorkspaceWorker:
             workspace = self.store.get(key)
             tags = {'mlflow.runName': 'Workspace ' + case, 'workspace.id': key, 'attempt_id': aid,
                     'case_id': case, 'split': 'development', 'research.plan_run_id': '37fe164f40c546339c688b40af523203',
-                    'provider_contract_version': self.provider.contract_version, 'base_revision': workspace['head']}
-            tags.update(sampling_profile=getattr(self.provider, 'profile', 'unspecified'),
-                        sampling_seed=str(getattr(self.provider, 'seed', 'unspecified')))
+                    'provider_contract_version': provider.contract_version, 'base_revision': workspace['head']}
+            summary['generation_config'] = {'profile': getattr(provider, 'profile', 'unspecified'),
+                                            'seed': getattr(provider, 'seed', None)}
+            if hasattr(provider, 'payload'):
+                settings = provider.payload([], TOOLS, self.max_tokens)
+                summary['generation_settings'] = {key: value for key, value in settings.items() if key not in ('messages', 'tools')}
+                save('generation-settings.json', summary['generation_settings'])
+            tags.update(sampling_profile=getattr(provider, 'profile', 'unspecified'),
+                        sampling_seed=str(getattr(provider, 'seed', 'unspecified')))
             source_root = Path(__file__).resolve().parent
             sources = {name: hashlib.sha256((source_root / name).read_bytes()).hexdigest() for name in (
                 'workspace_worker.py', 'workspace_acceptance.py', 'workspace-tools/check_request.mjs', 'workspace_provider.py', 'workspace_store.py', 'workspace_tools.py',
@@ -408,7 +431,7 @@ class WorkspaceWorker:
             for turn in range(8):
                 check_active()
                 with span('context.budget', {'model_call': turn, 'reserved_output_tokens': self.max_tokens}, 'CHAIN') as budget:
-                    preflight = self.provider.preflight(messages, TOOLS, self.max_tokens)
+                    preflight = provider.preflight(messages, TOOLS, self.max_tokens)
                     if not preflight['fits']:
                         save(f'context-before-{turn}.json', messages)
                         current = self.store.get(key)
@@ -417,7 +440,7 @@ class WorkspaceWorker:
                             recent_events.extend(self.store.events(previous_attempt['id']))
                         messages = checkpoint_context(current, request, recent_events)
                         save(f'context-checkpoint-{turn}.json', messages)
-                        after = self.provider.preflight(messages, TOOLS, self.max_tokens)
+                        after = provider.preflight(messages, TOOLS, self.max_tokens)
                         budget.update(before=preflight, after=after, revision=current['head'])
                         self.store.event(aid, 'context.checkpoint', {'before': preflight, 'after': after, 'revision': current['head']})
                         if not after['fits']:
@@ -434,7 +457,7 @@ class WorkspaceWorker:
                     summary['initial_model_input_sha256'] = context_hash
                 with span('model.generate', {'messages': messages, 'tools': TOOLS, 'max_tokens': self.max_tokens}, 'LLM') as model_output:
                     try:
-                        result = self.provider.generate(messages, TOOLS, 'workspace-' + key, cancel,
+                        result = provider.generate(messages, TOOLS, 'workspace-' + key, cancel,
                             lambda delta: self.store.event(aid, 'model.delta', delta), self.max_tokens)
                     except Exception as exc:
                         save(f'model-{turn}-failed.json', {'error': str(exc), 'evidence': getattr(exc, 'evidence', None)})

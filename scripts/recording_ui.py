@@ -368,8 +368,10 @@ class Handler(BaseHTTPRequestHandler):
             elif len(parts) == 3 and re.fullmatch('[a-f0-9]{32}', parts[2]) and self.command == 'GET':
                 result = worker.get(parts[2])
             elif len(parts) == 4 and re.fullmatch('[a-f0-9]{32}', parts[2]):
-                if parts[3] == 'attempts' and self.command == 'POST':
-                    result = worker.start(parts[2], payload['base_revision'], payload['request'], payload.get('case', 'baseline'), payload.get('request_checks'))
+                if parts[3] == 'trial-copy' and self.command == 'POST':
+                    result = worker.copy_for_trial(parts[2], payload.get('base_revision'), payload.get('title'))
+                elif parts[3] == 'attempts' and self.command == 'POST':
+                    result = worker.start(parts[2], payload['base_revision'], payload['request'], payload.get('case', 'baseline'), payload.get('request_checks'), payload.get('generation_config'))
                 elif parts[3] == 'reviews' and self.command == 'GET':
                     result = worker.store.interface_reviews(parts[2])
                 elif parts[3] == 'reviews' and self.command == 'POST':

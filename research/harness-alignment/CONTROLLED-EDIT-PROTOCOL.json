@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "scope": "development_configuration_screening_not_held_out_or_latency_benchmark",
+  "source_workspace_id": "9181446da63f4da5a486f8ce094df90b",
+  "source_revision": "4591c332cf3fb36bc3d9bb36584b58ce5790020a8bcc37455600f183b49523c6",
+  "trial_base_revision": "4591c332cf3fb36bc3d9bb36584b58ce5790020a8bcc37455600f183b49523c6",
+  "dataset_sha256": "96afd50dbf965186f0c04116fd83483332d0fe28dcda647392964933a9177504",
+  "request": "Add record-type filtering to this mixed-source view. Above the records, provide buttons named All records, Measured observations, and Spoken requirements. Filter using the existing record_type field: measured_observation has one record and spoken_requirement has two records. Start with all three records. Keep search composable with the type filter. Clear filters must restore all records and clear search. Preserve exact text, source IDs, timestamps, original-source links, missing values, table and record details, and evidence-note saving. Do not convert requirements into measured values. Build and verify the result.",
+  "request_checks": [
+    {
+      "target": {
+        "role": "button",
+        "name": "Measured observations"
+      },
+      "action": "click",
+      "value": null
+    },
+    {
+      "target": {
+        "test_id": "record-row"
+      },
+      "action": "count",
+      "value": 1
+    },
+    {
+      "target": {
+        "role": "button",
+        "name": "Spoken requirements"
+      },
+      "action": "click",
+      "value": null
+    },
+    {
+      "target": {
+        "test_id": "record-row"
+      },
+      "action": "count",
+      "value": 2
+    },
+    {
+      "target": {
+        "role": "button",
+        "name": "All records"
+      },
+      "action": "click",
+      "value": null
+    },
+    {
+      "target": {
+        "test_id": "record-row"
+      },
+      "action": "count",
+      "value": 3
+    },
+    {
+      "target": {
+        "role": "button",
+        "name": "Measured observations"
+      },
+      "action": "click",
+      "value": null
+    },
+    {
+      "target": {
+        "test_id": "record-row"
+      },
+      "action": "count",
+      "value": 1
+    },
+    {
+      "target": {
+        "role": "button",
+        "name": "Clear filters"
+      },
+      "action": "click",
+      "value": null
+    },
+    {
+      "target": {
+        "test_id": "record-row"
+      },
+      "action": "count",
+      "value": 3
+    }
+  ],
+  "order": [
+    {
+      "profile": "legacy-greedy",
+      "seed": 42
+    },
+    {
+      "profile": "bonsai2-instruct",
+      "seed": 42
+    },
+    {
+      "profile": "bonsai2-instruct",
+      "seed": 42
+    },
+    {
+      "profile": "legacy-greedy",
+      "seed": 42
+    }
+  ],
+  "model_info": {
+    "model_path": "/Users/jaibhagat/.cache/prismml/bonsai-2-20260919/Ternary-Bonsai-2-27B-PQ2_0.gguf",
+    "model_alias": "bonsai-ui-public-ternary-bonsai2-27b",
+    "build_info": "b10709-9a9394a89",
+    "default_generation_settings": {
+      "params": {
+        "seed": 4294967295,
+        "temperature": 1.0,
+        "dynatemp_range": 0.0,
+        "dynatemp_exponent": 1.0,
+        "top_k": 20,
+        "top_p": 0.949999988079071,
+        "min_p": 0.05000000074505806,
+        "top_n_sigma": -1.0,
+        "xtc_probability": 0.0,
+        "xtc_threshold": 0.10000000149011612,
+        "typical_p": 1.0,
+        "repeat_last_n": 64,
+        "repeat_penalty": 1.0,
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0,
+        "dry_multiplier": 0.0,
+        "dry_base": 1.75,
+        "dry_allowed_length": 2,
+        "dry_penalty_last_n": 64,
+        "mirostat": 0,
+        "mirostat_tau": 5.0,
+        "mirostat_eta": 0.10000000149011612,
+        "adaptive_target": -1.0,
+        "adaptive_decay": 0.8999999761581421,
+        "max_tokens": -1,
+        "n_predict": -1,
+        "n_keep": 0,
+        "n_discard": 0,
+        "ignore_eos": false,
+        "stream": false,
+        "n_probs": 0,
+        "min_keep": 0,
+        "chat_format": "Content-only",
+        "reasoning_format": "none",
+        "reasoning_in_content": false,
+        "generation_prompt": "",
+        "samplers": [
+          "penalties",
+          "dry",
+          "top_n_sigma",
+          "top_k",
+          "typ_p",
+          "top_p",
+          "min_p",
+          "xtc",
+          "temperature"
+        ],
+        "speculative.types": "none",
+        "timings_per_token": false,
+        "post_sampling_probs": false,
+        "backend_sampling": false,
+        "lora": []
+      },
+      "n_ctx": 16384
+    },
+    "checkpoint_release": {
+      "repo": "prism-ml/Ternary-Bonsai-2-27B-gguf",
+      "revision": "6ed5e12bf84b7a63069882c91dd9e9218647d17b",
+      "verified_file": {
+        "path": "/Users/jaibhagat/.cache/prismml/bonsai-2-20260919/Ternary-Bonsai-2-27B-PQ2_0.gguf",
+        "sha256": "3907dc1658db1f78a9826bf8d5bcb8dc65db0d466388937af57f2294fae62ec1",
+        "verified": true
+      },
+      "runtime": {
+        "model_sha256": "3907dc1658db1f78a9826bf8d5bcb8dc65db0d466388937af57f2294fae62ec1",
+        "runtime_sha256": "1ad69ebaada923760c52c1dc50daf198a22c2adb4a9dcccd25779fa7079f353b",
+        "model_revision": "6ed5e12bf84b7a63069882c91dd9e9218647d17b",
+        "model_label": "Public Ternary Bonsai 2 27B PQ2_0, September 2026",
+        "runtime_libraries": {
+          "libggml-base.0.21.0.dylib": "47c2dbb05f300881ca79c019f3fd06546f8d08fe3a1e757e96a4520f209e34ae",
+          "libllama-server-impl.dylib": "abc26ad8148795489e41c12b5f6c70426ae9066b773488a5189642dd8699cb27",
+          "libllama-completion-impl.dylib": "1b42d35fec7268d3a2160f8deaef004442d74388592773ef2ec5852bb0777375",
+          "libllama-bench-impl.dylib": "5826b73164ead12648aae7addd2dbe02c9f16ade44a18db0ae6f56c56eaad9ec",
+          "libllama-perplexity-impl.dylib": "87ad21c59668498240556a547acbe60af65e03194c0c920fb59944324a0a1609",
+          "libllama-quantize-impl.dylib": "8bd5c8ca1839da2994141b4e411441cc1245255b1e85b42113a6de111f9d3e40",
+          "libllama-cli-impl.dylib": "1e1b0db681f3b746531421f154e31f3f3ab387708cd80fba829b492201a601eb",
+          "libllama-batched-bench-impl.dylib": "1ae74f4a5125d6dfdc6b17f687bf48f353dae8a156ca37b20d2172d4b0ac2f8d",
+          "libggml-blas.0.21.0.dylib": "a0d2f7baa25dff0439d765f04af345e6f769111e1eaa392c32a689b17b5e2690",
+          "libggml-rpc.0.21.0.dylib": "8c3be5dc07b51d1c159b41327e411ead500fb646698bdf9f8d0117d31ea9bcb7",
+          "libggml.0.21.0.dylib": "aa84e1ce5256bf9bce26151455f25265ed50144db501e9c805bf0ce827d54319",
+          "libmtmd.0.2.0.dylib": "045c48f9be1bca6d8d9d90a1fa96cdc11e786134448f5d50e588b32161fc2bcc",
+          "libllama-fit-params-impl.dylib": "ed781a7412a92388631983ec8e7ef601c3f3c10cbc7b73ca80e6cffdbe19283b",
+          "libllama.0.2.0.dylib": "0e972017d252c3f12dccae6f82274f0d74886f8f09cdbdd94b69803bb18cb348",
+          "libllama-common.0.2.0.dylib": "19374e87aa208fade8653a5f301a19cf18af7be43413770bcfdd76167f9d7881",
+          "libggml-cpu.0.21.0.dylib": "e184c7b1902c131e25d272088c607212410f2d520cc9f3d582ebaa928031568a",
+          "libggml-metal.0.21.0.dylib": "3c19876a8ab4fce134277240ce1f0e32accfceebca8598ae612e80eb8a011a8d"
+        },
+        "platform": "macOS-26.5-arm64-arm-64bit",
+        "hardware": "Apple M5 Pro\n51539607552",
+        "context": 16384,
+        "gpu_layers": 99,
+        "mmproj": "/Users/jaibhagat/.cache/prismml/bonsai-2-20260919/Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf",
+        "mmproj_sha256": "6807ede61d570bb86ba34b756a0fa109edc33668604de867c6ea6d8f1d631903",
+        "image_max_tokens": 1024
+      },
+      "matched_loaded_model_path": true
+    }
+  },
+  "controls": [
+    "Create a fresh trial copy for every run; no copied conversation or notes.",
+    "Use the existing Workspace queue and reject concurrent edit or source jobs.",
+    "Preserve cache_prompt; shared warm cache and run order prevent cold latency claims.",
+    "Require identical dataset, base revision, prompt, request, initial input and request-check hashes before comparison.",
+    "Retain failed attempts, loop detections, raw settings and traces.",
+    "Do not infer semantic correctness or human acceptance from browser counts.",
+    "Check composed search, exact values, original links and notes separately; fixed counts alone do not cover the full request."
+  ],
+  "execution_status": "prepared_not_run"
+}
