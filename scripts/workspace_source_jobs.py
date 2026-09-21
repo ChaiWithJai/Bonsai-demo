@@ -90,6 +90,9 @@ class SourceJobs:
             if revision:
                 status['parent_job_id'] = revision['parent_job_id']
                 status['feedback'] = revision['feedback']
+                status['parent_proposal_sha256'] = revision.get('parent_proposal_sha256')
+                status['parent_planning_run_id'] = revision.get('parent_planning_run_id')
+                status['parent_source_snapshot_sha256'] = revision.get('parent_source_snapshot_sha256')
             self.save(folder, 'status.json', status)
             cancel = threading.Event()
             thread = threading.Thread(target=self.run, args=(folder, manifest, context, status, cancel), daemon=True)
@@ -130,7 +133,11 @@ class SourceJobs:
         if not isinstance(feedback,str) or not 1<=len(feedback.strip())<=4000:
             raise ValueError('Describe what to change in the proposal')
         return self.start(status['source_id'],status['request'],status['apply_reviews'],
-                          {'parent_job_id':jid,'feedback':feedback.strip(),'actor':actor,'previous_proposal':status['proposal']})
+                          {'parent_job_id':jid,'feedback':feedback.strip(),'actor':actor,'previous_proposal':status['proposal'],
+                           'parent_proposal_sha256':status.get('proposal_sha256'),
+                           'parent_planning_run_id':status.get('run_id'),
+                           'parent_source_snapshot_sha256':hashlib.sha256((self.root/jid/'source-manifest.json').read_bytes()).hexdigest(),
+                           'identity_basis':'local unauthenticated interaction; not a training label'})
 
     def cancel(self, jid):
         with self.worker.guard:
@@ -179,6 +186,11 @@ class SourceJobs:
                 tags['planning_run_id']=status['planning_run_id']
             if status.get('parent_job_id'):
                 tags['parent_job_id']=status['parent_job_id']
+                for key in ('parent_proposal_sha256','parent_planning_run_id','parent_source_snapshot_sha256'):
+                    if status.get(key):tags[key]=status[key]
+            tags['source_snapshot_sha256']=hashlib.sha256((folder/'source-manifest.json').read_bytes()).hexdigest()
+            if status.get('parent_source_snapshot_sha256'):
+                tags['revision_source_changed']=str(tags['source_snapshot_sha256']!=status['parent_source_snapshot_sha256']).lower()
             run_id = w.client.create_run(eid, tags=tags).info.run_id
             root = w.client.start_trace('workspace.source_to_project', span_type='AGENT', experiment_id=eid,
                                        run_id=run_id, inputs=tags | {'request':status['request']}, attributes={'model_info':w.model_info})

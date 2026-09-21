@@ -115,6 +115,31 @@ class SourceJobsTest(unittest.TestCase):
             self.assertEqual(confirmation['actor'],'test')
             self.assertEqual(confirmation['proposal_sha256'],proposal['proposal_sha256'])
 
+    def test_revision_preserves_exact_parent_proposal_and_source_snapshot(self):
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as folder:
+            jobs = SourceJobs.__new__(SourceJobs)
+            jobs.root = Path(folder)
+            jid = 'a'*32
+            parent = jobs.root/jid
+            parent.mkdir()
+            raw = b'{"records": [{"value": 0}]}'
+            (parent/'source-manifest.json').write_bytes(raw)
+            proposal = {'plan': {'title': 'Prior interpretation'}}
+            jobs.save(parent, 'status.json', {'status':'awaiting_confirmation',
+                'source_id':'source', 'request':'Explore the evidence', 'apply_reviews':False,
+                'proposal':proposal, 'proposal_sha256':'exact-proposal-sha', 'run_id':'parent-run'})
+            jobs.start = Mock(return_value={'id':'new-job'})
+            self.assertEqual(jobs.revise(jid, ' Keep missing values ', 'test'), {'id':'new-job'})
+            revision = jobs.start.call_args.args[3]
+            self.assertEqual(revision['parent_proposal_sha256'], 'exact-proposal-sha')
+            self.assertEqual(revision['parent_planning_run_id'], 'parent-run')
+            self.assertEqual(revision['parent_source_snapshot_sha256'], hashlib.sha256(raw).hexdigest())
+            self.assertEqual(revision['previous_proposal'], proposal)
+            self.assertEqual(revision['feedback'], 'Keep missing values')
+            self.assertIn('not a training label', revision['identity_basis'])
+            self.assertFalse((parent/'confirmation.json').exists())
+
     def test_structured_entities_require_real_source_quotes_and_preserve_lineage(self):
         from workspace_data.proposal import structured_manifest
         manifest={'kind':'document','source_id':'source','records':[{'id':'original:page:2','locator':{'page':2},'data':{'text':'Bottleneck: metrics computation. Fix: vectorization.'}}]}
