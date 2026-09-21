@@ -26,6 +26,24 @@ The plan field contains the following object (these instructions apply to plan, 
 ''' + PLAN_INSTRUCTIONS + '\nWhen structure is provided, plan fields refer to the fields in structure.records values, not the original page metadata. Group only by those real structured fields. Findings still cite original source records.'
 
 
+def revision_messages(revision, aliases):
+    """Put the correction last, with prior citations in the current packet namespace."""
+    previous = json.loads(json.dumps(revision['previous_proposal']))
+    reverse = {original: alias for alias, original in aliases.items()}
+    for finding in previous['interpretation']['findings']:
+        finding['record_ids'] = [reverse.get(ref, ref) for ref in finding['record_ids']]
+    for record in (previous.get('structure') or {}).get('records', []):
+        for item in record['evidence']:
+            item['record_id'] = reverse.get(item['record_id'], item['record_id'])
+    return [
+        {'role':'assistant', 'content':json.dumps(previous, ensure_ascii=False)},
+        {'role':'user', 'content':json.dumps({
+            'correction':revision['feedback'],
+            'instruction':'Revise the previous proposal to apply this correction. Preserve supported content that does not need to change. Return the complete interpretation, structure, and plan. Use only record IDs in the current source evidence; prior citations absent from it cannot support this revision. Check the requested changes before returning.'
+        }, ensure_ascii=False)}
+    ]
+
+
 def source_packet(manifest, max_chars=32000, request=''):
     rows=manifest['records'];selected=[];used=0;excerpted=[]
     terms=set(re.findall(r"[\w-]{4,}",request.lower()))-{'these','those','with','from','that','this','show','data','files','please','view'}

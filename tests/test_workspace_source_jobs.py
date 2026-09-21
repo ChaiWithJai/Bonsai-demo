@@ -115,6 +115,19 @@ class SourceJobsTest(unittest.TestCase):
             self.assertEqual(confirmation['actor'],'test')
             self.assertEqual(confirmation['proposal_sha256'],proposal['proposal_sha256'])
 
+    def test_revision_correction_is_last_and_prior_citations_use_current_aliases(self):
+        from workspace_data.proposal import revision_messages
+        proposal={'interpretation':{'findings':[{'record_ids':['original:2']}]},
+                  'structure':{'records':[{'evidence':[{'record_id':'original:2','field':'text','quote':'fact'}]}]}}
+        revision={'previous_proposal':proposal,'feedback':'Use the title Requested title.'}
+        messages=revision_messages(revision,{'r1':'original:2'})
+        self.assertEqual([m['role'] for m in messages],['assistant','user'])
+        prior=json.loads(messages[0]['content'])
+        self.assertEqual(prior['interpretation']['findings'][0]['record_ids'],['r1'])
+        self.assertEqual(prior['structure']['records'][0]['evidence'][0]['record_id'],'r1')
+        self.assertEqual(json.loads(messages[-1]['content'])['correction'],revision['feedback'])
+        self.assertEqual(proposal['interpretation']['findings'][0]['record_ids'],['original:2'])
+
     def test_valid_revision_supersedes_parent_but_failed_planning_does_not(self):
         with tempfile.TemporaryDirectory() as folder:
             jobs = SourceJobs.__new__(SourceJobs)
