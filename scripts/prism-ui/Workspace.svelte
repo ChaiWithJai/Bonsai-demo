@@ -38,6 +38,16 @@
   let comparisonError = $state('');
   let selectedCase = $state('baseline');
   let preview = $state<Data | null>(null);
+  const planningHistory = $derived.by(() => {
+    const chain:Data[] = [];
+    const seen = new Set<string>();
+    let current = sourceStreams.find(item => item.workspace_id === project?.id);
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id); chain.unshift(current);
+      current = sourceStreams.find(item => item.id === current?.parent_job_id);
+    }
+    return chain;
+  });
   const running = $derived(Boolean(status?.running_attempts?.length));
   const sourceBusy = $derived(Boolean(status?.running_source_jobs?.length));
   const lastEvent = $derived(events.at(-1));
@@ -196,6 +206,12 @@
       <section class="conversation" aria-label="Workspace conversation">
         <div class="conversation-body">
           <div class="context-card"><p class="eyebrow">{project.fixture?.kind === 'desktop' ? 'YOUR SAVED PROJECT' : 'SAVED TEST PROJECT'}</p><h2>{project.title}</h2><p>{project.fixture?.kind === 'desktop' ? 'A model-planned Semiotic visualization of your uploaded records. Ask for a focused change and inspect the result.' : 'This cached explorer is a harness test fixture.'}</p></div>
+          {#if planningHistory.length}<section aria-label="Original workstream conversation">
+            {#each planningHistory as entry,index (entry.id)}
+              <article class="request"><p>{index === 0 ? entry.request : entry.feedback ?? entry.request}</p><small>{index === 0 ? 'Original request' : 'Proposal correction'}</small></article>
+              {#if entry.proposal}<article class="response"><p class="eyebrow">BONSAI · PROPOSAL</p><p>{entry.proposal.interpretation.rationale}</p><details><summary>What Bonsai found</summary>{#each entry.proposal.interpretation.findings as finding,i (i)}<p>{finding.text}</p>{/each}<p>Proposed view: {entry.proposal.plan.title}</p><p>These interpretations remain model-generated, not verified facts.</p></details>{#if entry.mlflow_url}<a href={entry.mlflow_url} target="_blank" rel="noreferrer">Proposal evidence</a>{/if}</article>{/if}
+            {/each}
+          </section>{/if}
           {#each requests as request (request.id)}<article class="request"><p>{request.request}</p><small>{request.status}</small></article>{/each}
           {#if trace?.request_checks?.length}<section class="context-card" aria-label="Checks for this attempt"><p class="eyebrow">EXPECTED RESULTS</p><ul>{#each trace.request_checks as check,i (i)}<li>{check.action === 'count' ? 'Number of records: ' + check.value : check.target.role + ' visible: “' + check.target.name + '”'}</li>{/each}</ul><small>Fixed when this request was sent.</small></section>{/if}
           {#if content}<article class="response"><p class="eyebrow">BONSAI</p><p>{content}</p></article>{/if}
@@ -215,7 +231,7 @@
         {#if tab === 'preview'}
           {#if preview}<div class="preview-caption">{preview.revision === project.head ? 'Current revision' : 'Earlier successful build'} · {preview.revision.slice(0, 10)}</div><iframe title="Generated project preview" src={preview.url + '?revision=' + preview.revision} sandbox="allow-scripts allow-same-origin"></iframe>
           {:else}<div class="preview-empty"><Monitor size={32}/><h2>Your project preview</h2><p>Build the saved revision to open it here. This step does not call the model.</p><button onclick={restore} disabled={busy || running}>{busy ? 'Building…' : 'Build saved revision'}</button></div>{/if}
-        {:else if tab === 'data'}<WorkspaceData onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>
+        {:else if tab === 'data'}<WorkspaceData initialSource={planningHistory.at(-1)?.source_id ?? ''} onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>
         {:else if tab === 'code'}<div class="source-title">App.svelte <span>{project.head.slice(0, 10)}</span></div><pre class="source"><code>{project.files['App.svelte']}</code></pre>
         {:else}<div class="evidence"><h2>Review this interface</h2>
           <p>Your judgment applies to saved revision {project.head.slice(0, 10)}. Automated checks do not count as human acceptance.</p>
@@ -273,4 +289,5 @@
   .stream-main{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:auto}.heading{padding:20px 24px;border-bottom:1px solid var(--border)}.heading h2{font-size:16px;margin:0;font-weight:550}.subtitle{font-size:11px;margin-top:5px}.start-layout{padding:0;gap:0;grid-template-columns:minmax(0,1fr) 280px;flex:1;min-height:0}.data-start{border:0;border-radius:0;overflow:auto;background:var(--background)}.stream-context{padding:32px 24px;border-left:1px solid var(--border);background:var(--card)}.stream-context h2{font-size:17px;margin:18px 0 10px}.stream-context p,.stream-context li{font-size:12px;line-height:1.8;color:var(--muted-foreground)}.stream-context ol{padding-left:18px;margin:25px 0}.project-bar{padding:12px 20px}.panes{border-radius:0;border-left:0;border-right:0;flex:1}.request{margin-left:25px;border-radius:18px 18px 4px 18px;background:#28342b;color:#fff}.response{margin-right:25px;background:var(--muted);border-radius:18px 18px 18px 4px;padding:15px}.composer form{border-radius:20px}
   @media(max-width:1100px){.workspace{grid-template-columns:220px minmax(0,1fr)}.start-layout{grid-template-columns:1fr}.stream-context{display:none}}
   @media(max-width:750px){.workspace{height:auto;min-height:100dvh;grid-template-columns:1fr;padding:42px 0 0;overflow:auto}.stream-list{max-height:240px;border-right:0;border-bottom:1px solid var(--border);padding:12px}.stream-list-title{padding-bottom:0}.stream-footer{display:none}.stream-row{padding:8px}.heading{padding:16px}.stream-main{overflow:visible}.start-layout{display:block}.panes{display:block}.stream-search{margin-bottom:0}}
+.request small{color:inherit;opacity:.7}.response details{font-size:11px;margin:12px 0}.response summary{cursor:pointer}.response a{font-size:11px;text-decoration:underline}
 </style>

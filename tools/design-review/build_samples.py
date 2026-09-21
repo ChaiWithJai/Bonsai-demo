@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "25-workstream-history": ("workstreams", "Original request and planning conversation remain beside the view"),
     "23-workstreams-start": ("workstreams", "Start a conversation with files and a question"),
     "24-workstreams-conversation": ("workstreams", "Continue a workstream beside its generated view"),
     "22-proposal-source-links": ("workspace", "Inspect original source passages before confirming structured records"),

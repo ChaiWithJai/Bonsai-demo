@@ -467,3 +467,22 @@ test('Workstreams opens conversations and starts with a clear file message',asyn
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/24-workstreams-conversation.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Workstream retains original request and proposal after reload',async({page},info)=>{
+ const job=await (await page.request.get('/api/workspace/source-jobs/9626cb0ca71647b5be329b7766bbd695')).json();
+ for(let pass=0;pass<2;pass++) {
+  await page.goto('/#/workspace');
+  const sidebar=page.getByRole('complementary',{name:'Workstreams',exact:true});
+  await page.getByLabel('Search workstreams',{exact:true}).fill('Development Workbook');
+  await sidebar.getByRole('button').filter({hasText:'Development Workbook Evidence Audit'}).click();
+  const history=page.getByRole('region',{name:'Original workstream conversation'});
+  await expect(history).toContainText(job.request);
+  await expect(history).toContainText(job.proposal.interpretation.rationale);
+  await expect(history.getByRole('link',{name:'Proposal evidence'})).toHaveAttribute('href',job.mlflow_url);
+ }
+ await page.getByRole('button',{name:'Data',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'development-workbook.xlsx',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.getByRole('button',{name:'Preview',exact:true}).click();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/25-workstream-history.'+info.project.name+'.png'),fullPage:true});
+});
