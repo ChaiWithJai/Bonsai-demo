@@ -78,7 +78,7 @@ class WorkbookIntakeTest(unittest.TestCase):
     def test_boolean_evidence_accepts_json_notation_but_not_the_opposite(self):
         from workspace_data.proposal import structured_manifest
         manifest={'source_id':'source','records':[{'id':'source:0','locator':{'cell':'C2'},'data':{'value':False}}]}
-        for quote in ('false','False'):
+        for quote in ('false','False',' false '):
             structure={'rationale':'Preserve the boolean cell','records':[{'values':{'value':False},'evidence':[{'record_id':'r1','field':'value','quote':quote}]}]}
             self.assertIs(structured_manifest(manifest,structure,{'r1':'source:0'})['records'][0]['data']['value'],False)
         for quote in ('true','True','alse'):

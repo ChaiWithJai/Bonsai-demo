@@ -103,7 +103,7 @@ def structured_manifest(manifest, structure, aliases):
             if not isinstance(ref,str) or ref not in aliases or not isinstance(field,str) or not isinstance(quote,str) or not 1<=len(quote)<=2000:
                 raise ValueError('Cite a shown record and a nonempty source quote')
             row=original[aliases[ref]];value=row['data'].get(field)
-            matches = quote in (json.dumps(value), str(value)) if type(value) is bool else value is not None and ' '.join(quote.split()) in ' '.join(str(value).split())
+            matches = quote.strip() in (json.dumps(value), str(value)) if type(value) is bool else value is not None and ' '.join(quote.split()) in ' '.join(str(value).split())
             if not matches:
                 raise ValueError(f'Evidence quote is not present in {ref}, field {field}')
             resolved.append({'record_id':row['id'],'locator':row['locator'],'field':field,'quote':quote})
