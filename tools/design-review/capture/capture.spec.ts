@@ -532,3 +532,29 @@ test('Revised workstream renders requested title and preserved evidence',async({
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/28-revised-workstream.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Shared file tool preserves message and edit drafts stay with their workstream',async({page})=>{
+ await page.goto('/#/workspace');
+ const sidebar=page.getByRole('complementary',{name:'Workstreams',exact:true});
+ const draft=page.getByLabel('Message Research analyst',{exact:true});
+ await draft.fill('Keep this draft while I search my attached files.');
+ await sidebar.getByRole('button',{name:'Search attached files',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Files for this workstream',exact:true})).toBeVisible();
+ await expect(draft).toHaveValue('Keep this draft while I search my attached files.');
+ await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:'Conversation',exact:true}).click();
+ await sidebar.getByRole('button',{name:'Search attached files',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Files for this workstream',exact:true})).toBeVisible();
+ await sidebar.getByRole('button',{name:'New workstream',exact:true}).click();
+ await expect(page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:'Conversation',exact:true})).toHaveAttribute('aria-pressed','true');
+ const search=page.getByLabel('Search workstreams',{exact:true});
+ await search.fill('Development Workbook');
+ await sidebar.getByRole('button').filter({hasText:'Development Workbook Evidence Audit'}).click();
+ await page.getByLabel('Describe the next change').fill('Draft for the workbook only.');
+ await search.fill('Observations and team requirements');
+ await sidebar.getByRole('button').filter({hasText:'Observations and team requirements'}).click();
+ await expect(page.getByLabel('Describe the next change')).toHaveValue('');
+ await page.getByLabel('Describe the next change').fill('A separate observations draft.');
+ await search.fill('Development Workbook');
+ await sidebar.getByRole('button').filter({hasText:'Development Workbook Evidence Audit'}).click();
+ await expect(page.getByLabel('Describe the next change')).toHaveValue('Draft for the workbook only.');
+});
