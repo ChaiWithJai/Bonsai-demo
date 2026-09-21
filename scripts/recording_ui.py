@@ -364,6 +364,12 @@ class Handler(BaseHTTPRequestHandler):
             elif len(parts) == 4 and re.fullmatch('[a-f0-9]{32}', parts[2]):
                 if parts[3] == 'attempts' and self.command == 'POST':
                     result = worker.start(parts[2], payload['base_revision'], payload['request'], payload.get('case', 'baseline'))
+                elif parts[3] == 'reviews' and self.command == 'GET':
+                    result = worker.store.interface_reviews(parts[2])
+                elif parts[3] == 'reviews' and self.command == 'POST':
+                    result = worker.store.review_interface(parts[2], payload)
+                elif parts[3] == 'review-export' and self.command == 'GET':
+                    result = worker.store.export_interface_reviews(parts[2])
                 elif parts[3] == 'comparison' and self.command == 'GET':
                     result = worker.comparison(parts[2], parse_qs(parsed.query).get('attempt', []))
                 elif parts[3] == 'preview' and self.command == 'POST':
