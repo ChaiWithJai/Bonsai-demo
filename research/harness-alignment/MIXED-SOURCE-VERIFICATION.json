@@ -1,0 +1,30 @@
+{
+  "scope": "Development fixture verification, not human acceptance or held-out evaluation",
+  "job_id": "60df4f14c15746fd9a34b2232c9abc8c",
+  "planning_run_id": "4994b57a5f9548cebfd9e23474b093d4",
+  "build_run_id": "ce9cee9caf01439e95d50f8c47e8ad25",
+  "workspace_id": "e13a4a3d2c214a688339afcd92ddb5fd",
+  "revision": "11bf58b9b15097a24c3db209d639547f654d647b89d6a808818365762be727d2",
+  "source_files": [
+    "development-notes.docx",
+    "synthetic-team-notes.wav"
+  ],
+  "records": 3,
+  "proposal_repairs": 1,
+  "checks": {
+    "source_separation": true,
+    "verbatim_quotes": true,
+    "audio_timestamps": true,
+    "unread_media_disclosed": true,
+    "browser_report_passed": true,
+    "full_python_suite_tests": 189,
+    "real_pdf_still_unconfirmed": true
+  },
+  "design_findings": [
+    "Machine-style record type labels wrap poorly.",
+    "Expanded raw JSON details dominate the record review.",
+    "This is workflow evidence, not a finished design."
+  ],
+  "human_acceptance": false,
+  "backup_status": "Newer evidence remains local and in MLflow; MongoDB archive restore verification is unavailable."
+}
