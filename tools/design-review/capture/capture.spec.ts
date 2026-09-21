@@ -594,3 +594,52 @@ test('Generated view keeps coverage behind an inspectable disclosure',async({pag
  await summary.locator('..').screenshot({path:path.resolve(import.meta.dirname,'../shots/30-generated-coverage.'+info.project.name+'.png')});
  await summary.click();await expect(warning).not.toBeVisible();
 });
+
+test('Intake draft restores question and attachments across reload and role changes',async({page})=>{
+ await page.goto('/#/workspace');
+ const sidebar=page.getByRole('complementary',{name:'Workstreams',exact:true});
+ await sidebar.getByRole('button',{name:'Data analyst',exact:true}).click();
+ const message=page.getByLabel('Message Data analyst',{exact:true});
+ const question='Group my records by release date and keep the original evidence.';
+ await message.fill(question);
+ await expect(page.getByText('Draft saved in this browser.',{exact:true})).toBeVisible();
+ await page.reload();
+ await sidebar.getByRole('button',{name:'Data analyst',exact:true}).click();
+ await expect(message).toHaveValue(question);
+ await page.locator('input[type=file]').setInputFiles({name:'draft-retention-development.json',mimeType:'application/json',buffer:Buffer.from('[{"release":"March","count":12}]')});
+ await expect(page.getByRole('button',{name:'Send ↑',exact:true})).toBeEnabled();
+ await sidebar.getByRole('button',{name:'Evidence reviewer',exact:true}).click();
+ await expect(page.getByLabel('Message Evidence reviewer',{exact:true})).toHaveValue('');
+ await sidebar.getByRole('button',{name:'Data analyst',exact:true}).click();
+ await expect(message).toHaveValue(question);
+ await expect(page.locator('.composer-files')).toContainText('draft-retention-development.json');
+ await page.reload();
+ await sidebar.getByRole('button',{name:'Data analyst',exact:true}).click();
+ await expect(message).toHaveValue(question);
+ await expect(page.locator('.composer-files')).toContainText('draft-retention-development.json');
+ await expect(page.getByRole('button',{name:'Send ↑',exact:true})).toBeEnabled();
+ await page.getByRole('button',{name:'Clear draft',exact:true}).click();
+ await expect(message).toHaveValue('');
+ await expect(page.locator('.composer-files')).toHaveCount(0);
+ await page.reload();
+ await sidebar.getByRole('button',{name:'Data analyst',exact:true}).click();
+ await expect(message).toHaveValue('');
+ await expect(page.locator('.composer-files')).toHaveCount(0);
+});
+
+test('Unavailable draft storage is disclosed without blocking the composer',async({page})=>{
+ await page.addInitScript(()=>{
+   const original=Storage.prototype.setItem;
+   Storage.prototype.setItem=function(key:string,value:string){
+     if(key.startsWith('bonsai-workstream-draft:'))throw new DOMException('Storage unavailable','QuotaExceededError');
+     return original.call(this,key,value);
+   };
+ });
+ await page.goto('/#/workspace');
+ await page.getByRole('complementary',{name:'Workstreams',exact:true}).getByRole('button',{name:'Data analyst',exact:true}).click();
+ const message=page.getByLabel('Message Data analyst',{exact:true});
+ await message.fill('Keep my question usable when browser storage is unavailable.');
+ await expect(page.getByText('Draft could not be saved in this browser. Keep this page open.',{exact:true})).toBeVisible();
+ await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:'Files',exact:true}).click();
+ await expect(message).toHaveValue('Keep my question usable when browser storage is unavailable.');
+});
