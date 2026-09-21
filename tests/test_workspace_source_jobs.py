@@ -111,6 +111,8 @@ class SourceJobsTest(unittest.TestCase):
             if active:active[1].join(10)
             complete=jobs.get(result['id']);self.assertEqual(complete['status'],'completed')
             self.assertEqual(provider.calls,1);self.assertEqual(tools.renders,1);self.assertEqual(len(store.list()),1)
+            built=store.get(complete['workspace_id'])
+            self.assertEqual(built['fixture']['compiled']['planning_coverage'],proposal['source_coverage'])
             confirmation=json.loads((jobs.root/result['id']/'confirmation.json').read_text())
             self.assertEqual(confirmation['actor'],'test')
             self.assertEqual(confirmation['proposal_sha256'],proposal['proposal_sha256'])

@@ -42,6 +42,7 @@
   {#if error}<p role="alert">{error}</p>{/if}
   {#if model}
     <header><p class="eyebrow">BONSAI / YOUR DATA</p><h1>{model.plan.title}</h1><p>{model.plan.summary}</p><p class="provenance">{model.rows.length} {model.record_origin === 'model_structured_unreviewed' ? 'model-structured records' : 'source records'} · {model.chart.component === 'RecordTable' ? 'Source record table' : 'Semiotic ' + model.chart.component} {#if model.chart.component !== 'RecordTable'}· {model.excluded_record_ids.length} records without plotted coordinates{/if}</p></header>
+    {#if model.planning_coverage}<details class="provenance"><summary>Source coverage · {model.planning_coverage.records_shown} of {model.planning_coverage.records_total} records supplied to Bonsai</summary><p>{model.planning_coverage.coverage}. This describes model input, not verified understanding.</p>{#each model.planning_coverage.member_coverage ?? [] as member (member.source_id)}<p><strong>{member.filename}</strong>: {member.records_shown} of {member.records_total ?? 'unknown'} records included.{#if !member.represented} Not included in model context; this view cannot establish findings about this file.{/if}</p>{/each}</details>{/if}
     {#if model.chart.component === 'RecordTable'}
       <!-- Keyboard users must be able to focus and scroll a wide source table. -->
       <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
