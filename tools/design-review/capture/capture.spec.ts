@@ -135,15 +135,28 @@ test('Multiple existing files can be attached and removed without inference',asy
 });
 
 test('Image upload extracts readable regions and exposes its limits',async({page},info)=>{
- const image=path.resolve(import.meta.dirname,'../../../.cache/workspace-pdf-20260921/page-1.png');
- test.skip(!await fs.stat(image).catch(()=>null),'Requires the real PDF page render');
+ const imagePath=path.resolve(import.meta.dirname,'../../../.cache/workspace-pdf-20260921/page-1.png');
+ test.skip(!await fs.stat(imagePath).catch(()=>null),'Requires the real PDF page render');
  await page.goto('/#/workspace');
- await page.locator('input[type=file]').setInputFiles({name:'S82065-page-1.png',mimeType:'image/png',buffer:await fs.readFile(image)});
+ await page.locator('input[type=file]').setInputFiles({name:'S82065-page-1.png',mimeType:'image/png',buffer:await fs.readFile(imagePath)});
  await expect(page.getByText('6 readable text regions',{exact:true})).toBeVisible();
  await expect(page.getByText(/Chart values, diagram relationships, and non-text content are not interpreted/)).toBeVisible();
- await page.locator('.records details').first().locator('summary').click();
- await expect(page.locator('.records pre').first()).toContainText('Five Bottlenecks, Five Fixes');
- await expect(page.locator('.records summary').first()).toContainText('bbox_normalized_bottom_left');
+ const image=page.getByRole('img',{name:'Original image: S82065-page-1.png'});
+ await expect(image).toBeVisible();
+ await expect.poll(()=>image.evaluate((node:HTMLImageElement)=>node.complete && node.naturalWidth>0)).toBe(true);
+ const passages=page.getByLabel('Recognized passages');
+ await passages.getByRole('button').first().click();
+ const outline=page.getByRole('button',{name:'Highlight passage 1: Five Bottlenecks, Five Fixes:'});
+ await expect(outline).toHaveAttribute('aria-pressed','true');
+ await expect(page.getByLabel('Source record')).toHaveValue(/:region:1$/);
+ const box=await outline.boundingBox();const frame=await image.boundingBox();
+ expect(box!.y).toBeGreaterThan(frame!.y);expect(box!.y).toBeLessThan(frame!.y+frame!.height*.3);
+ await outline.focus();await page.keyboard.press('Tab');await page.keyboard.press('Enter');
+ await expect(passages.getByRole('button').nth(1)).toHaveAttribute('aria-pressed','true');
+ await expect(page.getByLabel('Source record')).toHaveValue(/:region:2$/);
+ await page.getByLabel('Decision').selectOption('correct');
+ await expect(page.getByLabel('Corrected text')).toHaveValue('How We Avoid Leaving Training');
+ await page.getByRole('region',{name:'Image evidence'}).scrollIntoViewIfNeeded();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/09-workspace-image.'+info.project.name+'.png'),fullPage:true});
 });

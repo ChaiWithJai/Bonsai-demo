@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SourceData, SourceSummary } from '$lib/workspace-data-types';
+  import WorkspaceImageEvidence from '$lib/WorkspaceImageEvidence.svelte';
   import WorkspaceProposal from '$lib/WorkspaceProposal.svelte';
   import { onMount } from 'svelte';
   import WorkspaceRecordReview from '$lib/WorkspaceRecordReview.svelte';
@@ -7,6 +8,7 @@
   type Job = {id:string; source_id:string; source_ids?:string[]; filename:string; request:string; status:string; stage:string; workspace_id?:string; error?:string; mlflow_url?:string; proposal?:any; proposal_sha256?:string; source_coverage?:any; source_examples?:any[]};
   let jobs = $state<Job[]>([]);
   let intent = $state('');
+  let selectedRecord = $state('');
   let applyReviews = $state(false);
   let attached = $state<string[]>([]);
   const runningJob = $derived(jobs.find(job => ['queued','running'].includes(job.status)));
@@ -109,8 +111,8 @@
     {#if source.status === 'extracted'}
       <p class="fine">Previewing the first {source.records.length} of {source.record_count} records. Source IDs and locations are retained. Review the source evidence here or ask Bonsai to propose a view.</p>
       <form id="source-request" class="generate" onsubmit={generate}><label class="review-option"><input type="checkbox" bind:checked={applyReviews} disabled={Boolean(runningJob) || busy}/> Apply saved human corrections to a new working copy</label><button type="submit" disabled={Boolean(runningJob) || busy || intent.trim().length < 10}>Understand these files</button><p class="fine">First, review what Bonsai found and how it proposes to organize the data. Nothing is rendered until you confirm the view.</p></form>
-      <div class="records">{#each source.records.slice(0, 10) as row (row.id)}<details><summary>{JSON.stringify(row.locator)}</summary><pre>{JSON.stringify(row.data, null, 2)}</pre></details>{/each}</div>
-      {#key source.source_id}<WorkspaceRecordReview {source} onSaved={() => source ? choose(source.source_id) : Promise.resolve()}/>{/key}
+      {#if source.kind === 'image'}<WorkspaceImageEvidence {source} bind:selected={selectedRecord}/>{:else}<div class="records">{#each source.records.slice(0, 10) as row (row.id)}<details><summary>{JSON.stringify(row.locator)}</summary><pre>{JSON.stringify(row.data, null, 2)}</pre></details>{/each}</div>{/if}
+      {#key source.source_id+selectedRecord}<WorkspaceRecordReview {source} initialRecordId={selectedRecord} onSaved={() => source ? choose(source.source_id) : Promise.resolve()}/>{/key}
     {:else if source.kind === 'document' || source.kind === 'image'}<p class="error" role="alert">{source.extraction_error ?? 'This file has not been extracted yet.'}</p><button onclick={extractMedia} disabled={busy}>{busy ? 'Extracting…' : 'Extract text'}</button>
     {:else}<p>Original media is saved. Extracted records and review will appear once the media workflow is connected.</p>{/if}
   {/if}
