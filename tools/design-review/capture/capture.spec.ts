@@ -133,3 +133,17 @@ test('Multiple existing files can be attached and removed without inference',asy
  const after=await (await page.request.get('/api/workspace/source-jobs')).json();
  expect(after).toEqual(before);
 });
+
+test('Image upload extracts readable regions and exposes its limits',async({page},info)=>{
+ const image=path.resolve(import.meta.dirname,'../../../.cache/workspace-pdf-20260921/page-1.png');
+ test.skip(!await fs.stat(image).catch(()=>null),'Requires the real PDF page render');
+ await page.goto('/#/workspace');
+ await page.locator('input[type=file]').setInputFiles({name:'S82065-page-1.png',mimeType:'image/png',buffer:await fs.readFile(image)});
+ await expect(page.getByText('6 readable text regions',{exact:true})).toBeVisible();
+ await expect(page.getByText(/Chart values, diagram relationships, and non-text content are not interpreted/)).toBeVisible();
+ await page.locator('.records details').first().locator('summary').click();
+ await expect(page.locator('.records pre').first()).toContainText('Five Bottlenecks, Five Fixes');
+ await expect(page.locator('.records summary').first()).toContainText('bbox_normalized_bottom_left');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/09-workspace-image.'+info.project.name+'.png'),fullPage:true});
+});
