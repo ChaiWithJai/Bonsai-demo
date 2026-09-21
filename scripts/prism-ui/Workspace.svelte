@@ -19,17 +19,24 @@
   let tab = $state('preview');
   let home = $state(true);
   let streamSearch = $state('');
+  let streamsExpanded = $state(false);
   let sourceStreams = $state<Data[]>([]);
   let selectedSource = $state('');
+  let savedStreams = $state<Data[]>([]);
+  let selectedIntake = $state('');
+  let selectedStreamId = $state('');
+  const visibleStreams = $derived(savedStreams.filter(item=>(item.title+' '+item.role).toLowerCase().includes(streamSearch.toLowerCase())));
+  function openStream(item:Data){retainEditDraft();selectedStreamId=item.id;selectedRole=item.role;selectedIntake=item.latest_intake_id;selectedSource=item.source_id;home=true;initialPanel='conversation';streamsExpanded=false;}
+
   let draftKey = $state(0);
   let selectedRole = $state('Research analyst');
   let initialPanel = $state('conversation');
   const editDrafts = new Map<string, {prompt:string;checks:typeof requestChecks}>();
   function retainEditDraft() { if(project && !home) editDrafts.set(project.id,{prompt,checks:structuredClone($state.snapshot(requestChecks))}); }
-  function roleStream(role:string) { selectedRole=role; initialPanel='conversation'; newStream(); }
-  function newStream() { retainEditDraft(); home = true; selectedSource = ''; initialPanel='conversation'; draftKey += 1; }
+  function roleStream(role:string) { streamsExpanded=false; selectedRole=role; initialPanel='conversation'; newStream(); }
+  function newStream() { retainEditDraft(); home = true; selectedSource = ''; selectedIntake='';selectedStreamId=''; initialPanel='conversation'; draftKey += 1; }
   const visibleProjects = $derived((status?.workspaces ?? []).filter((item:Data) => item.title.toLowerCase().includes(streamSearch.toLowerCase())));
-  const visibleSources = $derived(sourceStreams.filter((item:Data) => !item.workspace_id && item.status !== 'superseded' && item.filename.toLowerCase().includes(streamSearch.toLowerCase())).filter((item:Data,index:number,all:Data[]) => all.findIndex(other => other.source_id === item.source_id) === index));
+  const visibleSources = $derived(sourceStreams.filter((item:Data) => item.kind !== 'intake_conversation' && !savedStreams.some(stream=>stream.source_ids.includes(item.source_id)) && !item.workspace_id && item.status !== 'superseded' && item.filename.toLowerCase().includes(streamSearch.toLowerCase())).filter((item:Data,index:number,all:Data[]) => all.findIndex(other => other.source_id === item.source_id) === index));
   let comparison = $state<Data | null>(null);
   let reviews = $state<Data | null>(null);
   let reviewer = $state('');
@@ -73,7 +80,7 @@
     if (!response.ok) throw new Error(result.error ?? `Workspace returned ${response.status}`);
     return result;
   }
-  async function refresh() { const [next, jobs] = await Promise.all([api(), api('/source-jobs')]); status = next; sourceStreams = jobs.jobs; }
+  async function refresh() { const [next, jobs, streams] = await Promise.all([api(), api('/source-jobs'),api('/workstreams')]); status = next; sourceStreams = jobs.jobs; savedStreams=streams.workstreams; }
   async function choose(id: string) {
     retainEditDraft();
     project = await api('/' + id);
@@ -192,22 +199,24 @@
 </script>
 
 <main class="workspace">
-  <aside class="stream-list" aria-label="Workstreams">
+  <button class="mobile-stream-toggle" aria-expanded={streamsExpanded} onclick={()=>streamsExpanded=!streamsExpanded}>Workstreams <span>{streamsExpanded ? 'Hide list ↑' : 'Choose a role or conversation ↓'}</span></button>
+  <aside class="stream-list" class:expanded={streamsExpanded} aria-label="Workstreams">
     <div class="stream-list-title"><h1>Workstreams</h1><button onclick={newStream} aria-label="New workstream"><Plus size={18}/></button></div>
     <label class="stream-search"><span class="sr-only">Search workstreams</span><input bind:value={streamSearch} placeholder="Search workstreams" /></label>
-    <p class="sidebar-section">Roles</p><div class="role-choices">{#each ['Research analyst','Data analyst','Evidence reviewer'] as role (role)}<button class:selected={home && selectedRole===role} onclick={()=>roleStream(role)}>{role}</button>{/each}</div><p class="sidebar-section">Workstreams</p>
-    <button class="stream-row" class:selected={home && !selectedSource} onclick={newStream}><span class="stream-avatar">＋</span><span><strong>New workstream</strong><small>A question, your files, a shared view</small></span></button>
-    {#each visibleSources as item (item.id)}<button class="stream-row" class:selected={home && selectedSource === item.source_id} onclick={() => {retainEditDraft();selectedSource=item.source_id;home=true;initialPanel='conversation';}}><span class="stream-avatar">B</span><span><strong>{item.filename}</strong><small>{item.status === 'awaiting_confirmation' ? 'Your review needed' : item.stage}</small></span></button>{/each}
+    <p class="sidebar-section">Roles</p><div class="role-choices">{#each [{name:'Research analyst',initial:'R',description:'Find connections across sources'},{name:'Data analyst',initial:'D',description:'Structure data and explore patterns'},{name:'Evidence reviewer',initial:'E',description:'Check claims against their sources'}] as role (role.name)}<button aria-label={role.name} aria-pressed={home && selectedRole===role.name} class:selected={home && selectedRole===role.name} onclick={()=>roleStream(role.name)}><span class="role-avatar" aria-hidden="true">{role.initial}</span><span><strong>{role.name}</strong><small>{role.description}</small></span></button>{/each}</div><div class="shared-tools"><p class="sidebar-section">Shared tools</p><button onclick={()=>{if(home) initialPanel='files'; else tab='data';}}>Search attached files</button><p>Available to every role</p></div><p class="sidebar-section">Workstreams</p>
+    <button class="stream-row" class:selected={home && !selectedSource && !selectedIntake} onclick={newStream}><span class="stream-avatar">＋</span><span><strong>New workstream</strong><small>A question, your files, a shared view</small></span></button>
+    {#each visibleStreams as item (item.id)}<button class="stream-row" class:selected={home && selectedStreamId===item.id} onclick={()=>openStream(item)}><span class="stream-avatar">{item.role.slice(0,1)}</span><span><strong>{item.title}</strong><small>{item.role} · {item.status==='awaiting_confirmation' ? 'Your review needed' : item.stage}</small></span></button>{/each}
+    {#each visibleSources as item (item.id)}<button class="stream-row" class:selected={home && selectedSource === item.source_id} onclick={() => {retainEditDraft();selectedStreamId='';selectedIntake='';selectedSource=item.source_id;home=true;initialPanel='conversation';}}><span class="stream-avatar">B</span><span><strong>{item.filename}</strong><small>{item.status === 'awaiting_confirmation' ? 'Your review needed' : item.stage}</small></span></button>{/each}
     {#each visibleProjects as item (item.id)}<button class="stream-row" class:selected={!home && project?.id===item.id} onclick={() => choose(item.id).catch(e => error=String(e))}><span class="stream-avatar">{item.title.slice(0,1)}</span><span><strong>{item.title}</strong><small>Continue the conversation</small></span></button>{/each}
-    <div class="shared-tools"><p class="sidebar-section">Shared tools</p><button onclick={()=>{if(home) initialPanel='files'; else tab='data';}}>Search attached files</button><p>Available to every role</p></div><div class="stream-footer"><span class="dot"></span> Bonsai 2 · on this Mac</div>
+    <div class="stream-footer"><span class="dot"></span> Bonsai 2 · on this Mac</div>
   </aside>
   <div class="stream-main">
-  <header class="heading"><div><h2>{home ? selectedSource ? sourceStreams.find(item => item.source_id===selectedSource)?.filename ?? 'Workstream' : 'New workstream' : project?.title}</h2><p class="subtitle">Conversation, files, and a view you can work with.</p></div></header>
+  <header class="heading"><div><h2>{home ? selectedIntake ? savedStreams.find(item=>item.id===selectedStreamId)?.title ?? 'Workstream' : selectedSource ? sourceStreams.find(item => item.source_id===selectedSource)?.filename ?? 'Workstream' : 'New workstream' : project?.title}</h2><p class="subtitle">Conversation, files, and a view you can work with.</p></div></header>
   {#if error}<p class="error" role="alert">{error}</p>{/if}
   {#if loading}<p role="status">Opening Workspace…</p>
   {:else if home || !project}
     <section class="start-layout" aria-label="New workstream conversation">
-      <div class="data-start">{#key selectedSource + ':' + draftKey}<WorkspaceData role={selectedRole} bind:panel={initialPanel} initialSource={selectedSource} onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>{/key}</div>
+      <div class="data-start">{#key selectedSource + ':' + selectedIntake + ':' + draftKey}<WorkspaceData initialIntake={selectedIntake} role={selectedRole} bind:panel={initialPanel} initialSource={selectedSource} onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>{/key}</div>
 
     </section>
   {:else}
@@ -317,4 +326,9 @@
   @media(max-width:750px){.workspace{height:auto;min-height:100dvh;grid-template-columns:1fr;padding:42px 0 0;overflow:auto}.stream-list{max-height:240px;border-right:0;border-bottom:1px solid var(--border);padding:12px}.stream-list-title{padding-bottom:0}.stream-footer{display:none}.stream-row{padding:8px}.heading{padding:16px}.stream-main{overflow:visible}.start-layout{display:block}.panes{display:block}.stream-search{margin-bottom:0}}
 .request small{color:inherit;opacity:.7}.response details{font-size:11px;margin:12px 0}.response summary{cursor:pointer}.response a{font-size:11px;text-decoration:underline}
 .start-layout{display:block}.data-start{height:100%;overflow:auto}.sidebar-section{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted-foreground);margin:18px 8px 4px}.role-choices{display:grid;gap:4px}.role-choices button{justify-content:flex-start;border:0;background:transparent;padding:9px 12px}.role-choices button.selected{background:var(--muted)}.shared-tools{margin-top:20px}.shared-tools button{border:0;background:transparent}.shared-tools>p:last-child{font-size:10px;color:var(--muted-foreground);margin:4px 12px}@media(max-width:750px){.role-choices{display:flex;flex-wrap:wrap}.role-choices button{font-size:10px;padding:6px}.stream-list{max-height:270px}}
+
+.role-choices button{text-align:left;gap:10px;padding:12px 9px}.role-choices strong,.role-choices small{display:block}.role-choices strong{font-size:12px;font-weight:550}.role-choices small{font-size:10px;line-height:1.5;color:var(--muted-foreground);margin-top:3px}.role-avatar{width:32px;height:32px;flex-shrink:0;display:grid;place-items:center;border-radius:11px;background:#e4e9df;color:#41523c}.role-choices button:nth-child(2) .role-avatar{background:#e2e9f1;color:#435b75}.role-choices button:nth-child(3) .role-avatar{background:#eee5f0;color:#72547e}
+@media(max-width:750px){.role-choices small{display:none}.role-avatar{width:24px;height:24px}.role-choices button{gap:5px}.role-choices strong{font-size:10px}}
+
+.mobile-stream-toggle{display:none}@media(max-width:750px){.mobile-stream-toggle{display:flex;border-radius:0;border:0;border-bottom:1px solid var(--border);padding:18px 16px;justify-content:space-between;font-size:15px;font-weight:600}.mobile-stream-toggle span{font-size:10px;font-weight:400;color:var(--muted-foreground)}.stream-list:not(.expanded){display:none}.stream-list.expanded{max-height:340px}}
 </style>

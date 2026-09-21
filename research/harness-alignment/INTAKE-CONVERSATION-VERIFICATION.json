@@ -1,0 +1,47 @@
+{
+  "scope": "development workflow, not held-out quality evaluation",
+  "training_executed": false,
+  "runs": [
+    {
+      "job_id": "3607530f6338455383b249129abd7101",
+      "status": "completed",
+      "run_id": "186fd3b69ca74e3d9cfabdaafc801ddd",
+      "run_url": "http://127.0.0.1:5210/#/experiments/32/runs/186fd3b69ca74e3d9cfabdaafc801ddd",
+      "run_status": "FINISHED",
+      "trace_verified": true
+    },
+    {
+      "job_id": "735a91c779434ca8b6068774fbc780af",
+      "status": "awaiting_confirmation",
+      "run_id": "e5472c9d3487445fb1b1dd8b4c377399",
+      "run_url": "http://127.0.0.1:5210/#/experiments/32/runs/e5472c9d3487445fb1b1dd8b4c377399",
+      "run_status": "FINISHED",
+      "trace_verified": true
+    }
+  ],
+  "conversation_context_preserved": true,
+  "proposal_confirmed": false,
+  "python_tests": 231,
+  "svelte_check": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "browser_checks": {
+    "live_reply_reload": "passed",
+    "live_file_handoff": "passed",
+    "desktop_mobile_navigation_and_reply": 4
+  },
+  "backup_status": "failed_unverified",
+  "backup_error": "MongoDB on 127.0.0.1:27028 refused connection. No restore verified.",
+  "limits": [
+    "Six exchanges or 12000 conversation characters; context overflow is explicit.",
+    "Conversation drafts are browser-local pointers to persisted jobs, not team accounts.",
+    "Only one synthetic CSV handoff was tested; this is not broad task quality evidence."
+  ],
+  "file_hashes": {
+    "scripts/workspace_intake_chat.py": "a43d26c3e8310e4375d0b3da243617ce6dc9d9d95f1c3e7c5244c5ee3bb00431",
+    "scripts/workspace_source_jobs.py": "c476caeaad6770c95de8c07cd3732e981721a904d43b63c741d560b8329a1e6e",
+    "scripts/recording_ui.py": "7df1dc960c28633b95143faf3b4cb223635c28e57d4f2dd247425d57a581df7d",
+    "scripts/prism-ui/WorkspaceData.svelte": "656546719214606b0c65fe16cc6fbe1aec53f1f1f1b8496f7fbacdde20ec48f4"
+  }
+}

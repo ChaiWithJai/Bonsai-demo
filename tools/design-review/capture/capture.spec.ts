@@ -759,3 +759,159 @@ test('Proposal judgments are separate from build approval and exclude test label
  expect((await page.request.get('/api/workspace/source-jobs/'+jid).then(r=>r.json())).status).toBe('completed');
  await page.locator('.proposal-review').screenshot({path:path.resolve(import.meta.dirname,'../shots/34-proposal-review.'+info.project.name+'.png')});
 });
+
+test('Controlled edit preserves mixed evidence and composes type filtering with search',async({page},info)=>{
+ test.skip(!process.env.CONTROLLED_PREVIEW_URL,'Requires a completed controlled-trial preview');
+ const base=process.env.CONTROLLED_PREVIEW_URL!;
+ await page.goto(base);
+ const source=await page.request.get(base+'api/desktop').then(response=>response.json());
+ await expect(page.getByTestId('record-row')).toHaveCount(3);
+ for(const row of source.rows){
+   const text=await page.locator('[data-record-id="'+row.id+'"]').getByTestId('record-data').textContent();
+   expect(JSON.parse(text!)).toEqual(row.data);
+ }
+ const search=page.getByRole('searchbox',{name:'Search records',exact:true});
+ await page.getByRole('button',{name:'Measured observations',exact:true}).click();
+ await search.fill('repository');
+ await expect(page.getByTestId('record-row')).toHaveCount(0);
+ await page.getByRole('button',{name:'Spoken requirements',exact:true}).click();
+ await expect(page.getByTestId('record-row')).toHaveCount(1);
+ await expect(page.getByTestId('record-row')).toHaveAttribute('data-record-id',source.rows[2].id);
+ await page.getByRole('button',{name:'Clear filters',exact:true}).click();
+ await expect(search).toHaveValue('');
+ await expect(page.getByTestId('record-row')).toHaveCount(3);
+ const row=page.locator('[data-record-id="'+source.rows[0].id+'"]');
+ await row.getByText('Supporting source passages',{exact:true}).click();
+ const expected=Object.values(source.evidence_links) as {url:string;label:string}[];
+ for(const link of await row.getByRole('link').all()){
+   const href=await link.getAttribute('href');
+   expect(expected.some(item=>item.url===href)).toBe(true);
+ }
+ await expect(row.getByRole('link')).not.toHaveCount(0);
+ await row.getByRole('button',{name:'Inspect '+source.rows[0].id,exact:true}).click();
+ const note='Controlled development check '+info.project.name+' '+Date.now();
+ await page.getByRole('textbox',{name:'Evidence note',exact:true}).fill(note);
+ await page.getByRole('button',{name:'Save note',exact:true}).click();
+ await expect(page.getByText(note,{exact:true})).toBeVisible();
+ await page.reload();
+ await expect(page.getByText(note,{exact:true})).toBeVisible();
+ const notes=await page.request.get(base+'api/annotations').then(response=>response.json());
+ expect(notes.find((item:any)=>item.note===note).record_id).toBe(source.rows[0].id);
+ if(process.env.CONTROLLED_SCREENSHOT_DIR)await page.screenshot({path:path.join(process.env.CONTROLLED_SCREENSHOT_DIR,'view.'+info.project.name+'.png'),fullPage:true});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test('Controlled edit records post-run filter selection semantics',async({page},info)=>{
+ test.skip(!process.env.CONTROLLED_PREVIEW_URL || !process.env.CONTROLLED_SCREENSHOT_DIR,'Requires controlled-trial output folder');
+ await page.goto(process.env.CONTROLLED_PREVIEW_URL!);
+ await page.getByRole('button',{name:'Measured observations',exact:true}).click();
+ const values:Record<string,string|null>={};
+ for(const name of ['All records','Measured observations','Spoken requirements'])values[name]=await page.getByRole('button',{name,exact:true}).getAttribute('aria-pressed');
+ const result={scope:'Post-run observational check; not a frozen success criterion',viewport:info.project.name,aria_pressed:values,
+   selected_state_exposed:values['Measured observations']==='true' && values['All records']==='false' && values['Spoken requirements']==='false'};
+ await fs.writeFile(path.join(process.env.CONTROLLED_SCREENSHOT_DIR!,'selection-semantics.'+info.project.name+'.json'),JSON.stringify(result,null,2));
+ await page.screenshot({path:path.join(process.env.CONTROLLED_SCREENSHOT_DIR!,'selected-filter.'+info.project.name+'.png'),fullPage:true});
+});
+
+test('Workstream role navigation and focused composer',async({page},info)=>{
+ await page.goto('/#/workspace');
+ if(info.project.name==='mobile')await page.getByRole('button',{name:'Workstreams Choose a role or conversation'}).click();
+ const role=page.getByRole('button',{name:'Data analyst',exact:true});
+ await role.click();
+ await expect(page.getByRole('button',{name:'Data analyst',exact:true,includeHidden:true})).toHaveAttribute('aria-pressed','true');
+ const message=page.getByLabel('Message Data analyst',{exact:true});
+ await expect(message).toBeEnabled();
+ await page.getByRole('button',{name:'Compare evidence',exact:true}).click();
+ await expect(message).toHaveValue(/Compare the evidence/);
+ await page.getByRole('button',{name:'Files',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Files for this workstream'})).toBeVisible();
+ await expect(message).toBeHidden();
+ await page.getByRole('button',{name:'Activity',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Runtime activity'})).toBeVisible();
+ await page.getByRole('button',{name:'Conversation',exact:true}).click();
+ await expect(message).toHaveValue(/Compare the evidence/);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/35-workstream-composer.'+info.project.name+'.png'),fullPage:true});
+});
+
+test('Bonsai discusses intent before attachment and retains the reply',async({page},info)=>{
+ test.skip(process.env.BONSAI_INTAKE_LIVE!=='1' || info.project.name!=='desktop','Explicit sequential development inference only');
+ test.setTimeout(300000);
+ await page.goto('/#/workspace');
+ await page.getByRole('button',{name:'Data analyst',exact:true}).click();
+ const message=page.getByLabel('Message Data analyst',{exact:true});
+ await expect(message).toBeEnabled();
+ await message.fill('I want to compare planned release dates with actual release dates. I have not attached any files yet. What evidence should I bring?');
+ const sent=page.waitForResponse(r=>r.url().endsWith('/source-jobs/intake') && r.request().method()==='POST');
+ await page.getByRole('button',{name:'Send ↑',exact:true}).click();
+ const response=await sent;expect(response.ok()).toBe(true);const job=await response.json();
+ const folder=path.resolve('.cache/intake-live-proof');await fs.mkdir(folder,{recursive:true});
+ await fs.writeFile(path.join(folder,'started.json'),JSON.stringify(job,null,2));
+ const conversation=page.getByRole('region',{name:'Conversation before attachment'});
+ await expect(conversation.locator('.intake-reply')).toBeVisible({timeout:260000});
+ const reply=await conversation.locator('.intake-reply').innerText();expect(reply.length).toBeGreaterThan(20);
+ await page.reload();
+ await page.getByRole('button',{name:'Data analyst',exact:true}).click();
+ await expect(page.locator('.intake-reply')).toHaveText(reply);
+ await expect(page.getByLabel('Message Data analyst',{exact:true})).toBeEnabled();
+ const terminal=await (await page.request.get('/api/workspace/source-jobs/'+job.id)).json();
+ expect(terminal.status).toBe('completed');expect(terminal.evidence_error).toBeUndefined();
+ await fs.writeFile(path.join(folder,'completed.json'),JSON.stringify(terminal,null,2));
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/36-intake-conversation.desktop.png'),fullPage:true});
+});
+
+test('Prior intake discussion reaches attached source proposal',async({page},info)=>{
+ test.skip(process.env.BONSAI_INTAKE_HANDOFF!=='1' || info.project.name!=='desktop','Explicit development proposal only');
+ test.setTimeout(300000);
+ const folder=path.resolve('.cache/intake-live-proof');
+ const prior=JSON.parse(await fs.readFile(path.join(folder,'completed.json'),'utf8'));
+ await page.addInitScript(({id})=>localStorage.setItem('bonsai-workstream-draft:v1:Data%20analyst:new',JSON.stringify({version:1,intent:'',intakeJobId:id,attached:[],sourceId:'',applyReviews:false})),{id:prior.id});
+ await page.goto('/#/workspace');await page.getByRole('button',{name:'Data analyst',exact:true}).click();
+ await expect(page.locator('.intake-reply')).toBeVisible();
+ await page.locator('input[type=file]').setInputFiles({name:'development-release-dates.csv',mimeType:'text/csv',buffer:Buffer.from('release_id,planned_date,actual_date,status\nexample-a,2026-01-10,2026-01-12,completed\nexample-b,2026-02-10,,pending\n')});
+ const message=page.getByLabel('Message Data analyst',{exact:true});await expect(message).toBeEnabled();
+ await message.fill('One product. Compare the planned and actual dates in these development records. Keep the missing actual date unknown and show source links.');
+ const sent=page.waitForResponse(r=>/\/sources\/[a-f0-9]+\/generate$/.test(r.url()) && r.request().method()==='POST');
+ await page.getByRole('button',{name:'Send ↑',exact:true}).click();
+ const response=await sent;expect(response.ok()).toBe(true);
+ expect(response.request().postDataJSON().intake_job_id).toBe(prior.id);
+ const job=await response.json();await fs.writeFile(path.join(folder,'handoff-started.json'),JSON.stringify(job,null,2));
+ await expect.poll(async()=>{const state=await (await page.request.get('/api/workspace/source-jobs/'+job.id)).json();await fs.writeFile(path.join(folder,'handoff-latest.json'),JSON.stringify(state,null,2));return state.status;},{timeout:260000,intervals:[2000]}).toBe('awaiting_confirmation');
+ await expect(page.getByRole('region',{name:'Visualization jobs'})).toBeVisible();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/37-intake-handoff.desktop.png'),fullPage:true});
+});
+
+test('Saved intake reply is readable on desktop and mobile',async({page},info)=>{
+ test.skip(process.env.BONSAI_INTAKE_REVIEW!=='1','Requires saved development reply; no inference');
+ const prior=JSON.parse(await fs.readFile(path.resolve('.cache/intake-live-proof/completed.json'),'utf8'));
+ await page.addInitScript(({id})=>localStorage.setItem('bonsai-workstream-draft:v1:Data%20analyst:new',JSON.stringify({version:1,intent:'',intakeJobId:id,attached:[],sourceId:'',applyReviews:false})),{id:prior.id});
+ await page.goto('/#/workspace');
+ if(info.project.name==='mobile')await page.getByRole('button',{name:'Workstreams Choose a role or conversation'}).click();
+ await page.getByRole('button',{name:'Data analyst',exact:true}).click();
+ await expect(page.locator('.intake-reply')).toHaveText(prior.reply);
+ await expect(page.getByRole('heading',{name:'What would you like to understand?'})).toBeHidden();
+ await expect(page.getByLabel('Message Data analyst',{exact:true})).toBeEnabled();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/36-intake-conversation.'+info.project.name+'.png'),fullPage:true});
+});
+
+test('Saved workstream reopens without browser draft storage',async({page},info)=>{
+ const prior=JSON.parse(await fs.readFile(path.resolve('.cache/intake-live-proof/completed.json'),'utf8'));
+ await page.goto('/#/workspace');
+ await page.evaluate(()=>localStorage.clear());await page.reload();
+ if(info.project.name==='mobile')await page.getByRole('button',{name:'Workstreams Choose a role or conversation'}).click();
+ const stream=page.locator('.stream-row').filter({has:page.locator('strong',{hasText:prior.request})});
+ await expect(stream).toHaveCount(1);await stream.click();
+ await expect(page.locator('.intake-reply')).toHaveText(prior.reply);
+ await expect(page.getByRole('region',{name:'Visualization jobs'})).toContainText('Planned vs Actual Release Dates');
+ await page.getByRole('button',{name:/^Files/}).click();
+ await expect(page.getByRole('heading',{name:'development-release-dates.csv',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Conversation',exact:true}).click();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ if(info.project.name==='desktop'){
+  const thread=await page.locator('.conversation-thread').boundingBox();const composer=await page.locator('.message-compose').boundingBox();
+  expect(thread!.y+thread!.height).toBeLessThanOrEqual(composer!.y);
+  await page.locator('.conversation-thread').evaluate(el=>el.scrollTop=el.scrollHeight);
+ }
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/38-recovered-workstream.'+info.project.name+'.png'),fullPage:true});
+});
