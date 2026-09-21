@@ -135,6 +135,8 @@ class WorkerTest(unittest.TestCase):
         self.assertEqual(seen, [checks])
         summary = self.client.runs[-1]['summary']
         self.assertEqual(summary['request_verification'], 'passed_supplied_checks')
+        self.assertEqual(summary['request_checks'], checks)
+        self.assertEqual(next(e['payload'] for e in self.store.events(aid) if e['kind'] == 'trace.started')['request_checks'], checks)
         self.assertIn('First revision', self.provider.calls[0][0]['content'])
         self.assertEqual(json.loads((self.store.root/'attempts'/aid/'request-checks.json').read_text()), checks)
         self.assertIn('request_checks_sha256', self.client.runs[-1]['tags'])

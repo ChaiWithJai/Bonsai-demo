@@ -5,6 +5,8 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    '18-expected-results': ('workspace', 'Review expected results before sending an edit'),
+    '19-live-expected-results': ('workspace', 'Fixed expected results remain in the conversation after reload'),
     '17-request-verification': ('workspace', 'Request checks and baseline verification have distinct completion messages'),
     '16-readable-records': ('workspace', 'Mixed source records with readable values, raw data and selected evidence notes'),
     '01-workspace-preview': ('workspace', 'Existing source explorer inside the Bonsai Workspace'),

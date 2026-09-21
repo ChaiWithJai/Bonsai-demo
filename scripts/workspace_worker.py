@@ -263,7 +263,7 @@ class WorkspaceWorker:
         status = 'failed'
         summary = {'attempt_id': aid, 'workspace_id': key, 'case': case,
                    'verification_scope': 'supplied_request_checks' if request_checks else 'baseline_only',
-                   'request_check_count': len(request_checks)}
+                   'request_check_count': len(request_checks), 'request_checks': request_checks}
 
         def save(name, value):
             (folder / name).write_text(json.dumps(value, indent=2, ensure_ascii=False) + '\n')
