@@ -239,3 +239,17 @@ test('Word document upload preserves text and declares coverage',async({page},in
  expect(await page.locator('.data').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/14-docx.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Table proposal explains record inspection without chart axes',async({page},info)=>{
+ const response=await page.request.get('/api/workspace/source-jobs/4fcf01b7f98f4b39b6d78f19bdc330fc');
+ const job=await response.json();expect(job.proposal.plan.view.component).toBe('RecordTable');
+ // Display-only replay of the saved proposal. No confirmation or server state change.
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[{...job,status:'awaiting_confirmation',workspace_id:undefined}]}}));
+ await page.goto('/#/workspace');
+ const proposal=page.getByRole('region',{name:'Bonsai proposal'});
+ await expect(proposal.getByText('Inspect source records',{exact:true})).toBeVisible();
+ await expect(proposal.getByText(/Read the structured fields in a searchable table/)).toBeVisible();
+ await expect(proposal).not.toContainText('undefined compared with');
+ await proposal.scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/15-table-proposal.'+info.project.name+'.png'),fullPage:true});
+});
