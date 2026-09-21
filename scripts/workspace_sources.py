@@ -112,9 +112,9 @@ class WorkspaceSources:
             return {'url': f'/api/workspace/sources/{source_id}/exports/{eid}', 'run_url': f'{self.tracking_uri}/#/experiments/{experiment_id}/runs/{run.info.run_id}', 'training_candidates': len(bundle['training_candidates'])}
 
     def download(self, source_id, export_id=None):
-        self.manifest(source_id)
+        manifest=self.manifest(source_id)
         if export_id is None:
-            return (self.root / source_id / 'source.bin').read_bytes(), 'application/octet-stream'
+            return (self.root / source_id / 'source.bin').read_bytes(), 'application/pdf' if manifest['filename'].lower().endswith('.pdf') else 'application/octet-stream'
         if not re.fullmatch('[a-f0-9]{32}', export_id):
             raise ValueError('Invalid export ID')
         path = self.root / source_id / 'exports' / export_id / 'record-reviews.json'

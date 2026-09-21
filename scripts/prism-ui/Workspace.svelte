@@ -122,7 +122,7 @@
   {#if loading}<p role="status">Opening Workspace…</p>
   {:else if home || !project}
     <section class="start-layout" aria-label="Workspace starting point">
-      <div class="start-intro"><p class="eyebrow">START WITH YOUR DATA</p><h2>What do you want to understand?</h2><p>Add a file and inspect the records behind it. Your original data and review history stay together.</p><p class="scope-note">Upload, review, visualize, and refine. Describe a question to create a source-bound visualization, then open the saved project to refine it.</p>
+      <div class="start-intro"><p class="eyebrow">START WITH YOUR DATA</p><h2>What do you want to understand?</h2><p>Bring a question and your files. Work with Bonsai to understand the evidence, choose a view, and refine it together.</p><p class="scope-note">Files and a question → shared understanding → confirm a view → explore and refine.</p>
       <details class="saved-projects"><summary>Saved projects ({status?.workspaces?.length ?? 0})</summary><p>Open a saved visualization to continue editing. Older source explorers are retained as test projects.</p>{#each status?.workspaces ?? [] as item (item.id)}<button onclick={() => choose(item.id).catch(e => error = String(e))} disabled={busy || running}>{item.title}</button>{/each}<button onclick={create} disabled={busy || running}>Create another test explorer</button></details></div>
       <div class="data-start"><WorkspaceData onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/></div>
     </section>

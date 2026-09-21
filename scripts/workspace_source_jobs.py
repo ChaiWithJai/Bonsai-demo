@@ -7,8 +7,9 @@ import threading
 import time
 import uuid
 from workspace_data.desktop_plan import profile, compile_plan, PLAN_INSTRUCTIONS
+from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal
 from workspace_data.record_review import apply_human_reviews
-from workspace_provider import GenerationCancelled
+from workspace_provider import GenerationCancelled, LocalProvider
 from workspace_store import RevisionConflict
 from workspace_tools import ROOT
 
@@ -16,12 +17,18 @@ from workspace_tools import ROOT
 class SourceJobs:
     def __init__(self, worker, sources):
         self.worker, self.sources = worker, sources
+        provider=worker.provider
+        self.planner = LocalProvider(f'http://{provider.host}:{provider.port}',provider.model,timeout=240,max_bytes=provider.max_bytes,profile=provider.profile,seed=provider.seed) if isinstance(provider,LocalProvider) else provider
         self.root = worker.store.root / 'source-jobs'
         self.root.mkdir(exist_ok=True)
         self.active = {}
         # Workspace's process ownership lock has already been acquired.
         for path in self.root.glob('*/status.json'):
             value = json.loads(path.read_text())
+            if value['status']=='awaiting_confirmation' and value.get('proposal_contract')!='source-proposal-v2-structured':
+                value.update(status='needs_revision',stage='Needs explicit source-backed structure')
+                self.save(path.parent,'legacy-proposal-status.json',json.loads(path.read_text()))
+                self.save(path.parent,'status.json',value)
             if value['status'] in ('running', 'queued'):
                 value.update(status='interrupted', error='Service stopped before this job finished')
                 self.save(path.parent, 'status.json', value)
@@ -44,7 +51,7 @@ class SourceJobs:
     def list(self):
         return {'jobs': [json.loads(p.read_text()) for p in sorted(self.root.glob('*/status.json'), key=lambda p:p.stat().st_mtime, reverse=True)]}
 
-    def start(self, source_id, request, apply_reviews=False):
+    def start(self, source_id, request, apply_reviews=False, revision=None):
         if not isinstance(request, str) or not 10 <= len(request.strip()) <= 4000:
             raise ValueError('Describe the visualization in 10 to 4,000 characters')
         if type(apply_reviews) is not bool:
@@ -68,8 +75,13 @@ class SourceJobs:
             self.save(folder, 'source-manifest.json', manifest)
             (folder / 'source.bin').write_bytes(raw)
             self.save(folder, 'profile.json', context)
+            if revision:
+                self.save(folder, 'revision-request.json', revision)
             status = {'id':jid, 'source_id':source_id, 'filename':manifest['filename'], 'request':request.strip(),
                       'apply_reviews':apply_reviews, 'status':'queued', 'stage':'Preparing source', 'created_at':time.time()}
+            if revision:
+                status['parent_job_id'] = revision['parent_job_id']
+                status['feedback'] = revision['feedback']
             self.save(folder, 'status.json', status)
             cancel = threading.Event()
             thread = threading.Thread(target=self.run, args=(folder, manifest, context, status, cancel), daemon=True)
@@ -77,6 +89,36 @@ class SourceJobs:
             self.worker.source_jobs.add(jid)
             thread.start()
             return status
+
+    def confirm(self, jid, proposal_sha256, actor='interactive-unattributed'):
+        with self.worker.guard:
+            status=self.get(jid)
+            if status['status'] != 'awaiting_confirmation' or status.get('proposal_contract')!='source-proposal-v2-structured' or status.get('proposal_sha256') != proposal_sha256:
+                raise RevisionConflict('Review the current proposal before confirming it')
+            if self.worker.running or self.worker.source_jobs:
+                raise RevisionConflict('Another Workspace job is running')
+            folder=self.root/jid
+            self.save(folder,'planning-status.json',status)
+            confirmation={'decision':'accept','proposal_sha256':proposal_sha256,'actor':actor,'created_at':time.time(),
+                          'identity_basis':'local unauthenticated interaction; not a training label'}
+            self.save(folder,'confirmation.json',confirmation)
+            status.update(status='queued',stage='Building your confirmed view',planning_run_id=status['run_id'])
+            self.save(folder,'status.json',status)
+            manifest=json.loads((folder/'source-manifest.json').read_text())
+            context=json.loads((folder/'profile.json').read_text())
+            cancel=threading.Event()
+            thread=threading.Thread(target=self.run,args=(folder,manifest,context,status,cancel,True),daemon=True)
+            self.active[jid]=(cancel,thread);self.worker.source_jobs.add(jid);thread.start()
+            return status
+
+    def revise(self, jid, feedback, actor='interactive-unattributed'):
+        status=self.get(jid)
+        if status['status'] not in ('awaiting_confirmation','needs_revision'):
+            raise RevisionConflict('Only a pending proposal can be revised')
+        if not isinstance(feedback,str) or not 1<=len(feedback.strip())<=4000:
+            raise ValueError('Describe what to change in the proposal')
+        return self.start(status['source_id'],status['request'],status['apply_reviews'],
+                          {'parent_job_id':jid,'feedback':feedback.strip(),'actor':actor,'previous_proposal':status['proposal']})
 
     def cancel(self, jid):
         with self.worker.guard:
@@ -93,7 +135,7 @@ class SourceJobs:
         for _, thread in active:
             thread.join(timeout=15)
 
-    def run(self, folder, manifest, context, status, cancel):
+    def run(self, folder, manifest, context, status, cancel, confirmed=False):
         w = self.worker
         root = run_id = None
         started = time.monotonic()
@@ -116,45 +158,73 @@ class SourceJobs:
         try:
             experiment = w.client.get_experiment_by_name('bonsai-workspace-data')
             eid = experiment.experiment_id if experiment else w.client.create_experiment('bonsai-workspace-data')
-            tags = {'mlflow.runName':'Source to editable visualization', 'source_id':manifest['source_id'],
-                    'job_id':status['id'], 'scope':'development', 'model':w.provider.model,
+            tags = {'mlflow.runName':'Build confirmed visualization' if confirmed else 'Discuss source interpretation', 'source_id':manifest['source_id'],
+                    'job_id':status['id'], 'scope':'development', 'model':w.provider.model, 'model_call_timeout_seconds':str(getattr(self.planner,'timeout','test')),
                     'sampling_profile':w.provider.profile, 'sampling_seed':str(w.provider.seed),
-                    'prompt_sha256':hashlib.sha256(PLAN_INSTRUCTIONS.encode()).hexdigest(),
+                    'prompt_sha256':hashlib.sha256(PROPOSAL_INSTRUCTIONS.encode()).hexdigest(),
                     'initial_ui_origin':'authored scaffold with model-authored typed visualization plan'}
+            if status.get('planning_run_id'):
+                tags['planning_run_id']=status['planning_run_id']
+            if status.get('parent_job_id'):
+                tags['parent_job_id']=status['parent_job_id']
             run_id = w.client.create_run(eid, tags=tags).info.run_id
             root = w.client.start_trace('workspace.source_to_project', span_type='AGENT', experiment_id=eid,
                                        run_id=run_id, inputs=tags | {'request':status['request']}, attributes={'model_info':w.model_info})
             update(status='running', stage='Planning visualization', run_id=run_id, trace_id=root.trace_id,
                    mlflow_url=f'{w.tracking_uri}/#/experiments/{eid}/runs/{run_id}')
             self.save(folder, 'model-info.json', w.model_info)
-            source_files = ['workspace_source_jobs.py','workspace_data/desktop_plan.py','workspace-tools/render_chart.mjs',
+            source_files = ['workspace_source_jobs.py','workspace_data/proposal.py','workspace_data/desktop_plan.py','workspace-tools/render_chart.mjs',
                             'workspace_provider.py','workspace-tools/package-lock.json']
             self.save(folder,'harness-hashes.json',{name:hashlib.sha256((ROOT/'scripts'/name).read_bytes()).hexdigest() for name in source_files})
-            messages = [{'role':'system','content':PLAN_INSTRUCTIONS},
-                        {'role':'user','content':json.dumps({'request':status['request'],'source_profile':context},ensure_ascii=False)}]
-            failures = set()
-            for turn in range(2):
-                check()
-                preflight = span('context.preflight', {'turn':turn}, lambda:w.provider.preflight(messages, [], 3000))
-                self.save(folder, f'preflight-{turn}.json', preflight)
-                if not preflight['fits']:
-                    raise ValueError('Source profile exceeds the model context; choose fewer fields or a smaller source')
-                response = span('model.plan', {'turn':turn,'messages':messages}, lambda:w.provider.generate(messages, [], 'source-'+status['id'], cancel, lambda delta:None, 3000))
-                self.save(folder, f'model-{turn}.json', response)
-                try:
-                    plan = json.loads(response['message']['content'])
-                    compiled = span('plan.validate', {'plan':plan}, lambda:compile_plan(manifest, plan))
-                    break
-                except (ValueError, TypeError, KeyError) as exc:
-                    error = str(exc)
-                    self.save(folder, f'validation-{turn}.json', {'error':error})
-                    if error in failures or turn == 1:
-                        raise ValueError('Plan validation failed within the two-call budget: '+error) from exc
-                    failures.add(error)
-                    messages += [response['message'], {'role':'user','content':'Correct only the JSON plan using this validation error: '+error}]
-                    update(stage='Repairing invalid plan once')
-            self.save(folder, 'compiled.json', compiled)
-            self.save(folder, 'chart.json', compiled['chart'])
+            if not confirmed:
+                packet=source_packet(manifest)
+                self.save(folder,'source-packet.json',packet)
+                messages = [{'role':'system','content':PROPOSAL_INSTRUCTIONS},
+                            {'role':'user','content':json.dumps({'request':status['request'],'source_profile':{k:v for k,v in context.items() if k!='extraction_coverage'},'source_evidence':{k:v for k,v in packet.items() if k!='record_id_map'},'revision':json.loads((folder/'revision-request.json').read_text()) if (folder/'revision-request.json').exists() else None},ensure_ascii=False)}]
+                failures = set()
+                for turn in range(2):
+                    check()
+                    preflight = span('context.preflight', {'turn':turn}, lambda:self.planner.preflight(messages, [], 4096))
+                    self.save(folder, f'preflight-{turn}.json', preflight)
+                    if not preflight['fits']:
+                        raise ValueError('Source profile exceeds the model context; choose fewer fields or a smaller source')
+                    response = span('model.plan', {'turn':turn,'messages':messages}, lambda:self.planner.generate(messages, [], 'source-'+status['id'], cancel, lambda delta:None, 4096))
+                    self.save(folder, f'model-{turn}.json', response)
+                    try:
+                        proposal = json.loads(response['message']['content'])
+                        compiled = span('plan.validate', {'proposal':proposal}, lambda:validate_proposal(manifest, proposal, packet['record_id_map']))
+                        for finding in proposal['interpretation']['findings']:
+                            finding['record_ids']=[packet['record_id_map'][ref] for ref in finding['record_ids']]
+                        if proposal.get('structure'):
+                            for row in proposal['structure']['records']:
+                                for item in row['evidence']:
+                                    item['record_id']=packet['record_id_map'][item['record_id']]
+                        plan = proposal['plan']
+                        break
+                    except (ValueError, TypeError, KeyError) as exc:
+                        error = str(exc)
+                        self.save(folder, f'validation-{turn}.json', {'error':error})
+                        if error in failures or turn == 1:
+                            raise ValueError('Plan validation failed within the two-call budget: '+error) from exc
+                        failures.add(error)
+                        messages += [response['message'], {'role':'user','content':'Correct the complete JSON proposal using this validation error: '+error}]
+                        update(stage='Repairing invalid plan once')
+                self.save(folder, 'compiled.json', compiled)
+                self.save(folder, 'chart.json', compiled['chart'])
+                self.save(folder,'proposal.json',proposal)
+                digest=hashlib.sha256(json.dumps(proposal,sort_keys=True).encode()).hexdigest()
+                update(status='awaiting_confirmation',proposal_contract='source-proposal-v2-structured',stage='Does this interpretation fit your question?',proposal=proposal,
+                       proposal_sha256=digest,source_coverage={k:v for k,v in packet.items() if k not in ('records','record_id_map')},
+                       source_examples=[{**r,'id':packet['record_id_map'][r['id']]} for r in packet['records'] if any(packet['record_id_map'][r['id']] in f['record_ids'] for f in proposal['interpretation']['findings'])])
+                return
+            compiled=json.loads((folder/'compiled.json').read_text())
+            if compiled.get('record_origin')=='model_structured_unreviewed':
+                compiled['grouping_origin']='model-structured fields, unreviewed; not learned similarity clusters'
+                compiled['original_record_count']=len(manifest['records'])
+            self.save(folder,'render-compiled.json',compiled)
+            plan=compiled['plan']
+            confirmation=json.loads((folder/'confirmation.json').read_text())
+            span('human.confirmation',confirmation,lambda:confirmation)
             update(stage='Rendering Semiotic component')
             rendered = span('semiotic.render', compiled['chart'], lambda:w.tools.command(
                 [w.tools.node,str(ROOT/'scripts/workspace-tools/render_chart.mjs'),str(folder/'chart.json'),str(folder/'render')],folder/'render',cancel))
@@ -184,11 +254,12 @@ class SourceJobs:
             update(elapsed_seconds=round(time.monotonic()-started,3))
             try:
                 if root:
-                    w.client.end_trace(root.trace_id,outputs=status,status='OK' if status['status']=='completed' else 'ERROR')
+                    w.client.end_trace(root.trace_id,outputs=status,status='OK' if status['status'] in ('completed','awaiting_confirmation') else 'ERROR')
                 if run_id:
                     w.client.log_artifacts(run_id,str(folder),'source-project')
                     w.client.log_metric(run_id,'workflow_passed',int(status['status']=='completed'))
-                    w.client.set_terminated(run_id,'FINISHED' if status['status']=='completed' else 'FAILED')
+                    w.client.log_metric(run_id,'proposal_ready',int(status['status']=='awaiting_confirmation'))
+                    w.client.set_terminated(run_id,'FINISHED' if status['status'] in ('completed','awaiting_confirmation') else 'FAILED')
             except Exception as exc:
                 update(evidence_error=str(exc))
             finally:
