@@ -9,17 +9,30 @@ CONFIG_FIELDS = ('model_revision', 'runtime_revision', 'harness_revision',
                  'sampling_profile', 'sampling_seed', 'hardware_id', 'cache_condition')
 
 
+UNVERIFIED_VALUES = {'unknown', 'unspecified', 'unverified-test', 'not recorded'}
+
+
+def recorded(value):
+    return isinstance(value, str) and bool(value.strip()) and value.strip().lower() not in UNVERIFIED_VALUES
+
+
 def compare(rows):
     if len(rows) < 2:
         raise ValueError('Choose at least two runs')
-    matching = {key: all(row['tags'].get(key) for row in rows) and
+    matching = {key: all(recorded(row['tags'].get(key)) for row in rows) and
                 len({row['tags'].get(key) for row in rows}) == 1 for key in MATCH_FIELDS}
     return {'schema_version': 1, 'task_metadata_matches': all(matching.values()),
             'matched_fields': matching,
+            'task_field_differences': {key: [r['tags'].get(key) for r in rows]
+                for key, matches in matching.items() if not matches},
+            'configuration_complete': all(recorded(row['tags'].get(key)) for row in rows for key in CONFIG_FIELDS),
+            'unverified_configuration': {key: [index for index, row in enumerate(rows)
+                if not recorded(row['tags'].get(key))] for key in CONFIG_FIELDS
+                if any(not recorded(row['tags'].get(key)) for row in rows)},
             'configuration_differences': {key: [r['tags'].get(key) for r in rows]
                 for key in CONFIG_FIELDS if len({r['tags'].get(key) for r in rows}) > 1},
             'interpretation': 'Descriptive comparison only. Matching task metadata does not establish '
-                'identical conversation history, cache state, or held-out performance. Missing outcomes '
+                'identical conversation history, cache state, or held-out performance. Configuration completeness means tags are recorded, not independently verified. Missing outcomes '
                 'remain unknown; MLflow run status alone is not task success.',
             'runs': rows}
 

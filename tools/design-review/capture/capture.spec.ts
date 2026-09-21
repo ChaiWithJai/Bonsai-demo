@@ -706,3 +706,23 @@ test('Generated view zooms nodes without losing selection or overflowing the pag
  await page.getByRole('button',{name:'Clear filters',exact:true}).click();
  await expect(page.getByTestId('record-row')).toHaveCount(5);
 });
+
+test('Comparison discloses task changes and incomplete configuration',async({page},info)=>{
+ const report=JSON.parse(await fs.readFile(path.resolve(import.meta.dirname,'../../../research/harness-alignment/CONFIGURATION-COMPARISON-AUDIT.json'),'utf8'));
+ // Historical evidence plus an explicitly display-only missing-hardware scenario.
+ report.configuration_complete=false;
+ report.unverified_configuration={hardware_id:[0,1]};
+ await page.route('**/api/workspace/*/comparison?*',route=>route.fulfill({json:report}));
+ await page.goto('/#/workspace');
+ await page.getByLabel('Search workstreams',{exact:true}).fill('Evidence Review: Requirements');
+ await page.getByRole('complementary',{name:'Workstreams',exact:true}).getByRole('button').filter({hasText:'Evidence Review: Requirements vs. Measured Observations'}).click();
+ await page.getByRole('button',{name:'Evidence',exact:true}).click();
+ await page.getByRole('button',{name:'Compare attempts',exact:true}).click();
+ await page.getByText('What changed between these attempts?',{exact:true}).click();
+ await expect(page.getByText('Configuration evidence is incomplete.',{exact:true})).toBeVisible();
+ await expect(page.getByText('hardware id: missing or unverified for attempt 1, 2.',{exact:true})).toBeVisible();
+ await expect(page.getByText(/Task differences or missing fields:.*base_revision.*request_sha256/)).toBeVisible();
+ await expect(page.getByText('Configuration differences: harness_revision.',{exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.locator('.comparison-context').screenshot({path:path.resolve(import.meta.dirname,'../shots/33-comparison-context.'+info.project.name+'.png')});
+});

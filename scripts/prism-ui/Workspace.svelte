@@ -264,6 +264,13 @@
           {#if comparisonError}<p role="alert">{comparisonError}</p>{/if}
           {#if comparison}
             <p>{comparison.task_metadata_matches ? 'Recorded task metadata matches.' : 'Task metadata differs or is missing.'} Conversation history and cache state may differ.</p>
+            <details class="comparison-context"><summary>What changed between these attempts?</summary>
+              <p>Task differences or missing fields: {Object.keys(comparison.task_field_differences ?? {}).join(', ') || 'None recorded'}.</p>
+              <p>Configuration differences: {Object.keys(comparison.configuration_differences ?? {}).join(', ') || 'None recorded'}.</p>
+              {#if comparison.configuration_complete === true}<p>All configuration tags are recorded. This does not establish a controlled experiment.</p>{:else if comparison.configuration_complete === false}<p>Configuration evidence is incomplete.</p>{/if}
+              {#each Object.entries(comparison.unverified_configuration ?? {}) as [field,indices] (field)}<p>{field.replaceAll('_',' ')}: missing or unverified for attempt {(indices as number[]).map(index=>index+1).join(', ')}.</p>{/each}
+              <p>{comparison.interpretation}</p>
+            </details>
             <div class="comparison-results">{#each comparison.runs as run (run.run_id)}<article><h3>{run.outcome.status ?? 'Outcome unknown'}</h3><p>{run.outcome.elapsed_seconds == null ? 'Duration unknown' : Number(run.outcome.elapsed_seconds).toFixed(1) + ' seconds'} · Browser checks: {run.browser_check?.passed === true ? 'passed' : run.browser_check?.passed === false ? 'failed' : 'not recorded'}</p>{#if run.outcome.error}<p>{run.outcome.error}</p>{/if}<dl>{#each ['model_revision', 'runtime_revision', 'harness_revision', 'sampling_profile', 'sampling_seed', 'dataset_sha256'] as field (field)}<dt>{field.replaceAll('_', ' ')}</dt><dd>{run.tags[field] ?? 'Not recorded'}</dd>{/each}</dl>{#if run.url}<a href={run.url} target="_blank" rel="noreferrer">Open MLflow run</a>{/if}</article>{/each}</div>
           {/if}
           <h2>Evidence for this attempt</h2><p>The complete attempt links model exchanges, patches, build diagnostics, and browser checks.</p>{#if trace}<a href={trace.mlflow_url} target="_blank" rel="noreferrer">Open complete MLflow attempt <ExternalLink size={14}/></a>{:else}<p>No model attempt recorded yet.</p>{/if}{#each activity as event (event.sequence)}<details><summary>{event.sequence}. {event.kind}</summary><pre>{JSON.stringify(event.payload, null, 2)}</pre></details>{/each}</div>{/if}

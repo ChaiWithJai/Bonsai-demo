@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "task_metadata_matches": false,
+  "matched_fields": {
+    "dataset_sha256": true,
+    "base_revision": false,
+    "prompt_sha256": true,
+    "case_id": true,
+    "request_sha256": false,
+    "initial_model_input_sha256": false,
+    "request_checks_sha256": false
+  },
+  "task_field_differences": {
+    "base_revision": [
+      "0392ce27b2b84d49537b8577588ad20d03ce404ff60ffc1e963acbba752fd710",
+      "1ec66fbf37e16f53e25909627b503c1e17452fdce814f340cf021efde54c40c7"
+    ],
+    "request_sha256": [
+      "5bf1420496223e2f65a8d0406ac6e4bb7469d168e1b2f3af5001c3c686cc0cd2",
+      "e365bce66441c2a1073f9d5068bb664cb4b6a26aaf0e4d9dd844487970b547f1"
+    ],
+    "initial_model_input_sha256": [
+      "27a0f1d3e86d743c440d234eb4a3c0878d7d09fff2c04a5d5ce02c7cbd42fbfc",
+      "b5eaebf0f1852ecedbcbc8f4ea7bd5feacffeca03dd58f957093e2fab9fa6e9f"
+    ],
+    "request_checks_sha256": [
+      "ac6604c8e0949ba7f8e3b43a907ea7a1d02b86ec70cb8680a63e655a1db6aee2",
+      "7aa7ed3f8cb5bff808125aca61159900aa03b66ee5e24aeb8dc87118623159f0"
+    ]
+  },
+  "configuration_complete": true,
+  "unverified_configuration": {},
+  "configuration_differences": {
+    "harness_revision": [
+      "aad616f7bd0df6d1354b3b4f9852e28247e5cc28ea0d7116fea3d2b6ce3c65c2",
+      "2748222830d03cf9e657d562cd23a8ef147528bc070b2f725f972b8a729469ed"
+    ]
+  },
+  "interpretation": "Descriptive comparison only. Matching task metadata does not establish identical conversation history, cache state, or held-out performance. Configuration completeness means tags are recorded, not independently verified. Missing outcomes remain unknown; MLflow run status alone is not task success.",
+  "runs": [
+    {
+      "run_id": "687eadc3b182497d9a3114bef7173cdb",
+      "url": "http://127.0.0.1:5210/#/experiments/31/runs/687eadc3b182497d9a3114bef7173cdb",
+      "tags": {
+        "workspace.id": "e13a4a3d2c214a688339afcd92ddb5fd",
+        "attempt_id": "e4d1b9d9944e463ba1fbe15cea2883dc",
+        "case_id": "baseline",
+        "split": "development",
+        "research.plan_run_id": "37fe164f40c546339c688b40af523203",
+        "provider_contract_version": "bonsai-workspace-openai-tools-v2",
+        "base_revision": "0392ce27b2b84d49537b8577588ad20d03ce404ff60ffc1e963acbba752fd710",
+        "sampling_profile": "legacy-greedy",
+        "sampling_seed": "42",
+        "research.plan_sha256": "75230b50dbc1ad332673f70e9a836bbf768a2810c46b72e452fe67cd59cc65b6",
+        "conversation_id": "e13a4a3d2c214a688339afcd92ddb5fd",
+        "harness_revision": "aad616f7bd0df6d1354b3b4f9852e28247e5cc28ea0d7116fea3d2b6ce3c65c2",
+        "dataset_sha256": "92a4f09380cd3c22363156ea5dfb4037834ec70f6708430b51b8a7c46a064e80",
+        "prompt_sha256": "deee0bf86e2a07959c3bd50801f90cc7a6d8a59cd79d4d3ddb9e9f532ddf6449",
+        "request_sha256": "5bf1420496223e2f65a8d0406ac6e4bb7469d168e1b2f3af5001c3c686cc0cd2",
+        "model_revision": "6ed5e12bf84b7a63069882c91dd9e9218647d17b",
+        "runtime_revision": "1ad69ebaada923760c52c1dc50daf198a22c2adb4a9dcccd25779fa7079f353b",
+        "hardware_id": "Apple M5 Pro\n51539607552",
+        "cache_condition": "persistent_server_cache_prompt_enabled_not_cold_benchmark",
+        "request_checks_sha256": "ac6604c8e0949ba7f8e3b43a907ea7a1d02b86ec70cb8680a63e655a1db6aee2",
+        "verification_scope": "supplied_request_checks",
+        "initial_model_input_sha256": "27a0f1d3e86d743c440d234eb4a3c0878d7d09fff2c04a5d5ce02c7cbd42fbfc",
+        "verification.human_acceptance": "false"
+      },
+      "outcome": {
+        "status": "completed",
+        "elapsed_seconds": 64.41849216702394,
+        "repairs": 0,
+        "verification_scope": "supplied_request_checks",
+        "request_verification": "passed_supplied_checks"
+      }
+    },
+    {
+      "run_id": "e1170fc339d942779ac82632e7ca8162",
+      "url": "http://127.0.0.1:5210/#/experiments/31/runs/e1170fc339d942779ac82632e7ca8162",
+      "tags": {
+        "workspace.id": "e13a4a3d2c214a688339afcd92ddb5fd",
+        "attempt_id": "b050c668733542efa0765906865228c6",
+        "case_id": "baseline",
+        "split": "development",
+        "research.plan_run_id": "37fe164f40c546339c688b40af523203",
+        "provider_contract_version": "bonsai-workspace-openai-tools-v2",
+        "base_revision": "1ec66fbf37e16f53e25909627b503c1e17452fdce814f340cf021efde54c40c7",
+        "sampling_profile": "legacy-greedy",
+        "sampling_seed": "42",
+        "research.plan_sha256": "75230b50dbc1ad332673f70e9a836bbf768a2810c46b72e452fe67cd59cc65b6",
+        "conversation_id": "e13a4a3d2c214a688339afcd92ddb5fd",
+        "harness_revision": "2748222830d03cf9e657d562cd23a8ef147528bc070b2f725f972b8a729469ed",
+        "dataset_sha256": "92a4f09380cd3c22363156ea5dfb4037834ec70f6708430b51b8a7c46a064e80",
+        "prompt_sha256": "deee0bf86e2a07959c3bd50801f90cc7a6d8a59cd79d4d3ddb9e9f532ddf6449",
+        "request_sha256": "e365bce66441c2a1073f9d5068bb664cb4b6a26aaf0e4d9dd844487970b547f1",
+        "model_revision": "6ed5e12bf84b7a63069882c91dd9e9218647d17b",
+        "runtime_revision": "1ad69ebaada923760c52c1dc50daf198a22c2adb4a9dcccd25779fa7079f353b",
+        "hardware_id": "Apple M5 Pro\n51539607552",
+        "cache_condition": "persistent_server_cache_prompt_enabled_not_cold_benchmark",
+        "request_checks_sha256": "7aa7ed3f8cb5bff808125aca61159900aa03b66ee5e24aeb8dc87118623159f0",
+        "verification_scope": "supplied_request_checks",
+        "initial_model_input_sha256": "b5eaebf0f1852ecedbcbc8f4ea7bd5feacffeca03dd58f957093e2fab9fa6e9f",
+        "verification.review_origin": "codex-development-verification",
+        "verification.human_acceptance": "false"
+      },
+      "outcome": {
+        "status": "completed",
+        "elapsed_seconds": 144.5055451670196,
+        "repairs": 1,
+        "verification_scope": "supplied_request_checks",
+        "request_verification": "passed_supplied_checks"
+      }
+    }
+  ]
+}
