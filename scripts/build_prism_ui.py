@@ -49,6 +49,9 @@ def main():
     comparison = stage / "src/routes/comparison"
     comparison.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(root / "scripts/prism-ui/Comparison.svelte", comparison / "+page.svelte")
+    workspace = stage / 'src/routes/workspace'
+    workspace.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(root / 'scripts/prism-ui/Workspace.svelte', workspace / '+page.svelte')
     shutil.copyfile(root / "scripts/prism-ui/SvgPreview.svelte", stage / "src/lib/SvgPreview.svelte")
     shutil.copyfile(root / "scripts/prism-ui/BrowserLiveView.svelte", stage / "src/lib/BrowserLiveView.svelte")
     layout = stage / "src/routes/+layout.svelte"
@@ -62,8 +65,10 @@ def main():
     settings_anchor = "\t\ttooltip: 'Settings'\n\t}\n];"
     if settings_anchor not in nav or "import { Package," not in nav:
         parser.error("Upstream sidebar integration changed; review before building")
-    nav = nav.replace("import { Package,", "import { Activity, Columns2, Package,", 1)
+    nav = nav.replace("import { Package,", "import { Workflow, Activity, Columns2, Package,", 1)
     nav = nav.replace(settings_anchor, "\t\ttooltip: 'Settings'\n\t},\n\t{ activeRouteId: '/observability', icon: Activity, route: '#/observability', tooltip: 'Observability' },\n\t{ activeRouteId: '/comparison', icon: Columns2, route: '#/comparison', tooltip: 'Head-to-head' }\n];", 1)
+    navigation.write_text(nav)
+    nav = nav.replace("tooltip: 'Head-to-head' }", "tooltip: 'Head-to-head' },\n\t{ activeRouteId: '/workspace', icon: Workflow, route: '#/workspace', tooltip: 'Workspace' }")
     navigation.write_text(nav)
     with (stage / "src/app.css").open("a") as css:
         css.write('\n' + (root / "scripts/prism-ui/prism.css").read_text())

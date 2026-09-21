@@ -1,0 +1,207 @@
+{
+  "id": "example-hf-snapshot-20260918",
+  "split": "ad_hoc",
+  "origin": "user-provided",
+  "category": "clusters",
+  "inputs": {
+    "task_id": "example-hf-snapshot-20260918",
+    "task": "Explore this cached Hugging Face snapshot by supplied parameter-size groups, with selectable source records and their source links. Show 30-day rolling download counts as snapshot observations, not daily downloads or unique users. Do not infer release dates from repository creation dates. Supplied groups are extracted from repository names, not learned similarity clusters.",
+    "contract": {
+      "framework": "Svelte 5",
+      "output": "raw App.svelte source",
+      "rows": [
+        {
+          "id": "prism-ml/Bonsai-8B-gguf",
+          "date": "2026-09-18",
+          "value": 126117,
+          "cluster_id": "8B",
+          "parameter_size": "8B",
+          "runtime": "Unspecified (GGUF format)",
+          "release": "Release unknown; repository created 2026-03-18",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-8B-gguf"
+        },
+        {
+          "id": "prism-ml/Bonsai-8B-mlx-1bit",
+          "date": "2026-09-18",
+          "value": 9866,
+          "cluster_id": "8B",
+          "parameter_size": "8B",
+          "runtime": "MLX",
+          "release": "Release unknown; repository created 2026-03-18",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-8B-mlx-1bit"
+        },
+        {
+          "id": "prism-ml/Bonsai-4B-gguf",
+          "date": "2026-09-18",
+          "value": 25010,
+          "cluster_id": "4B",
+          "parameter_size": "4B",
+          "runtime": "Unspecified (GGUF format)",
+          "release": "Release unknown; repository created 2026-03-29",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-4B-gguf"
+        },
+        {
+          "id": "prism-ml/Bonsai-4B-mlx-1bit",
+          "date": "2026-09-18",
+          "value": 698,
+          "cluster_id": "4B",
+          "parameter_size": "4B",
+          "runtime": "MLX",
+          "release": "Release unknown; repository created 2026-03-29",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-4B-mlx-1bit"
+        },
+        {
+          "id": "prism-ml/Bonsai-1.7B-gguf",
+          "date": "2026-09-18",
+          "value": 65445,
+          "cluster_id": "1.7B",
+          "parameter_size": "1.7B",
+          "runtime": "Unspecified (GGUF format)",
+          "release": "Release unknown; repository created 2026-03-29",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-1.7B-gguf"
+        },
+        {
+          "id": "prism-ml/Bonsai-1.7B-mlx-1bit",
+          "date": "2026-09-18",
+          "value": 1392,
+          "cluster_id": "1.7B",
+          "parameter_size": "1.7B",
+          "runtime": "MLX",
+          "release": "Release unknown; repository created 2026-03-29",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-1.7B-mlx-1bit"
+        },
+        {
+          "id": "prism-ml/Bonsai-27B-gguf",
+          "date": "2026-09-18",
+          "value": 416479,
+          "cluster_id": "27B",
+          "parameter_size": "27B",
+          "runtime": "Unspecified (GGUF format)",
+          "release": "Release unknown; repository created 2026-07-04",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-27B-gguf"
+        },
+        {
+          "id": "prism-ml/Bonsai-27B-mlx-1bit",
+          "date": "2026-09-18",
+          "value": 1040631,
+          "cluster_id": "27B",
+          "parameter_size": "27B",
+          "runtime": "MLX",
+          "release": "Release unknown; repository created 2026-07-04",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-27B-mlx-1bit"
+        },
+        {
+          "id": "prism-ml/Bonsai-27B-AWQ-4bit",
+          "date": "2026-09-18",
+          "value": 286,
+          "cluster_id": "27B",
+          "parameter_size": "27B",
+          "runtime": "Unspecified",
+          "release": "Release unknown; repository created 2026-07-11",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-27B-AWQ-4bit"
+        },
+        {
+          "id": "prism-ml/Bonsai-1.7B-unpacked",
+          "date": "2026-09-18",
+          "value": 3921,
+          "cluster_id": "1.7B",
+          "parameter_size": "1.7B",
+          "runtime": "Unspecified",
+          "release": "Release unknown; repository created 2026-03-29",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-1.7B-unpacked"
+        },
+        {
+          "id": "prism-ml/Bonsai-8B-unpacked",
+          "date": "2026-09-18",
+          "value": 6376,
+          "cluster_id": "8B",
+          "parameter_size": "8B",
+          "runtime": "Unspecified",
+          "release": "Release unknown; repository created 2026-03-24",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-8B-unpacked"
+        },
+        {
+          "id": "prism-ml/Bonsai-4B-unpacked",
+          "date": "2026-09-18",
+          "value": 831,
+          "cluster_id": "4B",
+          "parameter_size": "4B",
+          "runtime": "Unspecified",
+          "release": "Release unknown; repository created 2026-03-29",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-4B-unpacked"
+        },
+        {
+          "id": "prism-ml/Bonsai-27B-unpacked",
+          "date": "2026-09-18",
+          "value": 4771,
+          "cluster_id": "27B",
+          "parameter_size": "27B",
+          "runtime": "Unspecified",
+          "release": "Release unknown; repository created 2026-07-04",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-27B-unpacked"
+        },
+        {
+          "id": "prism-ml/Bonsai-8B-AWQ-4-bit",
+          "date": "2026-09-18",
+          "value": 480,
+          "cluster_id": "8B",
+          "parameter_size": "8B",
+          "runtime": "Unspecified",
+          "release": "Release unknown; repository created 2026-04-18",
+          "source_url": "https://huggingface.co/prism-ml/Bonsai-8B-AWQ-4-bit"
+        }
+      ],
+      "unit": "downloads in preceding 30 days per model repository",
+      "origin": "user-provided",
+      "grouping": "Source cluster labels are supplied by the user, not inferred by this application.",
+      "interval": {
+        "start": "2026-09-18",
+        "end": "2026-09-18"
+      },
+      "max_sample_rows": 100,
+      "lake": {
+        "total_rows": 14,
+        "files": 1,
+        "schema": [
+          {
+            "name": "event_id",
+            "type": "VARCHAR"
+          },
+          {
+            "name": "parameter_size",
+            "type": "VARCHAR"
+          },
+          {
+            "name": "date",
+            "type": "DATE"
+          },
+          {
+            "name": "value",
+            "type": "BIGINT"
+          }
+        ],
+        "parameter_sizes": [
+          "1.7B",
+          "27B",
+          "4B",
+          "8B"
+        ],
+        "origin": "user-provided",
+        "sample_limit": 100
+      }
+    }
+  },
+  "expectations": {
+    "check_ids": [
+      "records_initial",
+      "source_format",
+      "source_link",
+      "clear_restores_rows",
+      "accessible_names",
+      "api_error_visible",
+      "viewport_overflow",
+      "runtime_errors"
+    ],
+    "expected_review": "Ad hoc task. Common interaction checks only; no quality ground truth or category correctness claim."
+  }
+}

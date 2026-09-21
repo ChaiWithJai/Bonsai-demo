@@ -1,0 +1,12 @@
+{
+  "repository": "ChaiWithJai/bonsai-generative-ui",
+  "revision": "a69afd8290de71a18755f934516a0ed9f649afe6",
+  "attribution": "Authored starter adapted by Bonsai with one Codex correction. Preserved as an existing project, not a new model result.",
+  "source_hashes": {
+    "harness/render.mjs": "7e86c0396f995b5adf192c226125e469e00d22ae979b4c1749319ea2eb40a03a",
+    "package.json": "651c53f62fbc56ee4d3b75abd03525a8540b6c98baf0b6486157b6097831b136",
+    "package-lock.json": "26e79354d5dc89933db6f234e2e63b3b0f2121448bcc67670e75bcf992541a44",
+    "examples/reviewed-cache-explorer/App.svelte": "158a30a8bc50edb05e1d88a86c45f87b8a535016a97b7bce33121c77d01cbd4a",
+    "examples/reviewed-cache-explorer/task.json": "63db3189eb11a1d4f134eda28079526a02a77b75bfa3d172b7115915f82dafd4"
+  }
+}

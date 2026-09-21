@@ -18,8 +18,22 @@ class Endpoint(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
+    def send_json(self, value):
+        data = json.dumps(value).encode()
+        self.send_response(200)
+        self.send_header('Content-Length', str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_GET(self):
+        self.send_json({'default_generation_settings': {'n_ctx': 4096}, 'total_slots': 1})
+
     def do_POST(self):
         self.server.requests.append((self.path, dict(self.headers), json.loads(self.rfile.read(int(self.headers['Content-Length'])))))
+        if self.path == '/apply-template':
+            return self.send_json({'prompt': 'Rendered native template'})
+        if self.path == '/tokenize':
+            return self.send_json({'tokens': list(range(self.server.token_count))})
         self.send_response(200)
         self.send_header('Content-Type', 'text/event-stream')
         self.send_header('X-Bonsai-Trace-ID', 'fixture-proxy-trace')
@@ -39,6 +53,7 @@ class ProviderTest(unittest.TestCase):
     def setUp(self):
         self.server = ThreadingHTTPServer(('127.0.0.1', 0), Endpoint)
         self.server.requests = []
+        self.server.token_count = 500
         self.server.pause = False
         self.server.entered = threading.Event()
         self.server.release = threading.Event()
@@ -118,6 +133,32 @@ class ProviderTest(unittest.TestCase):
         with self.assertRaises(ProviderError):
             self.generate()
 
+    def test_native_preflight_reserves_output_tokens_and_uses_exact_settings(self):
+        result = self.provider.preflight([{'role': 'user', 'content': 'test'}], self.tools, 512)
+        self.assertTrue(result['fits'])
+        self.assertEqual(result['prompt_tokens'], 500)
+        self.assertEqual(self.server.requests[0][2]['chat_template_kwargs'], {'enable_thinking': False})
+        self.server.token_count = 3900
+        self.assertFalse(self.provider.preflight([], self.tools, 512)['fits'])
+
 
 if __name__ == '__main__':
     unittest.main()
+
+class SamplingProfileTest(unittest.TestCase):
+    def test_documented_profiles_and_legacy_control(self):
+        def payload(profile):
+            return LocalProvider('http://localhost:1', 'fixture', profile=profile, seed=7).payload([], [], 512)
+        legacy = payload('legacy-greedy')
+        self.assertEqual(legacy['temperature'], 0)
+        self.assertNotIn('top_p', legacy)
+        instruct = payload('bonsai2-instruct')
+        self.assertEqual((instruct['temperature'], instruct['top_p'], instruct['presence_penalty']), (.7, .8, 1.5))
+        self.assertEqual(instruct['chat_template_kwargs'], {'enable_thinking': False})
+        medium = payload('bonsai2-medium')
+        self.assertEqual((medium['temperature'], medium['top_p'], medium['presence_penalty']), (1., .95, 0.))
+        self.assertEqual(medium['chat_template_kwargs'], {'enable_thinking': True, 'reasoning_effort': 'medium'})
+        for p in (instruct, medium):
+            self.assertEqual((p['top_k'], p['min_p'], p['repeat_penalty'], p['seed']), (20, 0., 1., 7))
+            self.assertEqual(p['max_tokens'], 512)
+        with self.assertRaises(ValueError): payload('low')

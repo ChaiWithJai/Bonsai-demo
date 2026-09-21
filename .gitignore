@@ -230,6 +230,7 @@ activation-diagnostic/
 browser-screenshots/
 browser-content/
 replay-*.json
+node_modules/
 .DS_Store
 *.tar.gz
 *.zip
@@ -237,3 +238,19 @@ replay-*.json
 # Internal launch working notes — never commit
 TODOS.md
 llama.cpp
+
+# Workspace visual review artifacts
+tools/design-review/shots/
+tools/design-review/samples.json
+tools/design-review/annotations.json
+tools/design-review/patterns.json
+tools/design-review/suggestions.json
+**/test-results/
+**/playwright-report/
+
+# Local dependency symlinks and archived loop-audit evidence
+**/node_modules
+research/loop-diagnosis-20260921/*.json
+research/loop-diagnosis-20260921/*.txt
+research/loop-diagnosis-20260921/pinned-card.md
+research/loop-diagnosis-20260921/community-report.md
