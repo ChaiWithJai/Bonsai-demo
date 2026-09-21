@@ -11,8 +11,8 @@
   let events = $state<Data[]>([]);
   let attempt = $state('');
   let prompt = $state('');
-  let requestChecks = $state<{target: {role?: string; name?: string; test_id?: string}; action: string; value: number | boolean}[]>([]);
-  const checksValid = $derived(requestChecks.every(check => check.action === 'count' ? Number.isInteger(check.value) && Number(check.value) >= 0 && Number(check.value) <= 100000 : Boolean(check.target.name?.trim())));
+  let requestChecks = $state<{target: {role?: string; name?: string; test_id?: string}; action: string; value: number | boolean | null}[]>([]);
+  const checksValid = $derived((!requestChecks.length || requestChecks.some(check=>check.action!=='click')) && requestChecks.every(check => check.action === 'count' ? Number.isInteger(check.value) && Number(check.value) >= 0 && Number(check.value) <= 100000 : Boolean(check.target.name?.trim())));
   let error = $state('');
   let busy = $state(false);
   let loading = $state(true);
@@ -232,7 +232,7 @@
             {/each}
           </section>{/if}
           {#each requests as request (request.id)}<article class="request"><p>{request.request}</p><small>{request.status}</small></article>{/each}
-          {#if trace?.request_checks?.length}<section class="context-card" aria-label="Checks for this attempt"><p class="eyebrow">EXPECTED RESULTS</p><ul>{#each trace.request_checks as check,i (i)}<li>{check.action === 'count' ? 'Number of records: ' + check.value : check.target.role + ' visible: “' + check.target.name + '”'}</li>{/each}</ul><small>Fixed when this request was sent.</small></section>{/if}
+          {#if trace?.request_checks?.length}<section class="context-card" aria-label="Checks for this attempt"><p class="eyebrow">EXPECTED RESULTS</p><ul>{#each trace.request_checks as check,i (i)}<li>{check.action === 'count' ? 'Number of records: ' + check.value : check.action === 'click' ? 'Click “'+check.target.name+'”' : check.action === 'pressed' ? '“'+check.target.name+'” is '+(check.value ? 'selected' : 'not selected') : check.target.role + ' visible: “' + check.target.name + '”'}</li>{/each}</ul><small>Fixed when this request was sent.</small></section>{/if}
           {#if content}<article class="response"><p class="eyebrow">BONSAI</p><p>{content}</p></article>{/if}
           {#if activity.length}<div class="activity" aria-label="Attempt activity">{#each activity as event (event.sequence)}<div><span class="event-dot"></span><span>{event.kind.replaceAll('.', ' ')}{event.payload.name ? ' · ' + event.payload.name : ''}</span>{#if event.payload.ok === false}<strong>Needs repair</strong>{/if}</div>{/each}</div>{/if}
           {#if lastEvent?.kind === 'attempt.failed'}<p class="error">{lastEvent.payload.error ?? 'Attempt did not finish. Saved revisions are available.'}</p>{/if}

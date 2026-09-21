@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "39-selection-checks": ("workstreams", "Ordered click and selection expectations retained after an intercepted development request"),
     "38-recovered-workstream": ("workstreams", "Persisted conversation and attached proposal reopened without browser draft storage"),
     "36-intake-conversation": ("workstreams", "Real Bonsai reply before attachment, restored from saved development conversation"),
     "37-intake-handoff": ("workstreams", "Development CSV proposal preserves prior conversation and waits for confirmation"),

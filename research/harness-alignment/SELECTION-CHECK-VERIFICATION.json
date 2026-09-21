@@ -1,0 +1,113 @@
+{
+  "scope": "Post-run accessibility audit and one development repair; no human acceptance or general profile ranking",
+  "study": {
+    "run_id": "622d3ab4839d47ba84c191f5f1222b2e",
+    "run_url": "http://127.0.0.1:5210/#/experiments/32/runs/622d3ab4839d47ba84c191f5f1222b2e"
+  },
+  "audit": [
+    {
+      "profile": "legacy-greedy",
+      "passed": false,
+      "revision": "e65142d8f5a5f51c9e6118898b2950aace8580ab1bfee89a52fa7292cf9aec26"
+    },
+    {
+      "profile": "bonsai2-instruct",
+      "passed": true,
+      "revision": "cba550b98d0813c4ad2e17de12523bd05e48f4c9312b8f525e20db4c81d809db"
+    }
+  ],
+  "repair": {
+    "status": "completed",
+    "run_id": "bfc83ec0bb2f4153b912c12c02ff7b36",
+    "trace_id": "tr-242560e683adf2d97440a119ff45936c",
+    "repairs": 0,
+    "elapsed_seconds": 60.130178458057344,
+    "verification_scope": "supplied_request_checks",
+    "request_checks": [
+      {
+        "target": {
+          "role": "button",
+          "name": "Measured observations"
+        },
+        "action": "click",
+        "value": null
+      },
+      {
+        "target": {
+          "test_id": "record-row"
+        },
+        "action": "count",
+        "value": 1
+      },
+      {
+        "target": {
+          "role": "button",
+          "name": "Measured observations"
+        },
+        "action": "pressed",
+        "value": true
+      },
+      {
+        "target": {
+          "role": "button",
+          "name": "All records"
+        },
+        "action": "pressed",
+        "value": false
+      },
+      {
+        "target": {
+          "role": "button",
+          "name": "Spoken requirements"
+        },
+        "action": "pressed",
+        "value": false
+      },
+      {
+        "target": {
+          "role": "button",
+          "name": "Clear filters"
+        },
+        "action": "click",
+        "value": null
+      },
+      {
+        "target": {
+          "role": "button",
+          "name": "All records"
+        },
+        "action": "pressed",
+        "value": true
+      },
+      {
+        "target": {
+          "role": "button",
+          "name": "Measured observations"
+        },
+        "action": "pressed",
+        "value": false
+      },
+      {
+        "target": {
+          "test_id": "record-row"
+        },
+        "action": "count",
+        "value": 3
+      }
+    ]
+  },
+  "repaired_project_id": "20df8e3d05a241a58692dc405b1c1ebf",
+  "current_preview": {
+    "ok": true,
+    "url": "http://127.0.0.1:57761/",
+    "revision": "86c6f6c2c6ed970ae682bc6eed77d3d00aeb1b9abf10dfc00c2738c96cb505bb"
+  },
+  "original_trial_preserved": true,
+  "supplementary_checks": "desktop_mobile_passed",
+  "python_tests": 234,
+  "svelte_errors": 0,
+  "svelte_warnings": 0,
+  "backup_status": "failed_unverified",
+  "backup_error": "MongoDB refused connection on 127.0.0.1:27028",
+  "training_executed": false
+}
