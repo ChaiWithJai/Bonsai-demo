@@ -126,6 +126,8 @@ class Recorder:
                 raise
             finally:
                 state["elapsed_ms"] = (time.time() - state["started_at"]) * 1000
+                if session and session.startswith('workspace-'):
+                    state['activation_replay'] = 'not_scheduled_for_workspace_attempt'
                 (directory / "exchange.json").write_text(json.dumps(state, indent=2))
                 response = (directory / "response.bin").read_bytes()
                 span.set_outputs(parse_response(response, state.get("content_type", "")))
@@ -133,7 +135,7 @@ class Recorder:
                 if state.get("status", 500) >= 400 or not state["complete"]:
                     span.set_status("ERROR")
                 worker = getattr(self, "replay_worker", None)
-                if worker and kind == "completion" and state.get("complete") and state.get("status", 500) < 400:
+                if worker and kind == "completion" and state.get("complete") and state.get("status", 500) < 400 and not (session and session.startswith('workspace-')):
                     worker.enqueue(directory)
 
 
@@ -170,6 +172,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlsplit(self.path).path
+        if path.startswith('/api/workspace'):
+            return self.workspace_request()
         origin = self.headers.get("Origin")
         if origin and origin not in UI_ORIGINS:
             return self.respond(403, b"Origin is not an allowed local llama-ui", "text/plain")
@@ -243,6 +247,8 @@ class Handler(BaseHTTPRequestHandler):
     do_HEAD = do_GET
 
     def do_POST(self):
+        if urlsplit(self.path).path.startswith('/api/workspace'):
+            return self.workspace_request()
         if urlsplit(self.path).path == "/api/activation-replay":
             return self.activation_replay()
         if urlsplit(self.path).path == "/api/comparison/run":
@@ -250,6 +256,52 @@ class Handler(BaseHTTPRequestHandler):
         return self.forward()
 
     do_DELETE = do_POST
+
+    def workspace_request(self):
+        worker = getattr(self.server, 'workspace', None)
+        if worker is None:
+            return self.respond(503, b'{"error":"Workspace is not enabled on this recording service"}', 'application/json')
+        origin = self.headers.get('Origin')
+        if self.headers.get('Sec-Fetch-Site') == 'cross-site' or (origin and origin not in UI_ORIGINS):
+            return self.respond(403, b'{"error":"Local UI origin required"}', 'application/json')
+        from workspace_store import RevisionConflict
+        try:
+            parsed = urlsplit(self.path)
+            parts = parsed.path.strip('/').split('/')
+            payload = {}
+            if self.command == 'POST':
+                size = int(self.headers.get('Content-Length', '0'))
+                if not 0 < size <= 16000 or self.headers.get('Transfer-Encoding'):
+                    raise ValueError('Invalid request size')
+                payload = json.loads(self.rfile.read(size))
+                if not isinstance(payload, dict):
+                    raise ValueError('Expected a JSON object')
+            if self.command == 'GET' and parts == ['api', 'workspace']:
+                result = worker.status()
+            elif self.command == 'POST' and parts == ['api', 'workspace']:
+                result = worker.create()
+            elif len(parts) == 3 and re.fullmatch('[a-f0-9]{32}', parts[2]) and self.command == 'GET':
+                result = worker.get(parts[2])
+            elif len(parts) == 4 and re.fullmatch('[a-f0-9]{32}', parts[2]):
+                if parts[3] == 'attempts' and self.command == 'POST':
+                    result = worker.start(parts[2], payload['base_revision'], payload['request'], payload.get('case', 'baseline'))
+                elif parts[3] == 'preview' and self.command == 'POST':
+                    result = worker.restore_preview(parts[2])
+                elif parts[3] == 'events' and self.command == 'GET':
+                    after = int(parse_qs(parsed.query).get('after', ['0'])[0])
+                    result = {'events': worker.store.events(parts[2], after)}
+                elif parts[3] == 'cancel' and self.command == 'POST':
+                    worker.cancel(parts[2])
+                    result = {'cancelled': True}
+                else:
+                    raise ValueError('Unknown Workspace route')
+            else:
+                raise ValueError('Unknown Workspace route')
+            return self.respond(200, json.dumps(result).encode(), 'application/json')
+        except RevisionConflict as exc:
+            return self.respond(409, json.dumps({'error': str(exc)}).encode(), 'application/json')
+        except (ValueError, KeyError, TypeError) as exc:
+            return self.respond(400, json.dumps({'error': str(exc)}).encode(), 'application/json')
 
     def activation_replay(self):
         if self.command != "POST" or self.headers.get("Sec-Fetch-Site") == "cross-site" or (self.headers.get("Origin") and self.headers.get("Origin") not in UI_ORIGINS):
@@ -420,6 +472,10 @@ def main():
     parser.add_argument("--browseros-url", help="Verified Streamable HTTP endpoint reachable from this server")
     parser.add_argument("--release-manifest", type=Path, help="Verified checkpoint evidence JSON")
     parser.add_argument("--comparison-records-dir", type=Path, help="Directory for head-to-head comparison artifacts")
+    parser.add_argument('--workspace-dir', type=Path, help='Enable Workspace with a persistent store and attempt artifacts')
+    parser.add_argument('--workspace-profile', choices=['legacy-greedy', 'bonsai2-instruct', 'bonsai2-medium'], default='legacy-greedy', help='Explicit sampling profile for Workspace experiments')
+    parser.add_argument('--workspace-seed', type=int, default=42, help='Recorded sampling seed for Workspace attempts')
+    parser.add_argument('--workspace-max-tokens', type=int, default=4096, help='Output token limit for each Workspace model call')
     parser.add_argument("--bonsai-endpoint", default=os.environ.get("BONSAI_COMPARISON_ENDPOINT", "http://127.0.0.1:8081"))
     parser.add_argument("--qwen-endpoint", default=os.environ.get("QWEN_COMPARISON_ENDPOINT", "http://127.0.0.1:8082"))
     parser.add_argument("--mlflow-base-url", default=os.environ.get("BONSAI_MLFLOW_BASE_URL", "http://127.0.0.1:5210"))
@@ -470,10 +526,26 @@ def main():
     server.comparison = ComparisonAPI(args.tracking_uri, comparison_records,
         endpoints={"bonsai": args.bonsai_endpoint, "qwen": args.qwen_endpoint},
         browseros_url=args.browseros_url, browser_view=server.browser_view, replay_worker=server.recorder.replay_worker)
+    if args.workspace_dir:
+        from mlflow import MlflowClient
+        from workspace_provider import LocalProvider
+        from workspace_store import WorkspaceStore
+        from workspace_tools import WorkspaceTools
+        from workspace_worker import WorkspaceWorker
+        if not server.model_info.get('checkpoint_release'):
+            parser.error('Workspace requires a verified release manifest matching the loaded model')
+        with urlopen(server.upstream + '/v1/models', timeout=5) as response:
+            model = json.load(response)['data'][0]['id']
+        store = WorkspaceStore(args.workspace_dir)
+        origin = f'http://127.0.0.1:{args.port}'
+        server.workspace = WorkspaceWorker(store, LocalProvider(origin, model, profile=args.workspace_profile, seed=args.workspace_seed), WorkspaceTools(store, origin),
+            MlflowClient(tracking_uri=args.tracking_uri), args.tracking_uri, server.model_info, args.workspace_max_tokens)
     print(f"Recording llama-ui: http://127.0.0.1:{args.port}; model upstream unchanged: {server.upstream}", flush=True)
     try:
         server.serve_forever()
     finally:
+        if getattr(server, 'workspace', None):
+            server.workspace.close()
         server.recorder.mlflow.flush_trace_async_logging()
         server.server_close()
 

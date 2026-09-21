@@ -1,0 +1,6 @@
+interface:
+  display_name: "A+ Design Review"
+  short_description: "Capture and annotate responsive product surfaces"
+  default_prompt: "Use $design-review to capture and review the product surfaces."
+policy:
+  allow_implicit_invocation: true

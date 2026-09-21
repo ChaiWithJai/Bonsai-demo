@@ -21,9 +21,10 @@ class ProviderError(RuntimeError):
 
 
 class LocalProvider:
-    contract_version = 'bonsai-workspace-openai-tools-v1'
+    contract_version = 'bonsai-workspace-openai-tools-v2'
 
-    def __init__(self, endpoint, model, timeout=120, max_bytes=2_000_000):
+    def __init__(self, endpoint, model, timeout=120, max_bytes=2_000_000,
+                 profile='legacy-greedy', seed=42):
         url = urlsplit(endpoint)
         if (url.scheme != 'http' or url.hostname not in ('localhost', '127.0.0.1', '::1')
                 or url.username or url.password or url.query or url.fragment
@@ -35,6 +36,11 @@ class LocalProvider:
             raise ValueError('Provider limits exceed the bounded attempt contract')
         self.host, self.port = url.hostname, url.port or 80
         self.model, self.timeout, self.max_bytes = model, timeout, max_bytes
+        if profile not in ('legacy-greedy', 'bonsai2-instruct', 'bonsai2-medium'):
+            raise ValueError('Unknown Workspace sampling profile')
+        if not isinstance(seed, int) or isinstance(seed, bool) or not 0 <= seed < 2**32:
+            raise ValueError('Seed must be an unsigned 32-bit integer')
+        self.profile, self.seed = profile, seed
 
     def generate(self, messages, tools, session, cancel, emit, max_tokens):
         if not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}', session):
@@ -43,8 +49,7 @@ class LocalProvider:
             raise ValueError('Provide an explicit bounded output-token budget')
         if cancel.is_set():
             raise GenerationCancelled('Attempt cancelled before generation')
-        payload = {'model': self.model, 'messages': messages, 'tools': tools,
-                   'stream': True, 'max_tokens': max_tokens, 'temperature': 0}
+        payload = self.payload(messages, tools, max_tokens)
         body = json.dumps(payload, allow_nan=False).encode()
         if len(body) > self.max_bytes:
             raise ProviderError('Context exceeds the request byte limit')
@@ -90,6 +95,7 @@ class LocalProvider:
             response = connection.getresponse()
             trace_id = response.getheader('X-Bonsai-Trace-ID')
             if response.status != 200:
+                raw.extend(response.read(65536))
                 raise ProviderError(f'Local inference returned HTTP {response.status}')
             if 'text/event-stream' not in response.getheader('Content-Type', ''):
                 raise ProviderError('Expected a streaming completion response')
@@ -171,9 +177,60 @@ class LocalProvider:
                     'proxy_trace_id': trace_id, 'request': payload,
                     'raw_response': raw.decode('utf-8'), 'contract_version': self.contract_version}
         except (OSError, http.client.HTTPException, ValueError, TypeError, KeyError) as exc:
-            check()
-            raise ProviderError(f'Invalid or interrupted local completion: {type(exc).__name__}') from exc
+            try:
+                check()
+            except (ProviderError, GenerationCancelled) as reason:
+                reason.evidence = {'proxy_trace_id': trace_id, 'request': payload, 'raw_response': raw.decode('utf-8', errors='replace')}
+                raise
+            error = ProviderError(f'Invalid or interrupted local completion: {type(exc).__name__}')
+            error.evidence = {'proxy_trace_id': trace_id, 'request': payload, 'raw_response': raw.decode('utf-8', errors='replace')}
+            raise error from exc
+        except (ProviderError, GenerationCancelled) as exc:
+            exc.evidence = {'proxy_trace_id': trace_id, 'request': payload, 'raw_response': raw.decode('utf-8', errors='replace')}
+            raise
         finally:
             finished.set()
             connection.close()
             watcher.join(timeout=1)
+
+    def payload(self, messages, tools, max_tokens):
+        payload = {'model': self.model, 'messages': messages, 'tools': tools,
+                'stream': True, 'max_tokens': max_tokens, 'temperature': 0,
+                'seed': self.seed, 'cache_prompt': True,
+                'chat_template_kwargs': {'enable_thinking': False}}
+        if self.profile != 'legacy-greedy':
+            thinking = self.profile == 'bonsai2-medium'
+            payload.update(temperature=1.0 if thinking else 0.7,
+                           top_p=0.95 if thinking else 0.8, top_k=20, min_p=0.0,
+                           presence_penalty=0.0 if thinking else 1.5, repeat_penalty=1.0)
+            if thinking:
+                payload['chat_template_kwargs'] = {'enable_thinking': True, 'reasoning_effort': 'medium'}
+        return payload
+
+    def preflight(self, messages, tools, max_tokens):
+        """Count the exact native chat template before spending inference tokens."""
+        def request(path, payload=None):
+            connection = http.client.HTTPConnection(self.host, self.port, timeout=10)
+            try:
+                body = json.dumps(payload).encode() if payload is not None else None
+                connection.request('POST' if body is not None else 'GET', path, body,
+                                   {'Content-Type': 'application/json'})
+                response = connection.getresponse()
+                raw = response.read(8_000_001)
+                if response.status != 200 or len(raw) > 8_000_000:
+                    raise ProviderError('Native token preflight unavailable')
+                return json.loads(raw)
+            finally:
+                connection.close()
+        props = request('/props')
+        context = props.get('default_generation_settings', {}).get('n_ctx')
+        slots = props.get('total_slots', 1)
+        if type(context) is not int or type(slots) is not int or context < 1 or slots < 1:
+            raise ProviderError('Native context capacity is unverified')
+        rendered = request('/apply-template', self.payload(messages, tools, max_tokens))['prompt']
+        tokens = request('/tokenize', {'content': rendered, 'add_special': True, 'parse_special': True})['tokens']
+        if not isinstance(tokens, list) or not all(type(token) is int for token in tokens):
+            raise ProviderError('Native token preflight returned invalid tokens')
+        capacity = context // slots
+        return {'prompt_tokens': len(tokens), 'reserved_output_tokens': max_tokens,
+                'context_capacity': capacity, 'fits': len(tokens) + max_tokens <= capacity}

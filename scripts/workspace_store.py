@@ -126,13 +126,14 @@ class WorkspaceStore:
             if head['head']!=base:raise RevisionConflict('Workspace changed; read the current revision before patching')
             row=db.execute('SELECT files FROM revisions WHERE workspace_id=? AND hash=?',(key,base)).fetchone()
             files=json.loads(row['files'])
-            for edit in edits:
+            for index, edit in enumerate(edits):
                 if not isinstance(edit,dict) or set(edit)!={'path','old_text','new_text'}:raise ValueError('Each edit requires path, old_text and new_text')
                 path=validate_path(edit['path']);old,new=edit['old_text'],edit['new_text']
                 if path not in files:raise ValueError('The first slice only patches existing starter files')
                 if PurePosixPath(path).name in ('package.json','package-lock.json','pnpm-lock.yaml','uv.lock'):raise ValueError('Dependencies are pinned for this experiment')
                 if not isinstance(old,str) or not old or not isinstance(new,str) or len(new)>16000:raise ValueError('Provide bounded nonempty exact-match edits')
-                if files[path].count(old)!=1:raise RevisionConflict(f'{path}: old_text must match exactly once')
+                count=files[path].count(old)
+                if count!=1:raise RevisionConflict(f'{path}: edit {index+1} old_text matched {count} times; expected exactly once. Prefix: {old[:160]!r}')
                 files[path]=files[path].replace(old,new,1)
             validate_files(files)
             if files==json.loads(row['files']):raise ValueError('Patch makes no change')
@@ -159,7 +160,7 @@ class WorkspaceStore:
         return aid
 
     def event(self,attempt,kind,payload):
-        allowed={'model.delta','tool.started','tool.finished','build.finished','preview.ready','check.finished','attempt.completed','attempt.failed','attempt.cancelled'}
+        allowed={'trace.started','context.checkpoint','loop.detected','model.delta','tool.started','tool.finished','build.finished','preview.ready','check.finished','attempt.completed','attempt.failed','attempt.cancelled'}
         if kind not in allowed or not isinstance(payload,dict):raise ValueError('Unknown event contract')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')

@@ -1,6 +1,6 @@
 # Bonsai Workspace experiment
 
-The planned Workspace tab adds an incremental UI editing workflow to this fork.
+The Workspace tab adds an incremental UI editing workflow to this fork.
 It reuses the existing branding, inference server, recording proxy, and
 observability screens. The separate desktop prototype is frozen at
 `ChaiWithJai/bonsai-generative-ui@a69afd8290de71a18755f934516a0ed9f649afe6`.
@@ -11,41 +11,75 @@ The first model is Bonsai 2 27B with the previously verified Prism runtime and
 PQ2_0 checkpoint. The service stays running across requests. A transport adapter
 connects to its recording proxy and never starts or restarts inference.
 
-The first task starts with the existing reviewed cache explorer and its 14
+The first task starts with the existing cached source explorer and its 14
 records. Turn one adds runtime drilldown under parameter size groups. Turn two
 filters existing saved notes to the selected record while preserving turn one
 and note persistence. Missing values, zero values, and source identities must
 survive both turns.
 
-The harness will let the model read files, apply exact text edits, build, preview,
+The harness lets the model read files, apply exact text edits, build, preview,
 and check the browser. Each edit names its base revision. Build and browser
 failures return to a bounded repair loop. The next turn starts from the saved
 project. It does not ask the model to recreate the application.
 
 ## Current implementation status
 
-The Workspace tab and complete attempt worker are **not wired into the app yet**.
-The first foundation includes:
+The native `#/workspace` tab now uses the fork's branding and recording service.
+It opens the existing explorer, saves revisions, shows source and preview panes,
+and links the current attempt to MLflow. The worker runs on the server, so a
+browser reload reads saved events without restarting generation.
 
-* `scripts/workspace_store.py` saves immutable revisions and ordered attempt
-  events in SQLite. It rejects stale edits, patches from cancelled attempts,
-  dependency changes, and edits attributed to another workspace. A patch and
-  its event commit in one transaction. Browser reconnect reads persisted events.
-* `scripts/workspace_provider.py` streams content and native tool calls from an
-  existing local recording proxy. It bounds output and elapsed time, interrupts
-  a silent stream on cancellation, rejects incomplete completions, and retains
-  the proxy trace ID. It does not retry requests automatically.
-* Thirteen tests cover revision continuity, atomic rollback, restart recovery,
-  transport limits, tool fragments, cancellation, and incomplete responses.
-  Transport tests use a local HTTP fixture. They are not live model evidence.
+* `workspace_store.py` stores immutable revisions and ordered attempt events.
+  It rejects stale patches and cancelled attempts. Each patch and its event
+  commit together.
+* `workspace_provider.py` streams native tool calls through the recording proxy.
+  It applies the earlier harness's explicit `enable_thinking: false` request
+  setting and enables prompt cache reuse. Each model call has a 120-second limit
+  and a 4,096-token output budget by default.
+* `workspace_worker.py` preserves prior completed conversation context. It allows
+  eight model calls, two compiler/browser repairs, a ten-minute attempt, and fixed read, patch,
+  build, preview, and browser-check tools. An exclusive store lock prevents a
+  second worker from interrupting an active attempt. A repeated unmatched patch fragment on the same revision stops on its second occurrence and records a `loop.detected` event, span, and artifact. This deterministic guard is separate from the optional MLflow tool-efficiency judge.
+* `workspace_tools.py` compiles only the saved Svelte component with the authored
+  compiler. It never runs a generated build configuration. Each workspace gets
+  a separate loopback preview origin and a persistent source-note store.
+* `workspace-tools/check.mjs` checks source identities, values and links, runtime
+  drilldown, note filtering, note persistence, mobile overflow, and browser errors.
+  Automated notes are labeled `workspace-automated-check`.
 
-On exclusive service startup, the future worker must call
-`recover_interrupted()` once. Browser reconnect must never call it. The store
-does not provide service ownership locking. That belongs in worker integration.
+The first live W1 attempt with provider contract v2 passed after Bonsai repaired
+an event-handler syntax error. It took 87.97 seconds with one compiler repair.
+Run `b19ec999a7ac4733857707a083327e63` preserves the source, patch, failed build,
+repair, browser assertions, screenshots, and complete attempt trace. The earlier
+v1 attempt `2486ca6033f54889b02c9de565203048` timed out during reasoning output
+before applying a patch and remains recorded. This is development evidence.
 
-The future worker must preserve provider failures and link proxy exchange traces
-to its own complete attempt trace. A proxy trace ID alone does not establish
-distributed parentage or prove a complete successful attempt.
+The repository's 122 Python tests passed with `PYTHONPATH=scripts` and a resolved
+macOS temporary directory. The Workspace component passed Svelte checking and
+its production build. The second live turn has failed and remains an open acceptance gate. A later W1 continuation passed after native context preflight and an explicit context checkpoint. The September 21 loop audit distinguishes reasoning timeouts, context overflow, and repeated rejected patches. See [the diagnosis](research/loop-diagnosis-20260921/REPORT.md).
+
+The native recorder retains one trace per HTTP exchange. Workspace attempt
+traces link those exchange IDs explicitly. Distributed trace parentage is not
+claimed. Automatic activation replay is skipped for Workspace sessions so a
+second GPU workload is not started between tool calls.
+
+## Run locally
+
+Install the fixed tool dependencies with `npm ci --prefix scripts/workspace-tools`.
+Build the branded UI using the existing source and dependencies:
+
+```sh
+python scripts/build_prism_ui.py --source /path/to/llama.cpp/tools/ui
+```
+
+Start the existing recording service with its usual arguments plus
+`--workspace-dir /path/to/persistent/workspace-store`. Supply a release manifest
+that matches the loaded model. Workspace calls that recorder's own loopback
+completion route. It never starts or restarts the inference process.
+
+The experiment launcher currently uses the shared lab GPU reservation. The
+Mac model remains loaded across both model calls and user turns. The GB10 lane
+is unchanged. Build saved revision opens an existing project without inference.
 
 ## Next acceptance gate
 
@@ -68,6 +102,31 @@ follows the two-turn acceptance gate.
 Run the foundation checks with Python 3.11 or 3.12:
 
 ```sh
-python -m unittest discover -s tests -p 'test_workspace_*.py' -v
-python -m unittest discover -s tests -p test_recording_ui.py -v
+PYTHONPATH=scripts python -m unittest discover -s tests -p 'test_workspace_*.py' -v
+PYTHONPATH=scripts python -m unittest discover -s tests -p test_recording_ui.py -v
 ```
+
+## Explicit sampling experiments
+
+`--workspace-profile legacy-greedy` preserves the historical temperature-zero
+configuration. `--workspace-profile bonsai2-instruct` uses the pinned model
+card's non-thinking sampling settings. `--workspace-profile bonsai2-medium`
+uses its thinking sampling settings with medium effort. `--workspace-seed`
+records a chosen seed. Medium effort and a numeric thinking-token cap are
+different controls. Verify the loaded server's template and effective limits
+before a thinking trial. No sampled profile has been promoted by default.
+
+`research/loop-diagnosis-20260921/compare_profiles.py` runs sequential development
+trials from copies of the saved W1 project, including its prior conversation.
+It preserves the original workspace and logs every trial. This dated experiment
+script requires the documented local pilot paths and a warm, idle model. It is
+not the application launcher or a benchmark of latency.
+
+## Remaining product scope
+
+The native tab currently uses the cached 14-record fixture. Desktop upload,
+structured intake, source classification, correction review, training-candidate
+export, Semiotic views, and media extraction remain to be connected here. Their
+implementations and earlier evidence live in the frozen prototype; the plan is
+to reuse those modules and preserve their source identities and review history.
+The native Workspace is not yet a complete replacement for that workflow.
