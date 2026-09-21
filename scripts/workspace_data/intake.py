@@ -17,6 +17,9 @@ MEDIA = {'.png': 'image', '.jpg': 'image', '.jpeg': 'image', '.webp': 'image',
 
 def extract(name, content):
     suffix = Path(name).suffix.lower()
+    if suffix == '.docx':
+        from workspace_data.docx import extract_docx
+        return extract_docx(content, MAX_ROWS)
     if suffix in {'.eml','.mbox'}:
         from workspace_data.email_intake import extract_email
         return extract_email(name,content,MAX_ROWS)

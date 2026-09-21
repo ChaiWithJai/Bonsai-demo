@@ -227,3 +227,12 @@ test('Interface review is explicit and test feedback is excluded',async({page},i
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/13-interface-review.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Word document upload preserves text and declares coverage',async({page},info)=>{
+ await page.goto('/#/workspace');
+ await page.locator('input[type=file]').setInputFiles(path.resolve(import.meta.dirname,'../../../.cache/workspace-checks/development-notes.docx'));
+ await expect(page.getByRole('heading',{name:'development-notes.docx',exact:true})).toBeVisible();
+ await expect(page.getByText('1 records · document · extracted',{exact:true})).toBeVisible();
+ await expect(page.getByText(/1 embedded media files not read/)).toBeVisible();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/14-docx.'+info.project.name+'.png'),fullPage:true});
+});
