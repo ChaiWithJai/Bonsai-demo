@@ -15,6 +15,24 @@ class Client:
     def set_terminated(self, *args): pass
 
 class SourcesTest(unittest.TestCase):
+    def test_evidence_outage_keeps_failed_original_and_retry_history(self):
+        class Offline(Client):
+            def create_run(self, *args, **kwargs):
+                raise ConnectionError('Evidence service unavailable')
+        with tempfile.TemporaryDirectory() as folder:
+            service = WorkspaceSources(folder, Offline(), 'http://localhost:5210')
+            raw = b'a,b\n1,2,3\n'
+            source = service.upload('broken.csv', raw)
+            sid = source['source_id']
+            self.assertEqual(source['status'], 'extraction_failed')
+            self.assertEqual(source['record_count'], 0)
+            self.assertIn('unavailable', source['evidence_error'])
+            self.assertEqual(service.download(sid)[0], raw)
+            retried = service.extract_media(sid)
+            self.assertNotEqual(source['extraction_attempt_id'], retried['extraction_attempt_id'])
+            self.assertEqual(retried['status'], 'extraction_failed')
+            self.assertEqual(len(list((Path(folder)/sid/'extractions').glob('*/result.json'))), 2)
+
     def test_upload_review_export_preserves_source_and_excludes_test_feedback(self):
         with tempfile.TemporaryDirectory() as folder:
             service=WorkspaceSources(folder,Client(),'http://localhost:5210')

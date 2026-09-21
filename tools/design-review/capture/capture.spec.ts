@@ -396,3 +396,22 @@ test('Workbook upload preserves cell locations and missing formula results',asyn
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/20-workbook-intake.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Failed upload retains the original and offers explicit retry',async({page},info)=>{
+ await page.goto('/#/workspace');
+ const raw=Buffer.from('model,count\nDevelopment failure fixture,1,unexpected\n');
+ await page.locator('input[type=file]').setInputFiles({name:'development-retained-failure.csv',mimeType:'text/csv',buffer:raw});
+ await expect(page.getByRole('alert')).toContainText('different width');
+ await expect(page.getByText('The original file is saved. Retry after fixing the extraction issue, or attach a corrected file.',{exact:true})).toBeVisible();
+ const download=page.getByRole('link',{name:'Download original file',exact:true});
+ expect(await (await page.request.get((await download.getAttribute('href'))!)).body()).toEqual(raw);
+ const retry=page.getByRole('button',{name:'Retry extraction',exact:true});
+ await expect(retry).toBeEnabled();
+ const response=page.waitForResponse(r=>r.url().endsWith('/extract')&&r.request().method()==='POST');
+ await retry.click();
+ const result=await (await response).json();
+ expect(result.status).toBe('extraction_failed');expect(result.record_count).toBe(0);
+ await expect(retry).toBeEnabled();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/21-retained-upload-failure.'+info.project.name+'.png'),fullPage:true});
+});

@@ -1,0 +1,69 @@
+{
+  "purpose": "Development failure test; no human acceptance or model inference",
+  "source_id": "a4a2bee020533103f98b9a404c8daa6f90e8b73f738f12d7df90b080ccb2b00c",
+  "sha256": "483b998ad2da894a454a4dcd9b5f17098a6b64f0a80a45577bd87aba26f153c8",
+  "first": {
+    "schema_version": 1,
+    "source_id": "a4a2bee020533103f98b9a404c8daa6f90e8b73f738f12d7df90b080ccb2b00c",
+    "sha256": "483b998ad2da894a454a4dcd9b5f17098a6b64f0a80a45577bd87aba26f153c8",
+    "filename": "development-retained-failure.csv",
+    "bytes": 53,
+    "origin": "user-provided",
+    "extractor": "desktop-intake-v1",
+    "classification_status": "not_started",
+    "kind": "table",
+    "status": "extraction_failed",
+    "extraction_attempt_id": "218d5b894f1e4e658a6015fb3d3c45c9",
+    "extraction_attempted_at": "2026-09-21T20:52:43.267663+00:00",
+    "extraction_error": "Table record 1 has a different width from its header",
+    "extraction_error_type": "ValueError",
+    "extraction_run_id": "8f57a302ff8048a6ac879409d435ece7",
+    "extraction_run_url": "http://127.0.0.1:5210/#/experiments/32/runs/8f57a302ff8048a6ac879409d435ece7",
+    "record_count": 0,
+    "records": [],
+    "sample_limit": 100,
+    "review": {
+      "snapshot_id": "fbfc95fc5372ec842f6b90b772fb696cf7554b828703c084374af34ea6f1ca0c",
+      "events": [],
+      "latest": {},
+      "prior_snapshot_events": 0
+    }
+  },
+  "retry": {
+    "schema_version": 1,
+    "source_id": "a4a2bee020533103f98b9a404c8daa6f90e8b73f738f12d7df90b080ccb2b00c",
+    "sha256": "483b998ad2da894a454a4dcd9b5f17098a6b64f0a80a45577bd87aba26f153c8",
+    "filename": "development-retained-failure.csv",
+    "bytes": 53,
+    "origin": "user-provided",
+    "extractor": "desktop-intake-v1",
+    "classification_status": "not_started",
+    "kind": "table",
+    "status": "extraction_failed",
+    "extraction_attempt_id": "9fad2b34bf9842379d93635f5554d06c",
+    "extraction_attempted_at": "2026-09-21T20:52:43.340471+00:00",
+    "extraction_error_type": "ValueError",
+    "extraction_error": "Table record 1 has a different width from its header",
+    "extraction_run_id": "c8f10670b6634586bcdebcd5c36ed6f0",
+    "extraction_run_url": "http://127.0.0.1:5210/#/experiments/32/runs/c8f10670b6634586bcdebcd5c36ed6f0",
+    "record_count": 0,
+    "records": [],
+    "sample_limit": 100,
+    "review": {
+      "snapshot_id": "dc0705ebe92770c9c6c824349250b89ab87340b8dad1903e16571944648af834",
+      "events": [],
+      "latest": {},
+      "prior_snapshot_events": 0
+    }
+  },
+  "original_download_matches": true,
+  "real_pdf_status": "awaiting_confirmation",
+  "verification": {
+    "python_suite": 204,
+    "additional_evidence_outage_test": "passed",
+    "svelte_check": "0 errors, 0 warnings",
+    "production_build": "passed",
+    "desktop_mobile_failure_ui": "2 passed",
+    "human_acceptance": false
+  }
+}

@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import threading
 import uuid
-from workspace_data.intake import ingest
+from workspace_data.intake import ingest, extract_saved, save_manifest, FILE_KINDS
 from workspace_data.record_review import state, save_review, export_reviews
 
 
@@ -41,6 +41,8 @@ class WorkspaceSources:
             manifest = ingest(self.root, filename, content)
             if Path(manifest['filename']).suffix.lower() in ('.pdf','.png','.jpg','.jpeg','.webp','.wav','.mp3','.m4a') and manifest['status'] != 'extracted':
                 return self.extract_media(manifest['source_id'])
+            if manifest.get('extraction_attempt_id') and not manifest.get('extraction_run_id'):
+                self.log_file_extraction(manifest)
             return self.get(manifest['source_id'])
 
     def collection(self, source_ids, apply_reviews=False):
@@ -81,6 +83,34 @@ class WorkspaceSources:
             (folder/'manifest.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False))
             return self.get(sid)
 
+    def log_file_extraction(self, manifest):
+        rid = None
+        folder = self.root / manifest['source_id']
+        try:
+            experiment = self.client.get_experiment_by_name('bonsai-workspace-data')
+            eid = experiment.experiment_id if experiment else self.client.create_experiment('bonsai-workspace-data')
+            run = self.client.create_run(eid, tags={'mlflow.runName': 'Desktop file extraction',
+                'source_id': manifest['source_id'], 'source_sha256': manifest['sha256'],
+                'extractor': manifest['extractor'], 'bonsai_inference': 'false',
+                'extraction_attempt_id': manifest['extraction_attempt_id']})
+            rid = run.info.run_id
+            manifest.update(extraction_run_id=rid, extraction_run_url=f'{self.tracking_uri}/#/experiments/{eid}/runs/{rid}')
+            for filename in ('previous-manifest.json', 'result.json'):
+                self.client.log_artifact(rid, str(folder/'extractions'/manifest['extraction_attempt_id']/filename), 'extraction')
+            self.client.log_artifact(rid, str(folder/'source.bin'), 'source')
+            self.client.log_metric(rid, 'records', len(manifest['records']))
+            self.client.set_terminated(rid, 'FINISHED' if manifest['status']=='extracted' else 'FAILED')
+            manifest.pop('evidence_error', None)
+        except Exception as exc:
+            # Evidence-service failure must not discard the file or extraction outcome.
+            manifest['evidence_error'] = str(exc)
+            if rid:
+                try:
+                    self.client.set_terminated(rid, 'FAILED')
+                except Exception:
+                    pass
+        save_manifest(folder, manifest)
+
     def extract_pdf(self, source_id):
         if not self.manifest(source_id)["filename"].lower().endswith(".pdf"):
             raise ValueError("This extraction route is for PDF documents")
@@ -92,6 +122,11 @@ class WorkspaceSources:
         from workspace_data.audio import extract_audio
         with self.lock:
             manifest = self.manifest(source_id)
+            if Path(manifest['filename']).suffix.lower() in FILE_KINDS:
+                if manifest['status'] != 'extracted':
+                    manifest = extract_saved(self.root, manifest)
+                    self.log_file_extraction(manifest)
+                return self.get(source_id)
             is_pdf=manifest['filename'].lower().endswith('.pdf')
             is_audio=manifest['kind']=='audio'
             if not is_pdf and not is_audio and Path(manifest['filename']).suffix.lower() not in ('.png','.jpg','.jpeg','.webp'):
