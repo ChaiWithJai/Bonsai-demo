@@ -234,5 +234,8 @@ test('Word document upload preserves text and declares coverage',async({page},in
  await expect(page.getByRole('heading',{name:'development-notes.docx',exact:true})).toBeVisible();
  await expect(page.getByText('1 records · document · extracted',{exact:true})).toBeVisible();
  await expect(page.getByText(/1 embedded media files not read/)).toBeVisible();
+ await page.getByText('Document block 1 · paragraph',{exact:true}).click();
+ await expect(page.locator('.records pre').filter({hasText:'Development fixture: model A has 12 observations'})).toBeVisible();
+ expect(await page.locator('.data').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/14-docx.'+info.project.name+'.png'),fullPage:true});
 });
