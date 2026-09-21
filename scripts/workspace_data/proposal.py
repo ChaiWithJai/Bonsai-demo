@@ -45,7 +45,7 @@ def source_packet(manifest, max_chars=32000):
 
 def structured_manifest(manifest, structure, aliases):
     if structure is None:
-        if manifest.get('kind') in ('document','text'):
+        if manifest.get('kind') in ('document','text','email') or manifest.get('requires_structuring'):
             raise ValueError('Document and text sources require explicit source-grounded structured records for this view')
         return manifest
     if not isinstance(structure,dict) or set(structure)!={'rationale','records'} or not isinstance(structure['rationale'],str) or not 1<=len(structure['rationale'])<=2000:

@@ -74,10 +74,18 @@ class SourceJobs:
             self.save(folder, 'original-manifest.json', original)
             self.save(folder, 'source-manifest.json', manifest)
             (folder / 'source.bin').write_bytes(raw)
+            for member in manifest.get('sources',[]):
+                member_folder=folder/'originals'/member['source_id'];member_folder.mkdir(parents=True)
+                member_raw=(self.sources.root/member['source_id']/'source.bin').read_bytes()
+                if hashlib.sha256(member_raw).hexdigest()!=member['sha256']:
+                    raise ValueError('Attached original file integrity mismatch')
+                (member_folder/'source.bin').write_bytes(member_raw)
+                self.save(member_folder,'provenance.json',member)
             self.save(folder, 'profile.json', context)
             if revision:
                 self.save(folder, 'revision-request.json', revision)
             status = {'id':jid, 'source_id':source_id, 'filename':manifest['filename'], 'request':request.strip(),
+                      'source_ids':[s['source_id'] for s in manifest.get('sources',[])] or [source_id],
                       'apply_reviews':apply_reviews, 'status':'queued', 'stage':'Preparing source', 'created_at':time.time()}
             if revision:
                 status['parent_job_id'] = revision['parent_job_id']

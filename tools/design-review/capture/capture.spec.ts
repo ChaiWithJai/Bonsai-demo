@@ -106,3 +106,30 @@ test('Bonsai interpretation is reviewed before a view is built',async({page},inf
  const after=await (await page.request.get('/api/workspace')).json();expect(after.workspaces).toEqual(before.workspaces);
  // Never submit a human confirmation during visual review.
 });
+
+test('Multiple existing files can be attached and removed without inference',async({page},info)=>{
+ const ids=['02f32dd8bdd1d72b2e5293c89d06b739e19f789ad35820614bdcaec3f6ac3777','dd7cb2673ec7514249df506a13da200714aef7f0fb2b83bb0e9fc000fa9ba3e0'];
+ const before=await (await page.request.get('/api/workspace/source-jobs')).json();
+ const files=[];
+ for(const id of ids){
+  const source=await (await page.request.get('/api/workspace/sources/'+id)).json();
+  const original=await page.request.get('/api/workspace/sources/'+id+'/file');
+  files.push({name:source.filename,mimeType:'application/octet-stream',buffer:await original.body()});
+ }
+ await page.goto('/#/workspace');
+ await page.getByLabel('What should this visualization help you understand?').fill('Browser check only: review attachment handling without running the model.');
+ await page.locator('input[type=file]').setInputFiles(files);
+ const attachments=page.getByLabel('Attached files');
+ await expect(attachments.locator('button.remove')).toHaveCount(2);
+ await expect(page.getByRole('button',{name:'Understand these files',exact:true})).toBeEnabled();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/08-workspace-attachments.'+info.project.name+'.png'),fullPage:true});
+ await attachments.getByRole('button',{name:'Remove '+files[1].name,exact:true}).click();
+ await expect(attachments.locator('button.remove')).toHaveCount(1);
+ await expect(page.getByRole('heading',{name:files[0].name,exact:true})).toBeVisible();
+ await attachments.getByRole('button',{name:'Remove '+files[0].name,exact:true}).click();
+ await expect(attachments).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Understand these files',exact:true})).toHaveCount(0);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const after=await (await page.request.get('/api/workspace/source-jobs')).json();
+ expect(after).toEqual(before);
+});
