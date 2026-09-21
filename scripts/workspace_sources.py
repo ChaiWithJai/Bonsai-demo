@@ -1,4 +1,5 @@
 """Native Workspace source intake and review, with immutable original bytes."""
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -38,7 +39,50 @@ class WorkspaceSources:
     def upload(self, filename, content):
         with self.lock:
             manifest = ingest(self.root, filename, content)
+            if manifest['filename'].lower().endswith('.pdf') and manifest['status'] != 'extracted':
+                return self.extract_pdf(manifest['source_id'])
             return self.get(manifest['source_id'])
+
+    def extract_pdf(self, source_id):
+        from workspace_data.pdf import extract_pdf
+        with self.lock:
+            manifest = self.manifest(source_id)
+            if not manifest['filename'].lower().endswith('.pdf'):
+                raise ValueError('This extraction route is for PDF documents')
+            if manifest['status'] == 'extracted':
+                return self.get(source_id)
+            folder = self.root / source_id
+            raw = (folder / 'source.bin').read_bytes()
+            if hashlib.sha256(raw).hexdigest() != manifest['sha256']:
+                raise ValueError('Source hash mismatch')
+            evidence = folder / 'extractions' / uuid.uuid4().hex
+            evidence.mkdir(parents=True)
+            (evidence / 'previous-manifest.json').write_text(json.dumps(manifest,indent=2))
+            experiment = self.client.get_experiment_by_name('bonsai-workspace-data')
+            eid = experiment.experiment_id if experiment else self.client.create_experiment('bonsai-workspace-data')
+            run = self.client.create_run(eid,tags={'mlflow.runName':'PDF page extraction','source_id':source_id,'source_sha256':manifest['sha256'],'extractor':'poppler+apple-vision','bonsai_inference':'false'})
+            run_id = run.info.run_id
+            try:
+                result = extract_pdf(raw,evidence)
+                for i,row in enumerate(result['records']):
+                    row.update(id=f'{source_id}:page:{i+1}',source_id=source_id)
+                manifest.update(result,extraction_run_id=run_id)
+                manifest.pop('extraction_error',None)
+                self.client.log_metric(run_id,'pages',result['extraction_coverage']['page_count'])
+                self.client.log_metric(run_id,'pages_with_text',result['extraction_coverage']['pages_with_text'])
+                self.client.log_metric(run_id,'unresolved_pages',len(result['extraction_coverage']['unresolved_pages']))
+            except Exception as exc:
+                manifest.update(status='extraction_failed',extraction_error=str(exc),extraction_run_id=run_id)
+                (evidence/'failure.json').write_text(json.dumps({'error':str(exc)}))
+            manifest['extraction_run_url']=f'{self.tracking_uri}/#/experiments/{eid}/runs/{run_id}'
+            (evidence/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
+            self.client.log_artifacts(run_id,str(evidence),'pdf-extraction')
+            self.client.log_artifact(run_id,str(folder/'source.bin'),'source')
+            self.client.set_terminated(run_id,'FINISHED' if manifest['status']=='extracted' else 'FAILED')
+            temp=folder/'manifest.tmp'
+            temp.write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
+            temp.replace(folder/'manifest.json')
+            return self.get(source_id)
 
     def review(self, body):
         with self.lock:

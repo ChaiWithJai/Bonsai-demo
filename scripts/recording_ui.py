@@ -290,11 +290,25 @@ class Handler(BaseHTTPRequestHandler):
                 payload = json.loads(self.rfile.read(size))
                 if not isinstance(payload, dict):
                     raise ValueError('Expected a JSON object')
-            if parts[:3] == ['api', 'workspace', 'sources']:
+            if parts[:3] == ['api', 'workspace', 'source-jobs']:
+                jobs = self.server.workspace_source_jobs
+                if len(parts) == 3 and self.command == 'GET':
+                    result = jobs.list()
+                elif len(parts) == 4 and self.command == 'GET':
+                    result = jobs.get(parts[3])
+                elif len(parts) == 5 and parts[4] == 'cancel' and self.command == 'POST':
+                    result = jobs.cancel(parts[3])
+                else:
+                    raise ValueError('Unknown source job route')
+            elif parts[:3] == ['api', 'workspace', 'sources']:
                 if len(parts) == 3 and self.command == 'GET':
                     result = sources.list()
                 elif len(parts) == 4 and self.command == 'GET':
                     result = sources.get(parts[3])
+                elif len(parts) == 5 and parts[4] == 'extract' and self.command == 'POST':
+                    result = sources.extract_pdf(parts[3])
+                elif len(parts) == 5 and parts[4] == 'generate' and self.command == 'POST':
+                    result = self.server.workspace_source_jobs.start(parts[3], payload.get('request'), payload.get('apply_reviews', False))
                 elif len(parts) == 5 and parts[4] == 'file' and self.command == 'GET':
                     raw, mime = sources.download(parts[3])
                     return self.respond(200, raw, mime)
@@ -575,11 +589,14 @@ def main():
         origin = f'http://127.0.0.1:{args.port}'
         server.workspace = WorkspaceWorker(store, LocalProvider(origin, model, profile=args.workspace_profile, seed=args.workspace_seed), WorkspaceTools(store, origin),
             MlflowClient(tracking_uri=args.tracking_uri), args.tracking_uri, server.model_info, args.workspace_max_tokens)
+        from workspace_source_jobs import SourceJobs
+        server.workspace_source_jobs = SourceJobs(server.workspace, server.workspace_sources)
     print(f"Recording llama-ui: http://127.0.0.1:{args.port}; model upstream unchanged: {server.upstream}", flush=True)
     try:
         server.serve_forever()
     finally:
         if getattr(server, 'workspace', None):
+            server.workspace_source_jobs.close()
             server.workspace.close()
         server.recorder.mlflow.flush_trace_async_logging()
         server.server_close()

@@ -89,8 +89,10 @@ class WorkspaceTools:
             raise ValueError('Preview does not match the current revision')
         directory.mkdir(parents=True, exist_ok=True)
         task = directory / 'task.json'
-        task.write_text(json.dumps(workspace['fixture']['task']))
-        result = self.command([self.node, str(ROOT / 'scripts/workspace-tools/check.mjs'), preview['url'], str(task), str(directory), case], directory, cancel)
+        desktop = workspace['fixture'].get('kind') == 'desktop'
+        task.write_text(json.dumps(workspace['fixture']['compiled'] if desktop else workspace['fixture']['task']))
+        checker = 'check_desktop.mjs' if desktop else 'check.mjs'
+        result = self.command([self.node, str(ROOT / 'scripts/workspace-tools' / checker), preview['url'], str(task), str(directory), case], directory, cancel)
         report = directory / 'report.json'
         result.update(revision=workspace['head'], case=case,
                       report=json.loads(report.read_text()) if report.exists() else None)
@@ -99,8 +101,10 @@ class WorkspaceTools:
 
     def handler(self, key):
         owner = self
-        task = self.store.get(key)['fixture']['task']
-        source_rows = task['inputs']['contract']['rows']
+        fixture = self.store.get(key)['fixture']
+        desktop = fixture.get('kind') == 'desktop'
+        task = fixture.get('task')
+        source_rows = fixture['compiled']['rows'] if desktop else task['inputs']['contract']['rows']
 
         class PreviewHandler(BaseHTTPRequestHandler):
             def log_message(self, *args):
@@ -130,7 +134,11 @@ class WorkspaceTools:
                 if parsed.path in ('/', '/app.js'):
                     filename = 'index.html' if parsed.path == '/' else 'app.js'
                     return self.send((self.server.assets / filename).read_bytes(), content_type='text/html' if filename == 'index.html' else 'text/javascript')
-                if parsed.path == '/api/task':
+                if desktop and parsed.path == '/api/desktop':
+                    return self.send(fixture['compiled'] | {'interaction':fixture['render_evidence'].get('interaction', {})})
+                if desktop and parsed.path == '/api/chart.svg':
+                    return self.send(fixture['chart_svg'].encode(), content_type='image/svg+xml')
+                if parsed.path == '/api/task' and not desktop:
                     return self.send(task['inputs'])
                 if parsed.path == '/api/annotations':
                     with owner.store.connect() as db:
@@ -156,6 +164,13 @@ class WorkspaceTools:
                     record = next((r for r in source_rows if r['id'] == note.get('record_id')), None)
                     if record is None or not isinstance(note.get('note'), str) or not 0 < len(note['note'].strip()) <= 4000:
                         raise ValueError('Invalid note or source record')
+                    if desktop:
+                        saved = {'id':uuid.uuid4().hex, 'record_id':record['id'], 'note':note['note'].strip(),
+                                 'record_snapshot':record, 'created_at':datetime.now(timezone.utc).isoformat(),
+                                 'review_origin':self.headers.get('X-Eval-Actor', 'interactive-unattributed')}
+                        with owner.store.connect() as db:
+                            db.execute('INSERT INTO notes VALUES (?,?,?)',(key,saved['id'],json.dumps(saved)))
+                        return self.send(saved,201)
                     for field in ('start', 'end'):
                         datetime.strptime(note[field], '%Y-%m-%d')
                     if note['start'] > note['end']:
