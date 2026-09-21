@@ -115,6 +115,31 @@ class SourceJobsTest(unittest.TestCase):
             self.assertEqual(confirmation['actor'],'test')
             self.assertEqual(confirmation['proposal_sha256'],proposal['proposal_sha256'])
 
+    def test_valid_revision_supersedes_parent_but_failed_planning_does_not(self):
+        with tempfile.TemporaryDirectory() as folder:
+            jobs = SourceJobs.__new__(SourceJobs)
+            jobs.root = Path(folder)
+            jobs.worker = SimpleNamespace(guard=threading.Lock(),running={},source_jobs=set())
+            parent_id, child_id = 'a'*32, 'b'*32
+            parent, child = jobs.root/parent_id, jobs.root/child_id
+            parent.mkdir(); child.mkdir()
+            original = {'id':parent_id,'status':'awaiting_confirmation',
+                        'proposal_contract':'source-proposal-v2-structured',
+                        'proposal_sha256':'old-sha','proposal':{'plan':{}}}
+            jobs.save(parent,'status.json',original)
+            failed = {'id':child_id,'parent_job_id':parent_id,'status':'failed'}
+            jobs.save(child,'status.json',failed)
+            self.assertEqual(jobs.get(parent_id)['status'],'awaiting_confirmation')
+            jobs.save(child,'status.json',{**failed,'status':'awaiting_confirmation',
+                'proposal_contract':'source-proposal-v2-structured',
+                'proposal_sha256':'new-sha','proposal':{'plan':{}}})
+            self.assertEqual(jobs.get(parent_id)['status'],'superseded')
+            self.assertEqual(jobs.get(parent_id)['superseded_by'],child_id)
+            with self.assertRaises(RevisionConflict):jobs.confirm(parent_id,'old-sha')
+            with self.assertRaises(RevisionConflict):jobs.revise(parent_id,'Another change')
+            self.assertEqual(json.loads((parent/'status.json').read_text()),original)
+            self.assertFalse((parent/'confirmation.json').exists())
+
     def test_preview_includes_structure_only_citations_without_uncited_records(self):
         packet = {'records':[{'id':'r1','data':{'value':0}},
                              {'id':'r2','data':{'value':False}},

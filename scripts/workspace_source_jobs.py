@@ -58,6 +58,15 @@ class SourceJobs:
         packet_path = path.parent / 'source-packet.json'
         if status.get('proposal') and packet_path.is_file():
             status['source_examples'] = self.proposal_examples(status['proposal'], json.loads(packet_path.read_text()))
+        if status['status'] in ('awaiting_confirmation', 'needs_revision'):
+            for child_path in self.root.glob('*/status.json'):
+                child = json.loads(child_path.read_text())
+                if (child.get('parent_job_id') == jid
+                        and child.get('proposal_contract') == 'source-proposal-v2-structured'
+                        and child.get('proposal_sha256') and child.get('proposal')):
+                    status.update(status='superseded', stage='A revised proposal is available',
+                                  superseded_by=child['id'])
+                    break
         return status
 
     def list(self):
@@ -80,6 +89,11 @@ class SourceJobs:
         with self.worker.guard:
             if self.worker.running or self.worker.source_jobs:
                 raise RevisionConflict('Another Workspace job is using the local model')
+            if revision:
+                parent = self.get(revision['parent_job_id'])
+                if (parent['status'] not in ('awaiting_confirmation', 'needs_revision')
+                        or parent.get('proposal_sha256') != revision.get('parent_proposal_sha256')):
+                    raise RevisionConflict('Review the latest proposal before revising it')
             jid = uuid.uuid4().hex
             folder = self.root / jid
             folder.mkdir()
