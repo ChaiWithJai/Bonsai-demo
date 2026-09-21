@@ -486,3 +486,33 @@ test('Workstream retains original request and proposal after reload',async({page
  await page.getByRole('button',{name:'Preview',exact:true}).click();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/25-workstream-history.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Role composer preserves draft across tabs and sends attached data',async({page},info)=>{
+ await page.goto('/#/workspace');
+ const sidebar=page.getByRole('complementary',{name:'Workstreams',exact:true});
+ await sidebar.getByRole('button',{name:'Data analyst',exact:true}).click();
+ const tabs=page.getByRole('navigation',{name:'Workstream sections'});
+ await expect(tabs.getByRole('button',{name:'Conversation',exact:true})).toHaveAttribute('aria-pressed','true');
+ const message=page.getByLabel('Message Data analyst',{exact:true});
+ const intent='Compare the observed values and preserve missing evidence.';
+ await message.fill(intent);
+ await expect(page.getByRole('button',{name:'Send ↑',exact:true})).toBeDisabled();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/26-role-composer.'+info.project.name+'.png'),fullPage:true});
+ await page.locator('input[type=file]').setInputFiles({name:'role-composer-development.json',mimeType:'application/json',buffer:Buffer.from('[{"label":"A","value":0},{"label":"B","value":12}]')});
+ await expect(page.getByRole('button',{name:'Send ↑',exact:true})).toBeEnabled();
+ await tabs.getByRole('button',{name:/Files/}).click();
+ await expect(page.getByRole('heading',{name:'role-composer-development.json',exact:true})).toBeVisible();
+ await tabs.getByRole('button',{name:'Activity',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Runtime activity',exact:true})).toBeVisible();
+ await tabs.getByRole('button',{name:'Conversation',exact:true}).click();
+ await expect(message).toHaveValue(intent);
+ await expect(page.locator('.source-summary')).not.toBeVisible();
+ let payload:any;
+ await page.route('**/api/workspace/sources/*/generate',async route=>{payload=route.request().postDataJSON();await route.fulfill({status:409,json:{error:'Development check: no inference submitted'}});});
+ await page.getByRole('button',{name:'Send ↑',exact:true}).click();
+ await expect(page.getByRole('alert')).toContainText('no inference submitted');
+ expect(payload.request).toBe('Role: Data analyst\n\n'+intent);
+ await expect(message).toHaveValue(intent);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/27-role-attached-message.'+info.project.name+'.png'),fullPage:true});
+});

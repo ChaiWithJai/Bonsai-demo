@@ -5,6 +5,8 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "26-role-composer": ("workstreams", "Role-based composer with tabs and explicit attachment requirement"),
+    "27-role-attached-message": ("workstreams", "Attached draft persists across tabs and rejected submission"),
     "25-workstream-history": ("workstreams", "Original request and planning conversation remain beside the view"),
     "23-workstreams-start": ("workstreams", "Start a conversation with files and a question"),
     "24-workstreams-conversation": ("workstreams", "Continue a workstream beside its generated view"),
