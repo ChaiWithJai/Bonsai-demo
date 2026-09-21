@@ -20,6 +20,9 @@
   let sourceStreams = $state<Data[]>([]);
   let selectedSource = $state('');
   let draftKey = $state(0);
+  let selectedRole = $state('Research analyst');
+  let initialPanel = $state('conversation');
+  function roleStream(role:string) { selectedRole=role; initialPanel='conversation'; newStream(); }
   function newStream() { home = true; selectedSource = ''; draftKey += 1; }
   const visibleProjects = $derived((status?.workspaces ?? []).filter((item:Data) => item.title.toLowerCase().includes(streamSearch.toLowerCase())));
   const visibleSources = $derived(sourceStreams.filter((item:Data) => !item.workspace_id && item.status !== 'superseded' && item.filename.toLowerCase().includes(streamSearch.toLowerCase())).filter((item:Data,index:number,all:Data[]) => all.findIndex(other => other.source_id === item.source_id) === index));
@@ -186,10 +189,11 @@
   <aside class="stream-list" aria-label="Workstreams">
     <div class="stream-list-title"><h1>Workstreams</h1><button onclick={newStream} aria-label="New workstream"><Plus size={18}/></button></div>
     <label class="stream-search"><span class="sr-only">Search workstreams</span><input bind:value={streamSearch} placeholder="Search workstreams" /></label>
+    <p class="sidebar-section">Roles</p><div class="role-choices">{#each ['Research analyst','Data analyst','Evidence reviewer'] as role (role)}<button class:selected={home && selectedRole===role} onclick={()=>roleStream(role)}>{role}</button>{/each}</div><p class="sidebar-section">Workstreams</p>
     <button class="stream-row" class:selected={home && !selectedSource} onclick={newStream}><span class="stream-avatar">＋</span><span><strong>New workstream</strong><small>A question, your files, a shared view</small></span></button>
     {#each visibleSources as item (item.id)}<button class="stream-row" class:selected={home && selectedSource === item.source_id} onclick={() => {selectedSource=item.source_id;home=true;}}><span class="stream-avatar">B</span><span><strong>{item.filename}</strong><small>{item.status === 'awaiting_confirmation' ? 'Your review needed' : item.stage}</small></span></button>{/each}
     {#each visibleProjects as item (item.id)}<button class="stream-row" class:selected={!home && project?.id===item.id} onclick={() => choose(item.id).catch(e => error=String(e))}><span class="stream-avatar">{item.title.slice(0,1)}</span><span><strong>{item.title}</strong><small>Continue the conversation</small></span></button>{/each}
-    <div class="stream-footer"><span class="dot"></span> Bonsai 2 · on this Mac</div>
+    <div class="shared-tools"><p class="sidebar-section">Shared tools</p><button onclick={()=>{initialPanel='files';newStream();}}>Search attached files</button><p>Available to every role</p></div><div class="stream-footer"><span class="dot"></span> Bonsai 2 · on this Mac</div>
   </aside>
   <div class="stream-main">
   <header class="heading"><div><h2>{home ? selectedSource ? sourceStreams.find(item => item.source_id===selectedSource)?.filename ?? 'Workstream' : 'New workstream' : project?.title}</h2><p class="subtitle">Conversation, files, and a view you can work with.</p></div></header>
@@ -197,8 +201,8 @@
   {#if loading}<p role="status">Opening Workspace…</p>
   {:else if home || !project}
     <section class="start-layout" aria-label="New workstream conversation">
-      <div class="data-start">{#key selectedSource + ':' + draftKey}<WorkspaceData initialSource={selectedSource} onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>{/key}</div>
-      <aside class="stream-context"><span class="stream-avatar">B</span><h2>From files to understanding</h2><p>Your visualization will live here, beside the conversation.</p><ol><li>Attach the files you’re working with.</li><li>Tell Bonsai what you want to understand.</li><li>Review the interpretation, then build your view.</li></ol><p>Original files and supporting evidence stay with your workstream.</p></aside>
+      <div class="data-start">{#key selectedSource + ':' + draftKey}<WorkspaceData role={selectedRole} {initialPanel} initialSource={selectedSource} onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>{/key}</div>
+
     </section>
   {:else}
     <div class="project-bar"><label>Project <select value={project.id} onchange={(event) => choose(event.currentTarget.value).catch(e => error = String(e))} disabled={running || busy}>{#each status?.workspaces ?? [] as item (item.id)}<option value={item.id}>{item.title}</option>{/each}</select></label><span>{project.fixture?.kind === 'desktop' ? 'Your uploaded data' : 'Test project'}</span><span class="revision">Revision {project.head.slice(0, 10)}</span></div>
@@ -286,8 +290,9 @@
   .stream-search input{width:100%;box-sizing:border-box;background:var(--background);border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:12px;color:inherit}.stream-search{margin-bottom:10px}
   .stream-row{display:flex;justify-content:flex-start;text-align:left;border:0;background:transparent;padding:12px 9px;gap:10px;width:100%;min-width:0}.stream-row.selected{background:var(--muted)}.stream-row>span:last-child{min-width:0}.stream-row strong,.stream-row small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stream-row strong{font-size:12px;font-weight:550}.stream-row small{font-size:11px;color:var(--muted-foreground);margin-top:5px}
   .stream-avatar{display:flex;align-items:center;justify-content:center;width:36px;height:36px;flex-shrink:0;border-radius:50%;background:#778965;color:white;font-size:16px}.stream-footer{margin-top:auto;padding:22px 10px 0;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted-foreground)}
-  .stream-main{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:auto}.heading{padding:20px 24px;border-bottom:1px solid var(--border)}.heading h2{font-size:16px;margin:0;font-weight:550}.subtitle{font-size:11px;margin-top:5px}.start-layout{padding:0;gap:0;grid-template-columns:minmax(0,1fr) 280px;flex:1;min-height:0}.data-start{border:0;border-radius:0;overflow:auto;background:var(--background)}.stream-context{padding:32px 24px;border-left:1px solid var(--border);background:var(--card)}.stream-context h2{font-size:17px;margin:18px 0 10px}.stream-context p,.stream-context li{font-size:12px;line-height:1.8;color:var(--muted-foreground)}.stream-context ol{padding-left:18px;margin:25px 0}.project-bar{padding:12px 20px}.panes{border-radius:0;border-left:0;border-right:0;flex:1}.request{margin-left:25px;border-radius:18px 18px 4px 18px;background:#28342b;color:#fff}.response{margin-right:25px;background:var(--muted);border-radius:18px 18px 18px 4px;padding:15px}.composer form{border-radius:20px}
-  @media(max-width:1100px){.workspace{grid-template-columns:220px minmax(0,1fr)}.start-layout{grid-template-columns:1fr}.stream-context{display:none}}
+  .stream-main{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:auto}.heading{padding:20px 24px;border-bottom:1px solid var(--border)}.heading h2{font-size:16px;margin:0;font-weight:550}.subtitle{font-size:11px;margin-top:5px}.start-layout{padding:0;gap:0;grid-template-columns:minmax(0,1fr) 280px;flex:1;min-height:0}.data-start{border:0;border-radius:0;overflow:auto;background:var(--background)}.project-bar{padding:12px 20px}.panes{border-radius:0;border-left:0;border-right:0;flex:1}.request{margin-left:25px;border-radius:18px 18px 4px 18px;background:#28342b;color:#fff}.response{margin-right:25px;background:var(--muted);border-radius:18px 18px 18px 4px;padding:15px}.composer form{border-radius:20px}
+  @media(max-width:1100px){.workspace{grid-template-columns:220px minmax(0,1fr)}.start-layout{grid-template-columns:1fr}}
   @media(max-width:750px){.workspace{height:auto;min-height:100dvh;grid-template-columns:1fr;padding:42px 0 0;overflow:auto}.stream-list{max-height:240px;border-right:0;border-bottom:1px solid var(--border);padding:12px}.stream-list-title{padding-bottom:0}.stream-footer{display:none}.stream-row{padding:8px}.heading{padding:16px}.stream-main{overflow:visible}.start-layout{display:block}.panes{display:block}.stream-search{margin-bottom:0}}
 .request small{color:inherit;opacity:.7}.response details{font-size:11px;margin:12px 0}.response summary{cursor:pointer}.response a{font-size:11px;text-decoration:underline}
+.start-layout{display:block}.data-start{height:100%;overflow:auto}.sidebar-section{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted-foreground);margin:18px 8px 4px}.role-choices{display:grid;gap:4px}.role-choices button{justify-content:flex-start;border:0;background:transparent;padding:9px 12px}.role-choices button.selected{background:var(--muted)}.shared-tools{margin-top:20px}.shared-tools button{border:0;background:transparent}.shared-tools>p:last-child{font-size:10px;color:var(--muted-foreground);margin:4px 12px}@media(max-width:750px){.role-choices{display:flex;flex-wrap:wrap}.role-choices button{font-size:10px;padding:6px}.stream-list{max-height:270px}}
 </style>
