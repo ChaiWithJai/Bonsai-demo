@@ -33,6 +33,22 @@ class RecordReviewTest(unittest.TestCase):
         self.assertEqual(export_reviews(self.root,self.manifest)['training_candidates'],[])
         self.assertEqual(len(export_reviews(self.root,self.manifest)['review_events']),3)
 
+    def test_dataset_version_tracks_candidates_and_is_stable_on_repeat_export(self):
+        empty = export_reviews(self.root, self.manifest)
+        first = save_review(self.root, self.manifest, self.body())
+        self.assertEqual(export_reviews(self.root, self.manifest)['dataset_sha256'], empty['dataset_sha256'])
+        # Human-kind feedback is simulated only inside this temporary test store.
+        second = save_review(self.root, self.manifest, self.body(
+            previous_event_id=first['event_id'], reviewer_kind='human', action='correct',
+            corrected_data={'value': 2, 'label': 'A'}))
+        reviewed = export_reviews(self.root, self.manifest)
+        self.assertEqual(reviewed['example_count'], 1)
+        self.assertNotEqual(reviewed['dataset_sha256'], empty['dataset_sha256'])
+        self.assertEqual(reviewed['dataset_sha256'], export_reviews(self.root, self.manifest)['dataset_sha256'])
+        save_review(self.root, self.manifest, self.body(previous_event_id=second['event_id'],
+            reviewer_kind='human', action='correct', corrected_data={'value': 3, 'label': 'A'}))
+        self.assertNotEqual(reviewed['dataset_sha256'], export_reviews(self.root, self.manifest)['dataset_sha256'])
+
     def test_stale_edits_and_source_changes_cannot_overwrite_reviews(self):
         original=self.body()
         save_review(self.root,self.manifest,original)
