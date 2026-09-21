@@ -307,3 +307,75 @@ test('Workspace distinguishes request checks from baseline verification',async({
   await page.unroute('**/api/workspace');
  }
 });
+
+test('Composer reviews expected results and preserves a rejected draft',async({page},info)=>{
+ const id='e13a4a3d2c214a688339afcd92ddb5fd';
+ const project=await (await page.request.get('/api/workspace/'+id)).json();
+ await page.goto('/#/workspace');
+ await page.locator('.saved-projects summary').click();
+ await page.locator('.saved-projects').getByRole('button',{name:project.title,exact:true}).click();
+ await page.getByLabel('Describe the next change').fill('Use the heading Mixed source evidence.');
+ await page.locator('.expectations summary').click();
+ await page.getByRole('button',{name:'Add expected result',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Send request',exact:true})).toBeDisabled();
+ await page.getByLabel('Exact label',{exact:true}).fill('Mixed source evidence');
+ await page.getByRole('button',{name:'Add expected result',exact:true}).click();
+ await page.getByRole('combobox',{name:'Check 2',exact:true}).selectOption('records');
+ await page.getByLabel('Expected count',{exact:true}).fill('3');
+ await expect(page.getByRole('button',{name:'Send request',exact:true})).toBeEnabled();
+ await page.locator('.expectations').scrollIntoViewIfNeeded();
+ await page.locator('.expectations').evaluate(el=>el.scrollTop=0);
+ if(info.project.name==='desktop')await expect(page.getByRole('button',{name:'Send request',exact:true})).toBeInViewport();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/18-expected-results.'+info.project.name+'.png'),fullPage:true});
+ let submitted:any;
+ await page.route('**/api/workspace/'+id+'/attempts',async route=>{
+  submitted=route.request().postDataJSON();
+  await route.fulfill({status:409,json:{error:'Development check: draft retained'}});
+ });
+ await page.getByRole('button',{name:'Send request',exact:true}).click();
+ await expect(page.getByText('Development check: draft retained',{exact:false})).toBeVisible();
+ expect(submitted.request_checks).toEqual([
+  {target:{role:'heading',name:'Mixed source evidence'},action:'visible',value:true},
+  {target:{test_id:'record-row'},action:'count',value:3}
+ ]);
+ expect(submitted.base_revision).toBe(project.head);
+ await expect(page.getByLabel('Exact label',{exact:true})).toHaveValue('Mixed source evidence');
+ await expect(page.getByLabel('Describe the next change')).toHaveValue('Use the heading Mixed source evidence.');
+ await page.getByRole('button',{name:'Remove check 1',exact:true}).click();
+ await expect(page.getByLabel('Expected count',{exact:true})).toHaveValue('3');
+});
+
+test('Live composer sends fixed expected results to Bonsai',async({page},info)=>{
+ test.skip(process.env.BONSAI_LIVE_ACCEPTANCE !== '1' || info.project.name !== 'desktop','Explicit development inference only');
+ test.setTimeout(240000);
+ await page.setExtraHTTPHeaders({'X-Eval-Actor':'codex-development-verification'});
+ const id='e13a4a3d2c214a688339afcd92ddb5fd';
+ const project=await (await page.request.get('/api/workspace/'+id)).json();
+ await page.goto('/#/workspace');
+ await page.locator('.saved-projects summary').click();
+ await page.locator('.saved-projects').getByRole('button',{name:project.title,exact:true}).click();
+ await page.getByLabel('Describe the next change').fill('Change the main heading to exactly Mixed source evidence. Preserve all records, source links, fields, notes and interactions. Build and check the result.');
+ await page.locator('.expectations summary').click();
+ await page.getByRole('button',{name:'Add expected result',exact:true}).click();
+ await page.getByLabel('Exact label',{exact:true}).fill('Mixed source evidence');
+ await page.getByRole('button',{name:'Add expected result',exact:true}).click();
+ await page.getByRole('combobox',{name:'Check 2',exact:true}).selectOption('records');
+ await page.getByLabel('Expected count',{exact:true}).fill('3');
+ const response=page.waitForResponse(r=>r.url().endsWith('/'+id+'/attempts')&&r.request().method()==='POST');
+ await page.getByRole('button',{name:'Send request',exact:true}).click();
+ const sent=await response;expect(sent.ok()).toBe(true);const attempt=await sent.json();
+ await fs.writeFile(path.resolve(import.meta.dirname,'../../../.cache/workspace-checks/live-composer-attempt.json'),JSON.stringify(attempt,null,2));
+ await expect(page.getByRole('region',{name:'Checks for this attempt'})).toContainText('Mixed source evidence');
+ await expect.poll(async()=>{
+  const current=await (await page.request.get('/api/workspace/'+id)).json();
+  return current.attempts.find((a:any)=>a.id===attempt.attempt_id)?.status;
+ },{timeout:210000,intervals:[1000,3000,5000]}).toBe('completed');
+ await expect(page.getByText('Build, baseline checks, and supplied request checks passed. Ready for your review.',{exact:true})).toBeVisible();
+ await page.reload();
+ await page.locator('.saved-projects summary').click();
+ await page.locator('.saved-projects').getByRole('button',{name:project.title,exact:true}).click();
+ await expect(page.getByRole('region',{name:'Checks for this attempt'})).toContainText('Number of records: 3');
+ await page.getByRole('region',{name:'Checks for this attempt'}).scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/19-live-expected-results.desktop.png'),fullPage:true});
+});
