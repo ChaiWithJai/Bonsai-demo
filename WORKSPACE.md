@@ -54,7 +54,7 @@ repair, browser assertions, screenshots, and complete attempt trace. The earlier
 v1 attempt `2486ca6033f54889b02c9de565203048` timed out during reasoning output
 before applying a patch and remains recorded. This is development evidence.
 
-The repository's 122 Python tests passed with `PYTHONPATH=scripts` and a resolved
+The repository's 146 Python tests passed with `PYTHONPATH=scripts` and a resolved
 macOS temporary directory. The Workspace component passed Svelte checking and
 its production build. The second live turn has failed and remains an open acceptance gate. A later W1 continuation passed after native context preflight and an explicit context checkpoint. The September 21 loop audit distinguishes reasoning timeouts, context overflow, and repeated rejected patches. See [the diagnosis](research/loop-diagnosis-20260921/REPORT.md).
 
@@ -124,9 +124,14 @@ not the application launcher or a benchmark of latency.
 
 ## Remaining product scope
 
-The native tab currently uses the cached 14-record fixture. Desktop upload,
-structured intake, source classification, correction review, training-candidate
-export, Semiotic views, and media extraction remain to be connected here. Their
-implementations and earlier evidence live in the frozen prototype; the plan is
-to reuse those modules and preserve their source identities and review history.
-The native Workspace is not yet a complete replacement for that workflow.
+The generated project still uses the cached 14-record fixture. The native Data
+panel now accepts desktop files, preserves source bytes and locations, records
+corrections separately, and exports reviewed examples with MLflow evidence.
+The intake and review modules are reused from the frozen prototype. Uploaded
+media is stored with pending extraction status.
+
+Connecting those uploaded records to classification, Semiotic views, generated
+projects, and multimodal extraction remains open. The native Workspace is not
+yet a complete replacement for the prototype workflow. The [sampling comparison
+and data checkpoint](research/loop-diagnosis-20260921/COMPARISON.md) records the
+failed W2 trials, successful source-review checks, and next intervention.

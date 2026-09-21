@@ -268,15 +268,48 @@ class Handler(BaseHTTPRequestHandler):
         try:
             parsed = urlsplit(self.path)
             parts = parsed.path.strip('/').split('/')
+            sources = self.server.workspace_sources
+            if parts == ['api', 'workspace', 'sources'] and self.command == 'POST':
+                from workspace_data.intake import MAX_BYTES
+                from urllib.parse import unquote
+                size = int(self.headers.get('Content-Length', '0'))
+                if (not 0 < size <= MAX_BYTES or self.headers.get('Transfer-Encoding')
+                        or self.headers.get('Content-Type') != 'application/octet-stream'):
+                    raise ValueError('Upload one source of at most 25 MiB')
+                content = self.rfile.read(size)
+                if len(content) != size:
+                    raise ValueError('Incomplete source upload')
+                result = sources.upload(unquote(self.headers.get('X-Source-Filename', '')), content)
+                return self.respond(200, json.dumps(result).encode(), 'application/json')
             payload = {}
             if self.command == 'POST':
                 size = int(self.headers.get('Content-Length', '0'))
-                if not 0 < size <= 16000 or self.headers.get('Transfer-Encoding'):
+                limit = 65536 if parts[:3] == ['api', 'workspace', 'sources'] else 16000
+                if not 0 < size <= limit or self.headers.get('Transfer-Encoding'):
                     raise ValueError('Invalid request size')
                 payload = json.loads(self.rfile.read(size))
                 if not isinstance(payload, dict):
                     raise ValueError('Expected a JSON object')
-            if self.command == 'GET' and parts == ['api', 'workspace']:
+            if parts[:3] == ['api', 'workspace', 'sources']:
+                if len(parts) == 3 and self.command == 'GET':
+                    result = sources.list()
+                elif len(parts) == 4 and self.command == 'GET':
+                    result = sources.get(parts[3])
+                elif len(parts) == 5 and parts[4] == 'file' and self.command == 'GET':
+                    raw, mime = sources.download(parts[3])
+                    return self.respond(200, raw, mime)
+                elif len(parts) == 5 and parts[4] == 'review' and self.command == 'POST':
+                    if payload.get('source_id') != parts[3]:
+                        raise ValueError('Review must belong to this source')
+                    result = sources.review(payload)
+                elif len(parts) == 5 and parts[4] == 'export' and self.command == 'POST':
+                    result = sources.export(parts[3])
+                elif len(parts) == 6 and parts[4] == 'exports' and self.command == 'GET':
+                    raw, mime = sources.download(parts[3], parts[5])
+                    return self.respond(200, raw, mime)
+                else:
+                    raise ValueError('Unknown source route')
+            elif self.command == 'GET' and parts == ['api', 'workspace']:
                 result = worker.status()
             elif self.command == 'POST' and parts == ['api', 'workspace']:
                 result = worker.create()
@@ -532,11 +565,13 @@ def main():
         from workspace_store import WorkspaceStore
         from workspace_tools import WorkspaceTools
         from workspace_worker import WorkspaceWorker
+        from workspace_sources import WorkspaceSources
         if not server.model_info.get('checkpoint_release'):
             parser.error('Workspace requires a verified release manifest matching the loaded model')
         with urlopen(server.upstream + '/v1/models', timeout=5) as response:
             model = json.load(response)['data'][0]['id']
         store = WorkspaceStore(args.workspace_dir)
+        server.workspace_sources = WorkspaceSources(args.workspace_dir / 'sources', MlflowClient(tracking_uri=args.tracking_uri), args.tracking_uri)
         origin = f'http://127.0.0.1:{args.port}'
         server.workspace = WorkspaceWorker(store, LocalProvider(origin, model, profile=args.workspace_profile, seed=args.workspace_seed), WorkspaceTools(store, origin),
             MlflowClient(tracking_uri=args.tracking_uri), args.tracking_uri, server.model_info, args.workspace_max_tokens)

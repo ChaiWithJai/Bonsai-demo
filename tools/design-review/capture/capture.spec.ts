@@ -31,3 +31,19 @@ test('Workspace screens',async({page},info)=>{
  await page.reload();
  await expect(page.getByLabel('Describe the next change')).toBeVisible();
 });
+
+test('Workspace uploaded data and persisted review',async({page},info)=>{
+ await page.goto('http://127.0.0.1:5258/#/workspace');
+ await page.getByRole('button',{name:'Data',exact:true}).click();
+ await page.getByLabel('Saved source').selectOption('9dda1f05e8cd19fa874f8ff8efb24704e5e582d14356b2c4fcadd5bbd033f4f6');
+ await expect(page.getByRole('heading',{name:'synthetic-review.json'})).toBeVisible();
+ await page.getByText('Review records and export corrections',{exact:true}).click();
+ await expect(page.getByText(/1 records reviewed in this extraction version/)).toBeVisible();
+ await page.getByLabel('Source record').selectOption('9dda1f05e8cd19fa874f8ff8efb24704e5e582d14356b2c4fcadd5bbd033f4f6:0');
+ await expect(page.getByText(/Latest review: correct by Workspace automated browser check \(test\)/)).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const response=await page.request.get('http://127.0.0.1:5258/api/workspace/sources/9dda1f05e8cd19fa874f8ff8efb24704e5e582d14356b2c4fcadd5bbd033f4f6');
+ const source=await response.json();
+ expect(source.records.map((r:any)=>r.data.value)).toEqual([0,null]);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/04-workspace-data.'+info.project.name+'.png'),fullPage:true});
+});

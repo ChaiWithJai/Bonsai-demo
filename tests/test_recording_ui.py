@@ -205,3 +205,23 @@ class RecordingUITest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class WorkspaceSourceHTTPTest(RecordingUITest):
+    def setUp(self):
+        super().setUp()
+        from workspace_sources import WorkspaceSources
+        self.proxy.workspace = object()
+        self.proxy.workspace_sources = WorkspaceSources(Path(self.temp.name)/'sources',None,'http://localhost:5210')
+
+    def test_source_upload_download_and_origin_boundary(self):
+        raw=b'[{"value":0},{"value":null}]'
+        headers={'Content-Type':'application/octet-stream','X-Source-Filename':'fixture.json'}
+        status,body=self.call('POST','/api/workspace/sources',raw,headers)
+        self.assertEqual(status,200)
+        sid=json.loads(body)['source_id']
+        status,body=self.call('GET','/api/workspace/sources/'+sid+'/file')
+        self.assertEqual((status,body),(200,raw))
+        status,body=self.call('GET','/api/workspace/sources/'+sid)
+        self.assertEqual(json.loads(body)['record_count'],2)
+        self.assertEqual(self.call('POST','/api/workspace/sources',raw,{**headers,'Origin':'https://unrelated.example'})[0],403)
+        self.assertEqual(self.call('POST','/api/workspace/sources',raw,{'Content-Type':'application/json'})[0],400)
