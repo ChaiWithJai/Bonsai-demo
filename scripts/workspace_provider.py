@@ -198,6 +198,9 @@ class LocalProvider:
                 'stream': True, 'max_tokens': max_tokens, 'temperature': 0,
                 'seed': self.seed, 'cache_prompt': True,
                 'chat_template_kwargs': {'enable_thinking': False}}
+        if not tools:
+            payload.pop('tools')
+            payload['response_format'] = {'type': 'json_object'}
         if self.profile != 'legacy-greedy':
             thinking = self.profile == 'bonsai2-medium'
             payload.update(temperature=1.0 if thinking else 0.7,

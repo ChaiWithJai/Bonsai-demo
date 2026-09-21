@@ -16,6 +16,7 @@
   let selectedCase = $state('baseline');
   let preview = $state<Data | null>(null);
   const running = $derived(Boolean(status?.running_attempts?.length));
+  const sourceBusy = $derived(Boolean(status?.running_source_jobs?.length));
   const lastEvent = $derived(events.at(-1));
   const trace = $derived(events.find(e => e.kind === 'trace.started')?.payload);
   const content = $derived(events.filter(e => e.kind === 'model.delta' && e.payload.field === 'content').map(e => e.payload.text).join(''));
@@ -77,7 +78,7 @@
   }
   async function submit(event: SubmitEvent) {
     event.preventDefault();
-    if (!project || !prompt.trim() || busy || running) return;
+    if (!project || !prompt.trim() || busy || running || sourceBusy) return;
     busy = true; error = '';
     try {
       const result = await api('/' + project.id + '/attempts', {request: prompt.trim(), base_revision: project.head, case: selectedCase});
@@ -121,16 +122,16 @@
   {#if loading}<p role="status">Opening Workspace…</p>
   {:else if home || !project}
     <section class="start-layout" aria-label="Workspace starting point">
-      <div class="start-intro"><p class="eyebrow">START WITH YOUR DATA</p><h2>What do you want to understand?</h2><p>Add a file and inspect the records behind it. Your original data and review history stay together.</p><p class="scope-note">Available now: upload, record review, and correction export. Creating an editable visualization from these records is the next unfinished step.</p>
-      <details class="saved-projects"><summary>Previous test projects ({status?.workspaces?.length ?? 0})</summary><p>These explorers were used to test model edits. They are not visualizations of your uploaded files.</p>{#each status?.workspaces ?? [] as item (item.id)}<button onclick={() => choose(item.id).catch(e => error = String(e))} disabled={busy || running}>{item.title}</button>{/each}<button onclick={create} disabled={busy || running}>Create another test explorer</button></details></div>
-      <div class="data-start"><WorkspaceData/></div>
+      <div class="start-intro"><p class="eyebrow">START WITH YOUR DATA</p><h2>What do you want to understand?</h2><p>Add a file and inspect the records behind it. Your original data and review history stay together.</p><p class="scope-note">Upload, review, visualize, and refine. Describe a question to create a source-bound visualization, then open the saved project to refine it.</p>
+      <details class="saved-projects"><summary>Saved projects ({status?.workspaces?.length ?? 0})</summary><p>Open a saved visualization to continue editing. Older source explorers are retained as test projects.</p>{#each status?.workspaces ?? [] as item (item.id)}<button onclick={() => choose(item.id).catch(e => error = String(e))} disabled={busy || running}>{item.title}</button>{/each}<button onclick={create} disabled={busy || running}>Create another test explorer</button></details></div>
+      <div class="data-start"><WorkspaceData onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/></div>
     </section>
   {:else}
-    <div class="project-bar"><label>Project <select value={project.id} onchange={(event) => choose(event.currentTarget.value).catch(e => error = String(e))} disabled={running || busy}>{#each status?.workspaces ?? [] as item (item.id)}<option value={item.id}>{item.title}</option>{/each}</select></label><span>Test project</span><span class="revision">Revision {project.head.slice(0, 10)}</span></div>
+    <div class="project-bar"><label>Project <select value={project.id} onchange={(event) => choose(event.currentTarget.value).catch(e => error = String(e))} disabled={running || busy}>{#each status?.workspaces ?? [] as item (item.id)}<option value={item.id}>{item.title}</option>{/each}</select></label><span>{project.fixture?.kind === 'desktop' ? 'Your uploaded data' : 'Test project'}</span><span class="revision">Revision {project.head.slice(0, 10)}</span></div>
     <div class="panes">
       <section class="conversation" aria-label="Workspace conversation">
         <div class="conversation-body">
-          <div class="context-card"><p class="eyebrow">SAVED TEST PROJECT</p><h2>{project.title}</h2><p>This cached explorer is a harness test fixture. Uploaded files are separate until data-to-project generation is connected.</p></div>
+          <div class="context-card"><p class="eyebrow">{project.fixture?.kind === 'desktop' ? 'YOUR SAVED PROJECT' : 'SAVED TEST PROJECT'}</p><h2>{project.title}</h2><p>{project.fixture?.kind === 'desktop' ? 'A model-planned Semiotic visualization of your uploaded records. Ask for a focused change and inspect the result.' : 'This cached explorer is a harness test fixture.'}</p></div>
           {#each requests as request (request.id)}<article class="request"><p>{request.request}</p><small>{request.status}</small></article>{/each}
           {#if content}<article class="response"><p class="eyebrow">BONSAI</p><p>{content}</p></article>{/if}
           {#if activity.length}<div class="activity" aria-label="Attempt activity">{#each activity as event (event.sequence)}<div><span class="event-dot"></span><span>{event.kind.replaceAll('.', ' ')}{event.payload.name ? ' · ' + event.payload.name : ''}</span>{#if event.payload.ok === false}<strong>Needs repair</strong>{/if}</div>{/each}</div>{/if}
@@ -138,8 +139,8 @@
           {#if lastEvent?.kind === 'attempt.completed'}<p class="verified">Build and authored browser checks passed.</p>{/if}
         </div>
         <div class="composer">
-          <div class="suggestions">{#each suggestions as suggestion (suggestion.case)}<button disabled={running || busy} onclick={() => useSuggestion(suggestion)}>{suggestion.label}</button>{/each}</div>
-          <form onsubmit={submit}><label class="sr-only" for="workspace-prompt">Describe the next change</label><textarea id="workspace-prompt" bind:value={prompt} placeholder="What should this project do next?" disabled={running || busy}></textarea><div><span>{running ? 'Editing saved project…' : 'Edits · builds · browser checks'}</span>{#if running}<button type="button" onclick={cancel} aria-label="Stop attempt"><Square size={16}/></button>{:else}<button class="send" type="submit" disabled={!prompt.trim() || busy} aria-label="Send request"><ArrowUp size={18}/></button>{/if}</div></form>
+          {#if project.fixture?.kind !== 'desktop'}<div class="suggestions">{#each suggestions as suggestion (suggestion.case)}<button disabled={running || busy} onclick={() => useSuggestion(suggestion)}>{suggestion.label}</button>{/each}</div>{/if}
+          <form onsubmit={submit}><label class="sr-only" for="workspace-prompt">Describe the next change</label><textarea id="workspace-prompt" bind:value={prompt} placeholder="What should this project do next?" disabled={running || busy || sourceBusy}></textarea><div><span>{sourceBusy ? 'Source generation is using Bonsai…' : running ? 'Editing saved project…' : 'Edits · builds · browser checks'}</span>{#if running}<button type="button" onclick={cancel} aria-label="Stop attempt"><Square size={16}/></button>{:else}<button class="send" type="submit" disabled={!prompt.trim() || busy || sourceBusy} aria-label="Send request"><ArrowUp size={18}/></button>{/if}</div></form>
           <small>Every attempt keeps its source, diagnostics, and MLflow evidence.</small>
         </div>
       </section>
@@ -148,7 +149,7 @@
         {#if tab === 'preview'}
           {#if preview}<div class="preview-caption">{preview.revision === project.head ? 'Current revision' : 'Earlier successful build'} · {preview.revision.slice(0, 10)}</div><iframe title="Generated project preview" src={preview.url + '?revision=' + preview.revision} sandbox="allow-scripts allow-same-origin"></iframe>
           {:else}<div class="preview-empty"><Monitor size={32}/><h2>Your project preview</h2><p>Build the saved revision to open it here. This step does not call the model.</p><button onclick={restore} disabled={busy || running}>{busy ? 'Building…' : 'Build saved revision'}</button></div>{/if}
-        {:else if tab === 'data'}<WorkspaceData/>
+        {:else if tab === 'data'}<WorkspaceData onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>
         {:else if tab === 'code'}<div class="source-title">App.svelte <span>{project.head.slice(0, 10)}</span></div><pre class="source"><code>{project.files['App.svelte']}</code></pre>
         {:else}<div class="evidence"><h2>Evidence for this attempt</h2><p>The complete attempt links model exchanges, patches, build diagnostics, and browser checks.</p>{#if trace}<a href={trace.mlflow_url} target="_blank" rel="noreferrer">Open complete MLflow attempt <ExternalLink size={14}/></a>{:else}<p>No model attempt recorded yet.</p>{/if}{#each activity as event (event.sequence)}<details><summary>{event.sequence}. {event.kind}</summary><pre>{JSON.stringify(event.payload, null, 2)}</pre></details>{/each}</div>{/if}
       </section>
