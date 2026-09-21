@@ -39,7 +39,7 @@ try {
  const passages=compiled.rows[0].locator?.source_evidence ?? [];
  if(passages.some(p=>/^[a-f0-9]{64}:/.test(p.record_id))) {
   const row=page.getByTestId('record-row').first();
-  await row.locator('details summary').click();
+  await row.locator('summary').filter({hasText:'Supporting source passages'}).click();
   for(const passage of passages.filter(p=>/^[a-f0-9]{64}:/.test(p.record_id))) {
    const sid=passage.record_id.split(':')[0];
    const links=row.getByRole('link').filter({hasText:'Open original'});
