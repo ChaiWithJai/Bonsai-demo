@@ -733,10 +733,11 @@ test('Proposal judgments are separate from build approval and exclude test label
  expect(response.ok()).toBe(true);
  const job=await response.json();
  expect(job.status).toBe('completed');
- // Expose this completed development source in the pending-source sidebar for navigation only.
- await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[{...job,workspace_id:undefined}]}}));
  await page.goto('/#/workspace');
- await page.getByRole('complementary',{name:'Workstreams',exact:true}).getByRole('button').filter({hasText:job.filename}).click();
+ await page.getByLabel('Search workstreams',{exact:true}).fill('Observations and team requirements');
+ await page.getByRole('complementary',{name:'Workstreams',exact:true}).getByRole('button').filter({hasText:'Observations and team requirements'}).click();
+ await page.getByRole('button',{name:'Evidence',exact:true}).click();
+ await page.getByText('Review source interpretation',{exact:true}).click();
  await expect(page.getByRole('region',{name:'Bonsai proposal',exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'Yes, build this view',exact:true})).toHaveCount(0);
  await page.getByText('Review interpretation for the example dataset',{exact:true}).click();
