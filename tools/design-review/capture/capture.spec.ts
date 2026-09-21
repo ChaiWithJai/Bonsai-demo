@@ -415,3 +415,28 @@ test('Failed upload retains the original and offers explicit retry',async({page}
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/21-retained-upload-failure.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Structured proposal links quotes to their original sources',async({page},info)=>{
+ const job=await (await page.request.get('/api/workspace/source-jobs/60df4f14c15746fd9a34b2232c9abc8c')).json();
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[{...job,status:'awaiting_confirmation',workspace_id:undefined}]}}));
+ await page.goto('/#/workspace');
+ const proposal=page.getByRole('region',{name:'Bonsai proposal'});
+ await expect(proposal).toBeVisible();
+ const records=proposal.locator('.structured-records article');
+ for(let i=0;i<job.proposal.structure.records.length;i++) {
+  const record=records.nth(i);await record.locator('summary').click();
+  for(let j=0;j<job.proposal.structure.records[i].evidence.length;j++) {
+   const item=job.proposal.structure.records[i].evidence[j];
+   const citation=record.locator('.citation').nth(j);
+   await expect(citation.locator('blockquote')).toHaveText(item.quote);
+   const href=await citation.getByRole('link').getAttribute('href');
+   expect(href).toContain('/sources/'+item.record_id.split(':')[0]+'/file');
+   const source=job.source_examples.find((r:any)=>r.id===item.record_id);
+   if(typeof source.locator.start_seconds==='number')expect(href).toContain('#t='+source.locator.start_seconds);
+   expect((await page.request.get(href!.split('#')[0])).ok()).toBe(true);
+  }
+ }
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await proposal.locator('.citation a').last().scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/22-proposal-source-links.'+info.project.name+'.png'),fullPage:true});
+});
