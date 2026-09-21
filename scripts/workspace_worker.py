@@ -336,13 +336,15 @@ class WorkspaceWorker:
             source_root = Path(__file__).resolve().parent
             sources = {name: hashlib.sha256((source_root / name).read_bytes()).hexdigest() for name in (
                 'workspace_worker.py', 'workspace_provider.py', 'workspace_store.py', 'workspace_tools.py',
-                'workspace-tools/render.mjs', 'workspace-tools/check.mjs', 'workspace-tools/package-lock.json')}
+                'workspace-tools/render.mjs', 'workspace-tools/check.mjs', 'workspace-tools/check_desktop.mjs',
+                'workspace-tools/package-lock.json')}
             release = self.model_info.get('checkpoint_release', {})
             tags.update({
                 'research.plan_sha256': '75230b50dbc1ad332673f70e9a836bbf768a2810c46b72e452fe67cd59cc65b6',
                 'conversation_id': key, 'harness_revision': hashlib.sha256(json.dumps(sources, sort_keys=True).encode()).hexdigest(),
                 'dataset_sha256': hashlib.sha256(json.dumps(workspace['fixture'], sort_keys=True).encode()).hexdigest(),
                 'prompt_sha256': hashlib.sha256(system_for(workspace).encode()).hexdigest(),
+                'request_sha256': hashlib.sha256(request.encode()).hexdigest(),
                 'model_revision': str(release.get('revision', 'unverified-test')),
                 'runtime_revision': str(release.get('runtime', {}).get('runtime_sha256', 'unverified-test')),
                 'hardware_id': str(release.get('runtime', {}).get('hardware', 'unverified-test')),
@@ -409,6 +411,10 @@ class WorkspaceWorker:
                         budget.update(preflight)
                 check_active()
                 save('messages.json', messages)
+                if turn == 0:
+                    context_hash = hashlib.sha256(json.dumps({'messages': messages, 'tools': TOOLS, 'max_tokens': self.max_tokens}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+                    self.client.set_tag(run_id, 'initial_model_input_sha256', context_hash)
+                    summary['initial_model_input_sha256'] = context_hash
                 with span('model.generate', {'messages': messages, 'tools': TOOLS, 'max_tokens': self.max_tokens}, 'LLM') as model_output:
                     try:
                         result = self.provider.generate(messages, TOOLS, 'workspace-' + key, cancel,

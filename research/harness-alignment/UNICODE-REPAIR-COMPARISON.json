@@ -1,11 +1,13 @@
 {
   "schema_version": 1,
-  "task_metadata_matches": true,
+  "task_metadata_matches": false,
   "matched_fields": {
     "dataset_sha256": true,
     "base_revision": true,
     "prompt_sha256": true,
-    "case_id": true
+    "case_id": true,
+    "request_sha256": false,
+    "initial_model_input_sha256": false
   },
   "configuration_differences": {
     "harness_revision": [
