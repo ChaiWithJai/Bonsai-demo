@@ -82,6 +82,34 @@ class SourceJobs:
         with self.worker.guard:
             return proposal_review.export(self.root / jid, self.get(jid))
 
+    def publish_proposal_reviews(self, jid):
+        from workspace_review_evidence import source_evidence
+        bundle = self.export_proposal_reviews(jid)
+        folder = self.root / jid / 'review-exports' / uuid.uuid4().hex
+        folder.mkdir(parents=True)
+        self.save(folder, 'proposal-reviews.json', bundle)
+        evidence = source_evidence(self.worker.store.root, {'source_job': {'id': jid}}, require_build=False) if bundle['example_count'] else []
+        client = self.worker.client
+        experiment = client.get_experiment_by_name('bonsai-workspace-data')
+        eid = experiment.experiment_id if experiment else client.create_experiment('bonsai-workspace-data')
+        rid = client.create_run(eid, tags={
+            'mlflow.runName': 'Reviewed interpretation dataset', 'source_job_id': jid,
+            'dataset_sha256': bundle['dataset_sha256'], 'dataset_task': bundle['dataset_task'],
+            'review_identity': 'self_declared_local', 'training_executed': 'false'}).info.run_id
+        try:
+            client.log_artifact(rid, str(folder / 'proposal-reviews.json'), 'review')
+            for path, artifact_path in evidence:
+                client.log_artifact(rid, str(path), artifact_path)
+            client.log_metric(rid, 'reviewed_examples', bundle['example_count'])
+            client.set_terminated(rid, 'FINISHED')
+        except Exception:
+            client.set_terminated(rid, 'FAILED')
+            raise
+        result = {'dataset_sha256': bundle['dataset_sha256'], 'example_count': bundle['example_count'],
+                  'run_url': f'{self.worker.tracking_uri}/#/experiments/{eid}/runs/{rid}'}
+        self.save(folder, 'publication.json', result)
+        return result
+
     def list(self):
         return {'jobs': [self.get(p.parent.name) for p in sorted(self.root.glob('*/status.json'), key=lambda p:p.stat().st_mtime, reverse=True)]}
 

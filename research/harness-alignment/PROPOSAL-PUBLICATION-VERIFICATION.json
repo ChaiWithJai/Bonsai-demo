@@ -1,0 +1,18 @@
+[
+  {
+    "viewport": "desktop",
+    "dataset_sha256": "dcb51bf3ab94e03618a693085eb55a66f8855d0686b3514ac7a4701ba70fb804",
+    "example_count": 0,
+    "run_url": "http://127.0.0.1:5210/#/experiments/32/runs/2f98ed652b2c4b54ba71ad681fab7671",
+    "artifact_verified": true,
+    "training_executed": false
+  },
+  {
+    "viewport": "mobile",
+    "dataset_sha256": "dcb51bf3ab94e03618a693085eb55a66f8855d0686b3514ac7a4701ba70fb804",
+    "example_count": 0,
+    "run_url": "http://127.0.0.1:5210/#/experiments/32/runs/2ded6a77c6b641598a3ea2dd498edd91",
+    "artifact_verified": true,
+    "training_executed": false
+  }
+]
