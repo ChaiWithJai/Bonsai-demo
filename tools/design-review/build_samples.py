@@ -5,6 +5,10 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "38-recovered-workstream": ("workstreams", "Persisted conversation and attached proposal reopened without browser draft storage"),
+    "36-intake-conversation": ("workstreams", "Real Bonsai reply before attachment, restored from saved development conversation"),
+    "37-intake-handoff": ("workstreams", "Development CSV proposal preserves prior conversation and waits for confirmation"),
+    "35-workstream-composer": ("workstreams", "Role cards, separate tools, conversation tabs and focused message composer"),
     "34-proposal-review": ("workstreams", "Development interpretation judgment excluded from human example export"),
     "33-comparison-context": ("workstreams", "Historical comparison with display-only missing-configuration disclosure"),
     "32-node-zoom": ("workstreams", "Zoomed Semiotic nodes retain source membership and full labels"),

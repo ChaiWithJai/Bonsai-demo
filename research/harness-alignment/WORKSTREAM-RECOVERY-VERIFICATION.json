@@ -1,0 +1,44 @@
+{
+  "scope": "local persisted workstream discovery",
+  "workstream": {
+    "id": "3607530f6338455383b249129abd7101",
+    "title": "I want to compare planned release dates with actual release dates. I have not attached any files yet. What evidence should I bring?",
+    "role": "Data analyst",
+    "latest_intake_id": "3607530f6338455383b249129abd7101",
+    "source_id": "236b0f0e516c40dc1fa0c8196722cee0d5392e5c9225232ff9e03938682db06a",
+    "source_ids": [
+      "236b0f0e516c40dc1fa0c8196722cee0d5392e5c9225232ff9e03938682db06a"
+    ],
+    "workspace_id": null,
+    "workspace_ids": [],
+    "status": "awaiting_confirmation",
+    "stage": "Does this interpretation fit your question?",
+    "updated_at": 1790030947.378638,
+    "turn_count": 1
+  },
+  "checks": {
+    "cold_browser_desktop": "passed",
+    "cold_browser_mobile": "passed",
+    "python_tests": 233,
+    "svelte_errors": 0,
+    "svelte_warnings": 0,
+    "production_build": "passed",
+    "desktop_conversation_composer_overlap": "none",
+    "final_browser_checks": 4
+  },
+  "inference_submitted": false,
+  "proposal_confirmed": false,
+  "backup_status": "unverified",
+  "file_sha256": {
+    "scripts/workspace_intake_chat.py": "6c3e90f06bd859441c8a770f12878b657d08b66fc357fdc44d6f18924828f35a",
+    "scripts/workspace_source_jobs.py": "12ae3c78c748988d8cca68164ae5ddd90617db9d8b617a8791ae47774971cf05",
+    "scripts/recording_ui.py": "f79cee9679d5e8aa1f923d1d0f77e8b9579cb8b525cb39d8cf441251b1b14b77",
+    "scripts/prism-ui/Workspace.svelte": "562053acd77fc31f5c71de935117e3314cbb5767be451f159824730ad4e53f39",
+    "scripts/prism-ui/WorkspaceData.svelte": "b3e44e297102eb4b7c99cc660ce5b436e0b660bd7a4007142e490a54fafadc7a"
+  },
+  "limits": [
+    "No authenticated team identity or cross-machine synchronization",
+    "Unsent drafts remain browser-local",
+    "Recovery tested on one existing development conversation and CSV proposal"
+  ]
+}

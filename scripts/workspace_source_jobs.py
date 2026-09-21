@@ -110,14 +110,20 @@ class SourceJobs:
         self.save(folder, 'publication.json', result)
         return result
 
+    def workstreams(self):
+        from workspace_intake_chat import workstreams
+        return {'workstreams':workstreams([json.loads(p.read_text()) for p in self.root.glob('*/status.json')])}
+
     def list(self):
         return {'jobs': [self.get(p.parent.name) for p in sorted(self.root.glob('*/status.json'), key=lambda p:p.stat().st_mtime, reverse=True)]}
 
-    def start(self, source_id, request, apply_reviews=False, revision=None):
+    def start(self, source_id, request, apply_reviews=False, revision=None, intake_job_id=None):
         if not isinstance(request, str) or not 10 <= len(request.strip()) <= 4000:
             raise ValueError('Describe the visualization in 10 to 4,000 characters')
         if type(apply_reviews) is not bool:
             raise ValueError('apply_reviews must be a boolean')
+        from workspace_intake_chat import context as intake_context
+        intake_messages = intake_context(self, intake_job_id)
         with self.sources.lock:
             manifest = self.sources.manifest(source_id)
             original = json.loads(json.dumps(manifest))
@@ -149,11 +155,13 @@ class SourceJobs:
                 (member_folder/'source.bin').write_bytes(member_raw)
                 self.save(member_folder,'provenance.json',member)
             self.save(folder, 'profile.json', context)
+            if intake_messages:
+                self.save(folder, 'intake-context.json', intake_messages)
             if revision:
                 self.save(folder, 'revision-request.json', revision)
             status = {'id':jid, 'source_id':source_id, 'filename':manifest['filename'], 'request':request.strip(),
                       'source_ids':[s['source_id'] for s in manifest.get('sources',[])] or [source_id],
-                      'apply_reviews':apply_reviews, 'status':'queued', 'stage':'Preparing source', 'created_at':time.time()}
+                      'intake_job_id':intake_job_id, 'apply_reviews':apply_reviews, 'status':'queued', 'stage':'Preparing source', 'created_at':time.time()}
             if revision:
                 status['parent_job_id'] = revision['parent_job_id']
                 status['feedback'] = revision['feedback']
@@ -204,7 +212,7 @@ class SourceJobs:
                            'parent_proposal_sha256':status.get('proposal_sha256'),
                            'parent_planning_run_id':status.get('run_id'),
                            'parent_source_snapshot_sha256':hashlib.sha256((self.root/jid/'source-manifest.json').read_bytes()).hexdigest(),
-                           'identity_basis':'local unauthenticated interaction; not a training label'})
+                           'identity_basis':'local unauthenticated interaction; not a training label'}, intake_job_id=status.get('intake_job_id'))
 
     def cancel(self, jid):
         with self.worker.guard:
@@ -249,6 +257,8 @@ class SourceJobs:
                     'sampling_profile':w.provider.profile, 'sampling_seed':str(w.provider.seed),
                     'prompt_sha256':hashlib.sha256(PROPOSAL_INSTRUCTIONS.encode()).hexdigest(),
                     'initial_ui_origin':'authored scaffold with model-authored typed visualization plan'}
+            if status.get('intake_job_id'):
+                tags['intake_job_id']=status['intake_job_id']
             if status.get('planning_run_id'):
                 tags['planning_run_id']=status['planning_run_id']
             if status.get('parent_job_id'):
@@ -265,13 +275,16 @@ class SourceJobs:
                    mlflow_url=f'{w.tracking_uri}/#/experiments/{eid}/runs/{run_id}')
             self.save(folder, 'model-info.json', w.model_info)
             source_files = ['workspace_data/intake.py','workspace_data/xlsx.py','workspace_sources.py','workspace_source_jobs.py','workspace_data/proposal.py','workspace_data/desktop_plan.py','workspace-tools/render_chart.mjs',
-                            'workspace_provider.py','workspace-tools/package-lock.json']
+                            'workspace_provider.py','workspace_intake_chat.py','workspace-tools/package-lock.json']
             self.save(folder,'harness-hashes.json',{name:hashlib.sha256((ROOT/'scripts'/name).read_bytes()).hexdigest() for name in source_files})
             if not confirmed:
                 packet=source_packet(manifest,request=status['request'])
                 self.save(folder,'source-packet.json',packet)
                 messages = [{'role':'system','content':PROPOSAL_INSTRUCTIONS},
                             {'role':'user','content':json.dumps({'request':status['request'],'source_profile':planning_profile(context),'source_evidence':{k:v for k,v in packet.items() if k!='record_id_map'}},ensure_ascii=False)}]
+                if (folder/'intake-context.json').exists():
+                    discussion=json.loads((folder/'intake-context.json').read_text())
+                    messages[-1]['content'] += '\nPrior conversation for intent only, not source evidence:\n'+json.dumps(discussion,ensure_ascii=False)
                 if (folder/'revision-request.json').exists():
                     messages += revision_messages(json.loads((folder/'revision-request.json').read_text()), packet['record_id_map'])
                 failures = set()

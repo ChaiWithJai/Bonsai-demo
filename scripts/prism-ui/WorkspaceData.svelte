@@ -5,8 +5,8 @@
   import WorkspaceProposalReview from '$lib/WorkspaceProposalReview.svelte';
   import { onMount } from 'svelte';
   import WorkspaceRecordReview from '$lib/WorkspaceRecordReview.svelte';
-  let { onProject = (_id: string) => {}, initialSource = '', role = 'Research analyst', panel = $bindable('conversation') } = $props<{onProject?: (id: string) => void; initialSource?:string; role?:string; panel?:string}>();
-  type Job = {kind?:string;run_id?:string;id:string; source_id:string; source_ids?:string[]; filename:string; request:string; status:string; stage:string; workspace_id?:string; error?:string; mlflow_url?:string; proposal?:any; proposal_sha256?:string; source_coverage?:any; source_examples?:any[]};
+  let { onProject = (_id: string) => {}, initialSource = '', initialIntake = '', role = 'Research analyst', panel = $bindable('conversation') } = $props<{onProject?: (id: string) => void; initialSource?:string; initialIntake?:string; role?:string; panel?:string}>();
+  type Job = {kind?:string;run_id?:string;id:string; source_id:string; source_ids?:string[]; filename:string; request:string; status:string; stage:string; workspace_id?:string; error?:string; mlflow_url?:string; proposal?:any; proposal_sha256?:string; reply?:string; role?:string; parent_job_id?:string; source_coverage?:any; source_examples?:any[]};
   function sourceLocation(locator: Record<string, unknown>, index: number) {
     if (locator.sheet != null && locator.cell != null) return String(locator.sheet) + ' · ' + locator.cell;
     if (locator.body_block != null) return 'Document block ' + locator.body_block + (locator.table_row != null ? ' · table row ' + locator.table_row : ' · paragraph');
@@ -18,12 +18,20 @@
   }
   let jobs = $state<Job[]>([]);
   let intent = $state('');
+  let intakeJobId = $state('');
+  const intakeJob = $derived(jobs.find(job=>job.id===intakeJobId));
+  const intakeHistory = $derived.by(()=>{
+    const result:Job[]=[];let current=intakeJob;
+    while(current && result.length<6){result.unshift(current);current=jobs.find(job=>job.id===current?.parent_job_id);}
+    return result;
+  });
+  const completedIntakeId = $derived(intakeJob?.status==='completed' ? intakeJob.id : intakeJob?.parent_job_id ?? '');
   let draftReady = $state(false);
   let draftNotice = $state('Restoring draft…');
   let draftStorageKey = '';
   $effect(() => {
     if (!draftReady) return;
-    const draft = {version:1, intent, attached, sourceId:source?.source_id ?? '', applyReviews};
+    const draft = {version:1, intent, intakeJobId, attached, sourceId:source?.source_id ?? '', applyReviews};
     try {
       localStorage.setItem(draftStorageKey, JSON.stringify(draft));
       draftNotice = intent || attached.length ? 'Draft saved in this browser.' : '';
@@ -32,7 +40,7 @@
     }
   });
   function clearDraft() {
-    intent=''; attached=[]; source=null; applyReviews=false; error='';
+    intent=''; intakeJobId=''; attached=[]; source=null; applyReviews=false; error='';
   }
   let fileSearch = $state('');
   let selectedRecord = $state('');
@@ -45,6 +53,8 @@
   const filteredSources = $derived(sources.filter(item => item.filename.toLowerCase().includes(fileSearch.toLowerCase())));
 
   let source = $state<SourceData | null>(null);
+  const effectiveIntent = $derived(intent.trim() || (source ? intakeJob?.request ?? '' : ''));
+
   const conversationJobs = $derived(jobs.filter(job => source && job.source_id === source.source_id));
   let error = $state('');
   let busy = $state(false);
@@ -103,12 +113,16 @@
     return result;
   }
   async function generate(event: SubmitEvent) {
-    event.preventDefault(); if (!source || runningJob || busy) return;
+    event.preventDefault(); if (runningJob || busy) return;
     busy=true;error='';
     try {
+      if(!source){
+        const reply=await jobRequest('/intake',{role,message:intent,parent_job_id:completedIntakeId || null});
+        intakeJobId=reply.id;intent='';panel='conversation';jobs=(await jobRequest()).jobs;return;
+      }
       if(attached.length>1) { source=await request('/collection',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_ids:attached,apply_reviews:applyReviews})});await refresh(); }
       if(!source)return;
-      await request('/'+source.source_id+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:'Role: '+role+'\n\n'+intent,apply_reviews:applyReviews})});
+      await request('/'+source.source_id+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:'Role: '+role+'\n\n'+effectiveIntent,apply_reviews:applyReviews,intake_job_id:completedIntakeId || null})});
       jobs=(await jobRequest()).jobs;
     } catch(e) { error=String(e); } finally { busy=false; }
   }
@@ -122,14 +136,16 @@
   }
   onMount(() => {
     let stopped=false;let timer:ReturnType<typeof setTimeout>;
-    draftStorageKey='bonsai-workstream-draft:v1:'+encodeURIComponent(role)+':'+(initialSource || 'new');
+    draftStorageKey='bonsai-workstream-draft:v1:'+encodeURIComponent(role)+':'+(initialIntake || initialSource || 'new');
     async function restoreDraft() {
       busy=true;
+      intakeJobId=initialIntake;
       try {
         const raw=localStorage.getItem(draftStorageKey);
         const saved=raw ? JSON.parse(raw) : null;
         if(saved?.version===1 && typeof saved.intent==='string' && Array.isArray(saved.attached)) {
           intent=saved.intent.slice(0,4000);
+          if(typeof saved.intakeJobId==='string' && /^[a-f0-9]{32}$/.test(saved.intakeJobId))intakeJobId=saved.intakeJobId;
           attached=saved.attached.filter((id:unknown)=>typeof id==='string' && /^[a-f0-9]{64}$/.test(id)).slice(0,20);
           applyReviews=saved.applyReviews===true;
           if(typeof saved.sourceId==='string' && /^[a-f0-9]{64}$/.test(saved.sourceId)) {
@@ -157,7 +173,7 @@
 
 <section class="data" class:empty={!source} aria-label="Desktop sources">
   <nav class="intake-tabs" aria-label="Workstream sections">{#each [['conversation','Conversation'],['files','Files'],['activity','Activity']] as [key,label] (key)}<button class:active={panel===key} aria-pressed={panel===key} onclick={()=>panel=key}>{label}{key==='files' && attached.length ? ' · '+attached.length : ''}</button>{/each}</nav>
-  <div class="conversation-intro" hidden={panel!=='conversation'}><p class="role-label">{role}</p><h2>What would you like to understand?</h2><p class="welcome-message">Attach your files and tell me what you’re working on. We’ll review the findings together before building a view.</p></div>
+  <div class="conversation-intro" hidden={panel!=='conversation' || intakeHistory.length>0 || conversationJobs.length>0}><p class="role-label">{role}</p><h2>What would you like to understand?</h2><p class="welcome-message">Tell me what you’re working on and attach the relevant files. I’ll help structure the evidence, then we’ll agree on a view before building it.</p><div class="conversation-starters" aria-label="Ways to start"><button onclick={()=>intent='Compare the evidence across these files and show where the sources agree or disagree.'}>Compare evidence</button><button onclick={()=>intent='Organize these files into a timeline, preserving the source for every event.'}>Explore a timeline</button><button onclick={()=>intent='Group related records and help me explore the patterns, with links back to the sources.'}>Find patterns</button></div></div>
   <div class="file-panel" hidden={panel!=='files'}><h2>Files for this workstream</h2><p class="fine">Inspect extracted records and original evidence here. The conversation stays in its own tab.</p>
   <details class="file-help"><summary>Supported files and extraction details</summary><p class="fine">Up to 20 files, 25 MiB each. Tables, text, email exports, and PDF pages are extracted locally. PDF pages without embedded text use OCR on this Mac. Images use local OCR. English audio uses local Whisper transcription. Bonsai can read image content and sampled video frames for review.</p></details>
   {#if attached.length}<div class="attachments" aria-label="Attached files">{#each attached as id (id)}{@const file=sources.find((item:SourceSummary)=>item.source_id===id)}<div><button class="attachment" onclick={()=>choose(id)} disabled={busy}>{file?.filename ?? 'Attached file'}</button><button class="remove" aria-label={'Remove '+(file?.filename ?? 'attached file')} onclick={()=>removeAttachment(id)} disabled={busy}>×</button></div>{/each}</div>{/if}
@@ -176,16 +192,17 @@
     {:else}<p>Original media is saved. Extracted records and review will appear once the media workflow is connected.</p>{/if}
   {/if}
   </div>
-  <div hidden={panel!=='conversation'}>
+  <div class="conversation-thread" hidden={panel!=='conversation'}>
+  {#if intakeHistory.length}<section class="intake-history" aria-label="Conversation before attachment">{#each intakeHistory as turn (turn.id)}<p class="intake-user">{turn.request}</p>{#if turn.reply}<p class="intake-reply">{turn.reply}</p>{:else}<p role="status">{turn.stage}</p>{/if}{#if turn.error}<p class="error" role="alert">{turn.error}</p>{/if}{#if ['queued','running'].includes(turn.status)}<button onclick={()=>cancel(turn.id)}>Stop reply</button>{/if}<details><summary>Reply evidence</summary><p>No source files were read in this reply.</p>{#if turn.mlflow_url}<a href={turn.mlflow_url} target="_blank" rel="noreferrer">View MLflow trace</a>{/if}</details>{/each}</section>{/if}
   {#if conversationJobs.length}<section class="jobs" aria-label="Visualization jobs"><h3>Your conversation with Bonsai</h3>{#each conversationJobs.slice(0,1) as job (job.id)}<article><strong>{job.filename}</strong><p>{job.request}</p><p role="status">{job.stage} · {job.status}</p>{#if job.proposal}<WorkspaceProposal readOnly={job.status !== 'awaiting_confirmation'} proposal={job.proposal} coverage={job.source_coverage} evidence={job.source_examples} busy={busy || Boolean(runningJob)} onConfirm={()=>respondToProposal(job)} onRevise={(feedback)=>respondToProposal(job,feedback)}/>{/if}{#if job.proposal}{#key job.id}<WorkspaceProposalReview jobId={job.id}/>{/key}{/if}{#if job.error}<p class="error">{job.error}</p>{/if}{#if ['queued','running'].includes(job.status)}<button onclick={()=>cancel(job.id)}>Cancel generation</button>{/if}{#if job.workspace_id}<button onclick={()=>onProject(job.workspace_id!)}>{job.status === 'completed' ? 'Open editable project' : 'Inspect saved project'}</button>{/if}{#if job.mlflow_url}<a href={job.mlflow_url} target="_blank" rel="noreferrer">MLflow evidence</a>{/if}</article>{/each}{#if conversationJobs.length > 1}<details><summary>Earlier proposals and attempts ({conversationJobs.length - 1})</summary>{#each conversationJobs.slice(1) as old (old.id)}<p>{old.filename} · {old.stage} · {old.status}{#if old.mlflow_url} <a href={old.mlflow_url} target="_blank" rel="noreferrer">Evidence</a>{/if}</p>{/each}</details>{/if}</section>{/if}
   </div>
   {#if panel==='activity'}<section class="runtime-panel"><h2>Runtime activity</h2>{#if busy}<p role="status">Processing your files…</p>{:else if runningJob}<p role="status">{runningJob.stage}</p>{:else}<p>No task is running.</p>{/if}{#each conversationJobs as job (job.id)}<article><strong>{job.stage}</strong><p>{job.status.replaceAll('_',' ')}</p>{#if job.error}<p class="error">{job.error}</p>{/if}{#if job.mlflow_url}<a href={job.mlflow_url} target="_blank" rel="noreferrer">View run evidence</a>{/if}</article>{/each}</section>{/if}
   {#if error}<p class="error" role="alert">{error}</p>{/if}
-  <form id="source-request" class="message-compose" onsubmit={generate}>
+  <form id="source-request" hidden={panel!=='conversation'} class="message-compose" onsubmit={generate}>
     {#if attached.length}<div class="composer-files">{#each attached as id (id)}{@const file=sources.find(item=>item.source_id===id)}<span>{file?.filename ?? 'Attached file'}<button type="button" aria-label={'Remove '+(file?.filename ?? 'file')} onclick={()=>removeAttachment(id)} disabled={busy}>×</button></span>{/each}<button type="button" onclick={()=>panel='files'}>Inspect files</button></div>{/if}
-    <label class="message-label" for="visualization-intent">Message {role}</label><textarea id="visualization-intent" bind:value={intent} minlength="10" maxlength="4000" required placeholder="What should we explore in your files?" disabled={busy}></textarea>
-    <div class="composer-actions"><label class="attach-button">＋ Attach files<input type="file" multiple accept=".xlsx,.docx,.eml,.mbox,.csv,.tsv,.json,.jsonl,.txt,.md,.png,.jpg,.jpeg,.webp,.pdf,.wav,.mp3,.m4a,.mp4,.mov,.webm" onchange={upload} disabled={busy}/></label><button type="submit" class="send-message" disabled={Boolean(runningJob) || busy || source?.status!=='extracted' || intent.trim().length<10}>Send ↑</button></div>
-    <p class="composer-hint">{!draftReady ? 'Restoring draft…' : busy ? 'Reading your files…' : !source ? 'Attach a file to begin. Your message stays here while it uploads.' : source.status!=='extracted' ? 'This file needs extraction. Open Files to inspect or retry.' : intent.trim().length<10 ? 'Describe what you want to understand (at least 10 characters).' : 'Bonsai will propose a view for your review.'}</p>
+    <label class="message-label" for="visualization-intent">Message {role}</label><textarea id="visualization-intent" bind:value={intent} maxlength="4000" placeholder="Tell me what you want to understand…" disabled={busy}></textarea>
+    <div class="composer-actions"><label class="attach-button">＋ Attach files<input type="file" multiple accept=".xlsx,.docx,.eml,.mbox,.csv,.tsv,.json,.jsonl,.txt,.md,.png,.jpg,.jpeg,.webp,.pdf,.wav,.mp3,.m4a,.mp4,.mov,.webm" onchange={upload} disabled={busy}/></label><button type="submit" class="send-message" disabled={Boolean(runningJob) || busy || (!source ? !intent.trim() : source.status!=='extracted' || effectiveIntent.length<10)}>Send ↑</button></div>
+    <p class="composer-hint">{!draftReady ? 'Restoring draft…' : busy ? source ? 'Reading your files…' : 'Sending your message…' : !source ? 'Start with a question, or attach files to explore together.' : source.status!=='extracted' ? 'This file needs extraction. Open Files to inspect or retry.' : effectiveIntent.length<10 ? 'Describe what you want to understand (at least 10 characters).' : 'Bonsai will propose a view for your review.'}</p>
     <div class="draft-status"><span role="status">{draftNotice}</span>{#if intent || attached.length}<button type="button" onclick={clearDraft} disabled={busy || Boolean(runningJob)}>Clear draft</button>{/if}</div>
   </form>
 
@@ -203,4 +220,12 @@
 .data.empty{min-height:calc(100dvh - 90px);box-sizing:border-box;display:flex;flex-direction:column}.empty .message-compose{margin-top:auto}.message-compose{border:1px solid var(--border);border-radius:20px;padding:12px 16px;margin-top:20px}.message-compose textarea{border:0;background:transparent;margin:5px 0;min-height:70px;padding:8px 0;resize:vertical}.saved-source{font-size:11px;margin:10px 0}.saved-source label{display:block;margin-top:10px}@media(max-width:750px){.data.empty{min-height:500px}.data{padding:20px}}
 
   .data,.data.empty{max-width:900px;width:100%;min-height:0;box-sizing:border-box;margin:0 auto;padding:0 28px 24px;display:flex;flex-direction:column}.intake-tabs{display:flex;gap:20px;border-bottom:1px solid var(--border);margin:0 -28px 24px;padding:0 28px}.intake-tabs button{border:0;border-radius:0;background:none;padding:16px 2px;color:var(--muted-foreground)}.intake-tabs button.active{color:var(--foreground);border-bottom:2px solid var(--foreground)}.conversation-intro{padding:12px 0}.role-label{font-size:11px;color:var(--muted-foreground)}.welcome-message{background:none;padding:0;max-width:480px;margin:12px 0 24px}.message-compose,.empty .message-compose{margin:24px 0 0;background:var(--card);border-radius:16px;box-shadow:0 4px 18px #00000006;padding:16px}.message-label{font-size:12px}.message-compose textarea{min-height:95px;max-height:200px;box-sizing:border-box;width:100%}.composer-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}.attach-button{cursor:pointer;font-size:12px;border:1px solid var(--border);border-radius:8px;padding:8px 12px}.attach-button:focus-within{outline:2px solid var(--ring)}.attach-button input{position:absolute;width:1px;height:1px;opacity:0}.send-message{background:var(--primary);color:var(--primary-foreground);border-radius:9px;padding:10px 18px}.composer-hint{font-size:11px;line-height:1.6;color:var(--muted-foreground);margin:12px 0 0}.composer-files{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.composer-files span{font-size:11px;background:var(--muted);border-radius:6px;padding:4px 8px;overflow-wrap:anywhere}.composer-files button{padding:3px 6px;font-size:11px}.runtime-panel article{padding:12px 0;border-bottom:1px solid var(--border)}[hidden]{display:none!important}@media(max-width:750px){.data,.data.empty{padding:0 16px 20px;min-height:0}.intake-tabs{margin:0 -16px 16px;padding:0 16px}}
+
+.conversation-intro{padding:30px 0 16px}.role-label{letter-spacing:.03em}.welcome-message{background:var(--muted);padding:18px 20px;border-radius:18px 18px 18px 4px;max-width:520px;margin:18px 0;line-height:1.8}.conversation-starters{display:flex;flex-wrap:wrap;gap:8px}.conversation-starters button{background:transparent;color:var(--foreground);font-size:12px;padding:9px 12px;border-radius:20px}.message-compose,.empty .message-compose{margin-top:auto;position:sticky;bottom:0;flex-shrink:0;box-shadow:0 -12px 24px var(--background)}.conversation-intro{margin-bottom:28px}.message-compose textarea{min-height:70px}.intake-tabs{position:sticky;top:0;z-index:2;background:var(--background);flex-shrink:0}.file-panel,.runtime-panel{padding-bottom:24px}button:focus-visible,textarea:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
+@media(max-width:750px){.conversation-intro{padding-top:10px}.message-compose,.empty .message-compose{position:static;margin-top:20px}.conversation-starters{gap:6px}.conversation-starters button{font-size:11px}.data,.data.empty{height:auto;min-height:480px}}
+
+.intake-history{padding-bottom:24px}.intake-history p{white-space:pre-wrap;overflow-wrap:anywhere;padding:14px 18px;line-height:1.7}.intake-user{margin-left:15%;background:var(--primary);color:var(--primary-foreground);border-radius:18px 18px 4px 18px}.intake-reply{margin-right:8%;background:var(--muted);border-radius:18px 18px 18px 4px}.intake-history details{font-size:11px;color:var(--muted-foreground);margin:12px 0 24px}
+
+.data,.data.empty{overflow:hidden}.conversation-intro{flex-shrink:0}.conversation-thread,.file-panel,.runtime-panel{flex:1;min-height:0;overflow:auto}.message-compose,.empty .message-compose{position:relative;bottom:auto;box-shadow:none;margin-top:16px}.conversation-thread{padding-right:8px}.intake-history{padding-bottom:0}
+@media(max-width:750px){.data,.data.empty{overflow:visible}.conversation-thread,.file-panel,.runtime-panel{overflow:visible;flex:auto}.conversation-thread{padding-right:0}}
 </style>

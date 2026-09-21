@@ -318,6 +318,9 @@ class Handler(BaseHTTPRequestHandler):
                 jobs = self.server.workspace_source_jobs
                 if len(parts) == 3 and self.command == 'GET':
                     result = jobs.list()
+                elif len(parts) == 4 and parts[3] == 'intake' and self.command == 'POST':
+                    from workspace_intake_chat import start
+                    result = start(jobs,payload.get('role'),payload.get('message'),payload.get('parent_job_id'))
                 elif len(parts) == 4 and self.command == 'GET':
                     result = jobs.get(parts[3])
                 elif len(parts) == 5 and parts[4] == 'reviews' and self.command in ('GET', 'POST'):
@@ -346,7 +349,7 @@ class Handler(BaseHTTPRequestHandler):
                 elif len(parts) == 5 and parts[4] == 'vision' and self.command == 'POST':
                     result = self.server.workspace_source_jobs.start_vision(parts[3])
                 elif len(parts) == 5 and parts[4] == 'generate' and self.command == 'POST':
-                    result = self.server.workspace_source_jobs.start(parts[3], payload.get('request'), payload.get('apply_reviews', False))
+                    result = self.server.workspace_source_jobs.start(parts[3], payload.get('request'), payload.get('apply_reviews', False), intake_job_id=payload.get('intake_job_id'))
                 elif len(parts) == 5 and parts[4] == 'file' and self.command == 'GET':
                     raw, mime = sources.download(parts[3])
                     return self.respond_file(raw, mime)
@@ -361,6 +364,8 @@ class Handler(BaseHTTPRequestHandler):
                     return self.respond(200, raw, mime)
                 else:
                     raise ValueError('Unknown source route')
+            elif self.command == 'GET' and parts == ['api', 'workspace', 'workstreams']:
+                result = self.server.workspace_source_jobs.workstreams()
             elif self.command == 'GET' and parts == ['api', 'workspace']:
                 result = worker.status()
             elif self.command == 'POST' and parts == ['api', 'workspace']:
