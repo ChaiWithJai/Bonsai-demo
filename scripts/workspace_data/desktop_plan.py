@@ -18,7 +18,7 @@ def profile(manifest):
     return {'source_id': manifest['source_id'], 'filename': manifest['filename'],
             'evidence_status':manifest.get('review_status','source_values_unreviewed'),
             'source_coverage':manifest.get('sources', []),
-            'media_coverage':manifest.get('vision_coverage') or manifest.get('audio_coverage') or manifest.get('image_coverage'),
+            'media_coverage':({'visual':manifest.get('vision_coverage'), 'speech':manifest.get('audio_coverage'), 'speech_error':manifest.get('speech_extraction_error'), 'limitation':'Independent frame and speech passes; temporal co-occurrence does not establish a causal relationship.'} if manifest.get('kind')=='video' else manifest.get('vision_coverage') or manifest.get('audio_coverage') or manifest.get('image_coverage')),
             'workbook_coverage':manifest.get('workbook_coverage'), 'document_coverage':manifest.get('document_coverage'), 'extractor':manifest.get('extractor'), 'extraction_coverage':manifest.get('extraction_coverage'),
             'record_count': len(rows), 'fields': [
                 {'name': key, 'missing': sum(row['data'].get(key) in (None, '') for row in rows),

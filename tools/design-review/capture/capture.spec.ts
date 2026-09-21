@@ -947,3 +947,26 @@ test('Expected results captures ordered selection checks without inference',asyn
  await page.locator('.expectations').scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/39-selection-checks.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Video evidence keeps speech and frame navigation separate',async({page},info)=>{
+ test.skip(process.env.VIDEO_SPEECH_REVIEW!=='1','Requires completed development video extraction');
+ const source=JSON.parse(await fs.readFile(path.resolve('.cache/video-speech-development/live/merged.json'),'utf8'));
+ const speech=source.records.filter((r:any)=>r.locator.evidence_channel==='speech');
+ const frames=source.records.filter((r:any)=>r.locator.evidence_channel==='visual');
+ expect(speech.length).toBeGreaterThan(0);expect(frames.length).toBeGreaterThan(0);
+ await page.goto('/#/workspace');await page.getByRole('button',{name:'Files',exact:true}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(source.source_id);
+ await expect(page.getByRole('button',{name:'Speech transcribed',exact:true})).toBeDisabled();
+ await expect(page.getByText('Speech extraction evidence',{exact:true})).toBeVisible();
+ const transcript=page.locator('.transcript');
+ await expect(transcript.getByRole('button',{name:/^Speech ·/})).toHaveCount(speech.length);
+ await expect(transcript.getByRole('button',{name:/^Frame ·/})).toHaveCount(frames.length);
+ await transcript.getByRole('button',{name:/^Speech ·/}).last().click();
+ await expect.poll(async()=>page.locator('video').evaluate((el:HTMLVideoElement)=>el.currentTime)).toBeCloseTo(speech.at(-1).locator.start_seconds,1);
+ await transcript.getByRole('button',{name:/^Frame ·/}).first().click();
+ await expect.poll(async()=>page.locator('video').evaluate((el:HTMLVideoElement)=>el.currentTime)).toBeCloseTo(frames[0].locator.time_seconds,1);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await expect.poll(async()=>page.locator('video').evaluate((el:HTMLVideoElement)=>el.readyState)).toBeGreaterThanOrEqual(2);
+ await expect.poll(async()=>page.locator('video').evaluate((el:HTMLVideoElement)=>el.seeking)).toBe(false);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/40-video-speech.'+info.project.name+'.png'),fullPage:true});
+});

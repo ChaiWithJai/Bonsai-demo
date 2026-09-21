@@ -127,6 +127,9 @@ class WorkspaceSources:
                     manifest = extract_saved(self.root, manifest)
                     self.log_file_extraction(manifest)
                 return self.get(source_id)
+            if manifest['kind']=='video':
+                from workspace_data.video import extract_speech
+                return extract_speech(self,source_id)
             is_pdf=manifest['filename'].lower().endswith('.pdf')
             is_audio=manifest['kind']=='audio'
             if not is_pdf and not is_audio and Path(manifest['filename']).suffix.lower() not in ('.png','.jpg','.jpeg','.webp'):
