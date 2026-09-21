@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 
 
-def source_evidence(root, fixture):
+def source_evidence(root, fixture, *, require_build=True):
     job = fixture.get('source_job')
     if not job:
         return []
@@ -23,9 +23,13 @@ def source_evidence(root, fixture):
 
     prefix = 'source-jobs/' + jid
     verified_raw(folder / 'source.bin', manifest['sha256'], prefix)
-    for name in ('original-manifest.json', 'source-manifest.json', 'proposal.json',
-                 'compiled.json', 'source-packet.json', 'confirmation.json',
-                 'model-info.json', 'harness-hashes.json', 'planning-status.json'):
+    names = ['original-manifest.json', 'source-manifest.json', 'proposal.json',
+             'source-packet.json', 'model-info.json', 'harness-hashes.json']
+    if require_build:
+        names += ['compiled.json', 'confirmation.json', 'planning-status.json']
+    elif (folder / 'planning-status.json').is_file():
+        names.append('planning-status.json')
+    for name in names:
         path = folder / name
         if not path.is_file():
             raise ValueError('Source job evidence is incomplete: ' + name)

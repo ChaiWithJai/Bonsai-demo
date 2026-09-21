@@ -748,6 +748,13 @@ test('Proposal judgments are separate from build approval and exclude test label
  const bundle=await page.request.get('/api/workspace/source-jobs/'+jid+'/review-export').then(r=>r.json());
  expect(bundle.example_count).toBe(0);
  expect(bundle.review_events.at(-1).reviewer_kind).toBe('test');
+ const publicationResponse=page.waitForResponse(response=>response.request().method()==='POST' && response.url().endsWith('/'+jid+'/review-export'));
+ await page.getByRole('button',{name:'Publish example bundle to MLflow',exact:true}).click();
+ const publication=await (await publicationResponse).json();
+ expect(publication.example_count).toBe(0);
+ expect(publication.dataset_sha256).toBe(bundle.dataset_sha256);
+ await expect(page.getByRole('link',{name:'Open dataset run',exact:true})).toHaveAttribute('href',publication.run_url);
+ await fs.writeFile(path.resolve(import.meta.dirname,'../../../.cache/workspace-checks/proposal-publication-'+info.project.name+'.json'),JSON.stringify(publication,null,2));
  expect((await page.request.get('/api/workspace/source-jobs/'+jid).then(r=>r.json())).status).toBe('completed');
  await page.locator('.proposal-review').screenshot({path:path.resolve(import.meta.dirname,'../shots/34-proposal-review.'+info.project.name+'.png')});
 });
