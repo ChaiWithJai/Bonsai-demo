@@ -38,3 +38,29 @@ class InterfaceReviewTest(unittest.TestCase):
     def test_active_attempt_prevents_review(self):
         self.store.start_attempt(self.key, self.project['head'], 'Change the UI')
         with self.assertRaises(RevisionConflict): self.store.review_interface(self.key, self.body())
+
+class InterfaceExportTest(unittest.TestCase):
+    def test_mlflow_export_preserves_exact_bundle_and_does_not_infer_acceptance(self):
+        import json
+        from pathlib import Path
+        from types import SimpleNamespace
+        from workspace_worker import WorkspaceWorker
+        class Client:
+            def get_experiment_by_name(self, name): return SimpleNamespace(experiment_id='32')
+            def create_run(self, eid, tags):
+                self.tags = tags
+                return SimpleNamespace(info=SimpleNamespace(run_id='export'))
+            def log_artifact(self, rid, path, location):
+                self.bundle = json.loads(Path(path).read_text())
+            def log_metric(self, rid, name, value): self.count = value
+            def set_terminated(self, rid, status): self.status = status
+        with tempfile.TemporaryDirectory() as folder:
+            store = WorkspaceStore(folder)
+            project = store.create('Export fixture', {'App.svelte': '<p>Data</p>'}, {'kind':'test'})
+            client = Client()
+            worker = SimpleNamespace(store=store, client=client, tracking_uri='http://localhost:5210')
+            result = WorkspaceWorker.export_interface_reviews(worker, project['id'])
+            self.assertEqual(result['example_count'], 0)
+            self.assertEqual(client.bundle['training_candidates'], [])
+            self.assertEqual(client.tags['dataset_sha256'], result['dataset_sha256'])
+            self.assertEqual(client.status, 'FINISHED')
