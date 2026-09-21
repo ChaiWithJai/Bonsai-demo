@@ -17,6 +17,22 @@
   }
   let jobs = $state<Job[]>([]);
   let intent = $state('');
+  let draftReady = $state(false);
+  let draftNotice = $state('Restoring draft…');
+  let draftStorageKey = '';
+  $effect(() => {
+    if (!draftReady) return;
+    const draft = {version:1, intent, attached, sourceId:source?.source_id ?? '', applyReviews};
+    try {
+      localStorage.setItem(draftStorageKey, JSON.stringify(draft));
+      draftNotice = intent || attached.length ? 'Draft saved in this browser.' : '';
+    } catch {
+      draftNotice = 'Draft could not be saved in this browser. Keep this page open.';
+    }
+  });
+  function clearDraft() {
+    intent=''; attached=[]; source=null; applyReviews=false; error='';
+  }
   let fileSearch = $state('');
   let selectedRecord = $state('');
   let videoPlayer: HTMLVideoElement | undefined = $state();
@@ -104,8 +120,28 @@
     try { await jobRequest('/'+id+'/cancel',{}); } catch(e) { error=String(e); }
   }
   onMount(() => {
-    if(initialSource) void choose(initialSource);
     let stopped=false;let timer:ReturnType<typeof setTimeout>;
+    draftStorageKey='bonsai-workstream-draft:v1:'+encodeURIComponent(role)+':'+(initialSource || 'new');
+    async function restoreDraft() {
+      busy=true;
+      try {
+        const raw=localStorage.getItem(draftStorageKey);
+        const saved=raw ? JSON.parse(raw) : null;
+        if(saved?.version===1 && typeof saved.intent==='string' && Array.isArray(saved.attached)) {
+          intent=saved.intent.slice(0,4000);
+          attached=saved.attached.filter((id:unknown)=>typeof id==='string' && /^[a-f0-9]{64}$/.test(id)).slice(0,20);
+          applyReviews=saved.applyReviews===true;
+          if(typeof saved.sourceId==='string' && /^[a-f0-9]{64}$/.test(saved.sourceId)) {
+            try { source=await request('/'+saved.sourceId); }
+            catch { error='Your message is restored, but an attached source is unavailable. Remove it or attach the file again.'; }
+          }
+        } else if(initialSource) await choose(initialSource);
+      } catch {
+        error='The saved draft could not be restored. You can still attach files and write a new message.';
+        if(initialSource) await choose(initialSource);
+      } finally { if(!stopped) {busy=false;draftReady=true;} }
+    }
+    void restoreDraft();
     refresh().catch(e=>error=String(e));
     async function poll() {
       try { jobs=(await jobRequest()).jobs;
@@ -148,12 +184,14 @@
     {#if attached.length}<div class="composer-files">{#each attached as id (id)}{@const file=sources.find(item=>item.source_id===id)}<span>{file?.filename ?? 'Attached file'}<button type="button" aria-label={'Remove '+(file?.filename ?? 'file')} onclick={()=>removeAttachment(id)} disabled={busy}>×</button></span>{/each}<button type="button" onclick={()=>panel='files'}>Inspect files</button></div>{/if}
     <label class="message-label" for="visualization-intent">Message {role}</label><textarea id="visualization-intent" bind:value={intent} minlength="10" maxlength="4000" required placeholder="What should we explore in your files?" disabled={busy}></textarea>
     <div class="composer-actions"><label class="attach-button">＋ Attach files<input type="file" multiple accept=".xlsx,.docx,.eml,.mbox,.csv,.tsv,.json,.jsonl,.txt,.md,.png,.jpg,.jpeg,.webp,.pdf,.wav,.mp3,.m4a,.mp4,.mov,.webm" onchange={upload} disabled={busy}/></label><button type="submit" class="send-message" disabled={Boolean(runningJob) || busy || source?.status!=='extracted' || intent.trim().length<10}>Send ↑</button></div>
-    <p class="composer-hint">{busy ? 'Reading your files…' : !source ? 'Attach a file to begin. Your message stays here while it uploads.' : source.status!=='extracted' ? 'This file needs extraction. Open Files to inspect or retry.' : intent.trim().length<10 ? 'Describe what you want to understand (at least 10 characters).' : 'Bonsai will propose a view for your review.'}</p>
+    <p class="composer-hint">{!draftReady ? 'Restoring draft…' : busy ? 'Reading your files…' : !source ? 'Attach a file to begin. Your message stays here while it uploads.' : source.status!=='extracted' ? 'This file needs extraction. Open Files to inspect or retry.' : intent.trim().length<10 ? 'Describe what you want to understand (at least 10 characters).' : 'Bonsai will propose a view for your review.'}</p>
+    <div class="draft-status"><span role="status">{draftNotice}</span>{#if intent || attached.length}<button type="button" onclick={clearDraft} disabled={busy || Boolean(runningJob)}>Clear draft</button>{/if}</div>
   </form>
 
 </section>
 
 <style>
+  .draft-status{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted-foreground);margin-top:8px}.draft-status button{background:none;color:inherit;border:0;padding:4px;font-size:11px}
   video{display:block;width:100%;max-height:420px;background:#111;border-radius:8px}audio{width:100%;margin:12px 0}.transcript{display:grid;gap:8px;margin-bottom:18px}.transcript button{text-align:left;background:var(--background);color:inherit;line-height:1.6}.transcript button[aria-pressed=true]{border-color:#94702e;background:#94702e12}
   .attachments{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.attachments>div{display:flex;max-width:100%;border:1px solid var(--border);border-radius:8px;overflow:hidden}.attachments button{background:var(--background);color:inherit;border:0;border-radius:0}.attachment{overflow-wrap:anywhere;text-align:left}.remove{font-size:18px;padding:8px}.error{white-space:pre-wrap}
 
