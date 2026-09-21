@@ -14,6 +14,14 @@
   let tab = $state('preview');
   let home = $state(true);
   let comparison = $state<Data | null>(null);
+  let reviews = $state<Data | null>(null);
+  let reviewer = $state('');
+  let reviewerKind = $state('human');
+  let reviewAction = $state('accept');
+  let reviewNote = $state('');
+  let reviewBusy = $state(false);
+  let reviewError = $state('');
+  let reviewExport = $state<Data | null>(null);
   let compareLeft = $state('');
   let compareRight = $state('');
   let comparing = $state(false);
@@ -42,6 +50,8 @@
   async function choose(id: string) {
     project = await api('/' + id);
     home = false;
+    reviews = await api('/' + id + '/reviews');
+    reviewNote = ''; reviewError = ''; reviewExport = null;
     comparison = null; comparisonError = '';
     const finished = (project?.attempts ?? []).filter((a: Data) => a.status !== 'running');
     compareLeft = finished.at(-2)?.id ?? ''; compareRight = finished.at(-1)?.id ?? '';
@@ -51,6 +61,26 @@
     attempt = latest?.id ?? '';
     events = [];
     if (attempt) await pollEvents();
+  }
+  async function saveInterfaceReview(event: SubmitEvent) {
+    event.preventDefault();
+    if (!project || reviewBusy || running) return;
+    const id = project.id;
+    reviewBusy = true; reviewError = ''; reviewExport = null;
+    try {
+      await api('/' + id + '/reviews', {revision: project.head, author: reviewer.trim(), reviewer_kind: reviewerKind, action: reviewAction, note: reviewNote.trim(), previous_event_id: reviews?.revision === project.head ? reviews?.latest?.event_id ?? null : null});
+      const saved = await api('/' + id + '/reviews');
+      if (project?.id === id) { reviews = saved; reviewNote = ''; }
+    } catch (e) { if (project?.id === id) reviewError = String(e); }
+    finally { reviewBusy = false; }
+  }
+  async function exportInterfaceReview() {
+    if (!project || reviewBusy) return;
+    const id = project.id;
+    reviewBusy = true; reviewError = '';
+    try { const result = await api('/' + id + '/review-export', {}); if (project?.id === id) reviewExport = result; }
+    catch (e) { if (project?.id === id) reviewError = String(e); }
+    finally { reviewBusy = false; }
   }
   async function compareAttempts() {
     if (!project || comparing) return;
@@ -169,7 +199,20 @@
           {:else}<div class="preview-empty"><Monitor size={32}/><h2>Your project preview</h2><p>Build the saved revision to open it here. This step does not call the model.</p><button onclick={restore} disabled={busy || running}>{busy ? 'Building…' : 'Build saved revision'}</button></div>{/if}
         {:else if tab === 'data'}<WorkspaceData onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>
         {:else if tab === 'code'}<div class="source-title">App.svelte <span>{project.head.slice(0, 10)}</span></div><pre class="source"><code>{project.files['App.svelte']}</code></pre>
-        {:else}<div class="evidence"><h2>Compare attempts</h2>
+        {:else}<div class="evidence"><h2>Review this interface</h2>
+          <p>Your judgment applies to saved revision {project.head.slice(0, 10)}. Automated checks do not count as human acceptance.</p>
+          <form class="interface-review" onsubmit={saveInterfaceReview}>
+            <label>Reviewer name<input bind:value={reviewer} required maxlength="100" /></label>
+            <label>Review origin<select aria-label="Review origin" bind:value={reviewerKind}><option value="human">Human review</option><option value="codex">Codex review</option><option value="test">Automated test</option></select></label>
+            <label>Interface judgment<select aria-label="Interface judgment" bind:value={reviewAction}><option value="accept">Accept this revision</option><option value="reject">Needs changes</option></select></label>
+            <label>Review notes<textarea bind:value={reviewNote} required maxlength="4000" placeholder="What works, or what needs to change? Describe the evidence."></textarea></label>
+            <button disabled={reviewBusy || running || !reviewer.trim() || !reviewNote.trim()}>Save interface review</button>
+          </form>
+          {#if reviewError}<p role="alert">{reviewError}</p>{/if}
+          {#if reviews?.revision === project.head && reviews?.latest}<p role="status">Saved {reviews.latest.action} review by {reviews.latest.author} ({reviews.latest.reviewer_kind}).</p><blockquote>{reviews.latest.note}</blockquote>{:else}<p>No review of this revision yet.</p>{/if}
+          <button onclick={exportInterfaceReview} disabled={reviewBusy || running}>Export interface reviews to MLflow</button>
+          {#if reviewExport}<p>{reviewExport.example_count} accepted human-reviewed examples. <a href={reviewExport.run_url} target="_blank" rel="noreferrer">Open review dataset in MLflow</a></p>{/if}
+          <h2>Compare attempts</h2>
           <p>Compare saved outcomes and model or harness settings. These are development runs, not a controlled benchmark.</p>
           <div class="comparison-controls">
             <label>First attempt<select bind:value={compareLeft} onchange={() => comparison = null}><option value="">Choose an attempt</option>{#each requests.filter((a: Data) => a.status !== 'running') as item, i (item.id)}<option value={item.id}>{i + 1}. {item.status} · {item.id.slice(0, 8)}</option>{/each}</select></label>
@@ -188,6 +231,8 @@
 </main>
 
 <style>
+  .interface-review{display:grid;gap:12px;margin:18px 0}.interface-review label{display:grid;gap:6px}.interface-review input,.interface-review select,.interface-review textarea{width:100%;min-width:0;padding:10px;border:1px solid #d9ddd6;border-radius:8px;background:transparent;color:inherit}.interface-review textarea{min-height:90px}
+
   .comparison-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:16px 0}.comparison-controls label{display:grid;gap:6px;min-width:0}.comparison-controls select{max-width:100%;padding:8px}.comparison-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:16px}.comparison-results article{min-width:0;border:1px solid #d9ddd6;border-radius:10px;padding:16px}.comparison-results dd{margin:4px 0 12px;overflow-wrap:anywhere;font-size:11px}.comparison-results dt{font-size:12px;font-weight:600}
 
   .start-layout{display:grid;grid-template-columns:minmax(260px, .8fr) minmax(0, 1.2fr);gap:40px;align-items:start;padding:28px 0}.start-intro h2{font-size:28px;letter-spacing:-.7px;font-weight:500;margin:12px 0}.start-intro>p:not(.eyebrow),.saved-projects p{font-size:13px;line-height:1.7;color:var(--muted-foreground);max-width:460px}.scope-note{padding:16px;border-left:2px solid var(--border);margin:26px 0}.data-start{border:1px solid var(--border);border-radius:15px;background:var(--card);min-width:0}.saved-projects{border-top:1px solid var(--border);padding-top:20px;font-size:12px}.saved-projects summary{cursor:pointer}.saved-projects button{display:block;margin:10px 0;max-width:100%;text-align:left;overflow-wrap:anywhere}@media(max-width:750px){.start-layout{grid-template-columns:1fr;gap:20px;padding:12px 0}.start-intro h2{font-size:25px}}
