@@ -516,3 +516,19 @@ test('Role composer preserves draft across tabs and sends attached data',async({
  await expect(message).toHaveValue(intent);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/27-role-attached-message.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Revised workstream renders requested title and preserved evidence',async({page},info)=>{
+ const job=await (await page.request.get('/api/workspace/source-jobs/6e83f104314444c88a3cb5b93fe79240')).json();
+ expect(job.status).toBe('completed');
+ await page.goto('/#/workspace');
+ await page.getByLabel('Search workstreams',{exact:true}).fill('Observations and team requirements');
+ await page.getByRole('complementary',{name:'Workstreams',exact:true}).getByRole('button').filter({hasText:'Observations and team requirements'}).click();
+ const history=page.getByRole('region',{name:'Original workstream conversation'});
+ await expect(history).toContainText('Use the title Observations and team requirements.');
+ const frame=page.frameLocator('iframe');
+ await expect(frame.getByRole('heading',{name:'Observations and team requirements',exact:true})).toBeVisible();
+ await expect(frame.getByTestId('record-row')).toHaveCount(3);
+ await expect(frame.getByText('Development fixture: model A has 12 observations.',{exact:true}).first()).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/28-revised-workstream.'+info.project.name+'.png'),fullPage:true});
+});
