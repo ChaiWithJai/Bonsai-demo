@@ -197,3 +197,17 @@ test('Video evidence seeks to the selected sampled frame',async({page},info)=>{
  await evidence.scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/11-workspace-video.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Compare saved repair attempts',async({page},info)=>{
+ await page.goto('/#/workspace');
+ await page.getByText(/Saved projects/).click();
+ await page.locator('.saved-projects button').filter({hasText:'Model Variant Node View'}).click();
+ await page.getByRole('button',{name:'Evidence',exact:true}).click();
+ await page.getByRole('button',{name:'Compare attempts',exact:true}).click();
+ await expect(page.getByText('Recorded task metadata matches.',{exact:false})).toBeVisible();
+ await expect(page.locator('.comparison-results article')).toHaveCount(2);
+ await expect(page.locator('.comparison-results').getByRole('heading',{name:'failed',exact:true})).toBeVisible();
+ await expect(page.locator('.comparison-results').getByRole('heading',{name:'completed',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/12-comparison.'+info.project.name+'.png'),fullPage:true});
+});

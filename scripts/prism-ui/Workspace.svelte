@@ -13,6 +13,11 @@
   let loading = $state(true);
   let tab = $state('preview');
   let home = $state(true);
+  let comparison = $state<Data | null>(null);
+  let compareLeft = $state('');
+  let compareRight = $state('');
+  let comparing = $state(false);
+  let comparisonError = $state('');
   let selectedCase = $state('baseline');
   let preview = $state<Data | null>(null);
   const running = $derived(Boolean(status?.running_attempts?.length));
@@ -37,12 +42,25 @@
   async function choose(id: string) {
     project = await api('/' + id);
     home = false;
+    comparison = null; comparisonError = '';
+    const finished = (project?.attempts ?? []).filter((a: Data) => a.status !== 'running');
+    compareLeft = finished.at(-2)?.id ?? ''; compareRight = finished.at(-1)?.id ?? '';
     localStorage.setItem('bonsai-workspace', id);
     preview = project?.preview ?? null;
     const latest = project?.attempts?.at(-1);
     attempt = latest?.id ?? '';
     events = [];
     if (attempt) await pollEvents();
+  }
+  async function compareAttempts() {
+    if (!project || comparing) return;
+    const id = project.id;
+    comparing = true; comparisonError = ''; comparison = null;
+    try {
+      const result = await api('/' + id + '/comparison?attempt=' + encodeURIComponent(compareLeft) + '&attempt=' + encodeURIComponent(compareRight));
+      if (project?.id === id) comparison = result;
+    } catch (e) { if (project?.id === id) comparisonError = String(e); }
+    finally { comparing = false; }
   }
   async function pollEvents() {
     const id = attempt;
@@ -151,13 +169,27 @@
           {:else}<div class="preview-empty"><Monitor size={32}/><h2>Your project preview</h2><p>Build the saved revision to open it here. This step does not call the model.</p><button onclick={restore} disabled={busy || running}>{busy ? 'Building…' : 'Build saved revision'}</button></div>{/if}
         {:else if tab === 'data'}<WorkspaceData onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>
         {:else if tab === 'code'}<div class="source-title">App.svelte <span>{project.head.slice(0, 10)}</span></div><pre class="source"><code>{project.files['App.svelte']}</code></pre>
-        {:else}<div class="evidence"><h2>Evidence for this attempt</h2><p>The complete attempt links model exchanges, patches, build diagnostics, and browser checks.</p>{#if trace}<a href={trace.mlflow_url} target="_blank" rel="noreferrer">Open complete MLflow attempt <ExternalLink size={14}/></a>{:else}<p>No model attempt recorded yet.</p>{/if}{#each activity as event (event.sequence)}<details><summary>{event.sequence}. {event.kind}</summary><pre>{JSON.stringify(event.payload, null, 2)}</pre></details>{/each}</div>{/if}
+        {:else}<div class="evidence"><h2>Compare attempts</h2>
+          <p>Compare saved outcomes and model or harness settings. These are development runs, not a controlled benchmark.</p>
+          <div class="comparison-controls">
+            <label>First attempt<select bind:value={compareLeft} onchange={() => comparison = null}><option value="">Choose an attempt</option>{#each requests.filter((a: Data) => a.status !== 'running') as item, i (item.id)}<option value={item.id}>{i + 1}. {item.status} · {item.id.slice(0, 8)}</option>{/each}</select></label>
+            <label>Second attempt<select bind:value={compareRight} onchange={() => comparison = null}><option value="">Choose an attempt</option>{#each requests.filter((a: Data) => a.status !== 'running') as item, i (item.id)}<option value={item.id}>{i + 1}. {item.status} · {item.id.slice(0, 8)}</option>{/each}</select></label>
+            <button onclick={compareAttempts} disabled={comparing || !compareLeft || !compareRight || compareLeft === compareRight}>{comparing ? 'Loading evidence…' : 'Compare attempts'}</button>
+          </div>
+          {#if comparisonError}<p role="alert">{comparisonError}</p>{/if}
+          {#if comparison}
+            <p>{comparison.task_metadata_matches ? 'Recorded task metadata matches.' : 'Task metadata differs or is missing.'} Conversation history and cache state may differ.</p>
+            <div class="comparison-results">{#each comparison.runs as run (run.run_id)}<article><h3>{run.outcome.status ?? 'Outcome unknown'}</h3><p>{run.outcome.elapsed_seconds == null ? 'Duration unknown' : Number(run.outcome.elapsed_seconds).toFixed(1) + ' seconds'} · Browser checks: {run.browser_check?.passed === true ? 'passed' : run.browser_check?.passed === false ? 'failed' : 'not recorded'}</p>{#if run.outcome.error}<p>{run.outcome.error}</p>{/if}<dl>{#each ['model_revision', 'runtime_revision', 'harness_revision', 'sampling_profile', 'sampling_seed', 'dataset_sha256'] as field (field)}<dt>{field.replaceAll('_', ' ')}</dt><dd>{run.tags[field] ?? 'Not recorded'}</dd>{/each}</dl>{#if run.url}<a href={run.url} target="_blank" rel="noreferrer">Open MLflow run</a>{/if}</article>{/each}</div>
+          {/if}
+          <h2>Evidence for this attempt</h2><p>The complete attempt links model exchanges, patches, build diagnostics, and browser checks.</p>{#if trace}<a href={trace.mlflow_url} target="_blank" rel="noreferrer">Open complete MLflow attempt <ExternalLink size={14}/></a>{:else}<p>No model attempt recorded yet.</p>{/if}{#each activity as event (event.sequence)}<details><summary>{event.sequence}. {event.kind}</summary><pre>{JSON.stringify(event.payload, null, 2)}</pre></details>{/each}</div>{/if}
       </section>
     </div>
   {/if}
 </main>
 
 <style>
+  .comparison-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:16px 0}.comparison-controls label{display:grid;gap:6px;min-width:0}.comparison-controls select{max-width:100%;padding:8px}.comparison-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:16px}.comparison-results article{min-width:0;border:1px solid #d9ddd6;border-radius:10px;padding:16px}.comparison-results dd{margin:4px 0 12px;overflow-wrap:anywhere;font-size:11px}.comparison-results dt{font-size:12px;font-weight:600}
+
   .start-layout{display:grid;grid-template-columns:minmax(260px, .8fr) minmax(0, 1.2fr);gap:40px;align-items:start;padding:28px 0}.start-intro h2{font-size:28px;letter-spacing:-.7px;font-weight:500;margin:12px 0}.start-intro>p:not(.eyebrow),.saved-projects p{font-size:13px;line-height:1.7;color:var(--muted-foreground);max-width:460px}.scope-note{padding:16px;border-left:2px solid var(--border);margin:26px 0}.data-start{border:1px solid var(--border);border-radius:15px;background:var(--card);min-width:0}.saved-projects{border-top:1px solid var(--border);padding-top:20px;font-size:12px}.saved-projects summary{cursor:pointer}.saved-projects button{display:block;margin:10px 0;max-width:100%;text-align:left;overflow-wrap:anywhere}@media(max-width:750px){.start-layout{grid-template-columns:1fr;gap:20px;padding:12px 0}.start-intro h2{font-size:25px}}
 
   .workspace{height:100dvh;overflow:auto;padding:30px 32px 20px;color:var(--foreground);background:radial-gradient(ellipse at 80% 0%,#b893891a,transparent 60%);display:flex;flex-direction:column;gap:18px}
