@@ -113,6 +113,37 @@ class WorkerTest(unittest.TestCase):
             self.assertFalse(active[1].is_alive())
         return self.store.get(self.workspace['id'])['attempts'][-1]
 
+    def test_request_failure_cannot_be_hidden_by_passing_baseline(self):
+        self.worker.tools.check_request = lambda workspace, *args: {'ok': False, 'revision': workspace['head'], 'report': {'passed': False, 'error': 'Requested heading is absent'}}
+        checks = [{'target': {'role': 'heading', 'name': 'Requested heading'}, 'action': 'visible', 'value': True}]
+        aid = self.worker.start(self.workspace['id'], self.workspace['head'], 'Change title', request_checks=checks)['attempt_id']
+        self.assertEqual(self.wait(aid)['status'], 'failed')
+        summary = self.client.runs[-1]['summary']
+        self.assertEqual(summary['verification_scope'], 'supplied_request_checks')
+        self.assertFalse(summary['check']['request_check']['ok'])
+        self.assertIn('Requested heading is absent', json.dumps(self.provider.calls))
+
+    def test_fixed_request_checks_reach_model_and_trace(self):
+        seen = []
+        def check(workspace, preview, directory, cancel, checks):
+            seen.append(checks)
+            return {'ok': True, 'revision': workspace['head'], 'report': {'passed': True}}
+        self.worker.tools.check_request = check
+        checks = [{'target': {'role': 'heading', 'name': 'First revision'}, 'action': 'visible', 'value': True}]
+        aid = self.worker.start(self.workspace['id'], self.workspace['head'], 'Change title', request_checks=checks)['attempt_id']
+        self.assertEqual(self.wait(aid)['status'], 'completed')
+        self.assertEqual(seen, [checks])
+        summary = self.client.runs[-1]['summary']
+        self.assertEqual(summary['request_verification'], 'passed_supplied_checks')
+        self.assertIn('First revision', self.provider.calls[0][0]['content'])
+        self.assertEqual(json.loads((self.store.root/'attempts'/aid/'request-checks.json').read_text()), checks)
+        self.assertIn('request_checks_sha256', self.client.runs[-1]['tags'])
+
+    def test_invalid_request_checks_do_not_start_an_attempt(self):
+        with self.assertRaises(ValueError):
+            self.worker.start(self.workspace['id'], self.workspace['head'], 'Change title', request_checks=[{'action':'evaluate','value':'arbitrary code'}])
+        self.assertFalse(self.store.get(self.workspace['id'])['attempts'])
+
     def test_repeated_failed_fragment_stops_before_third_generation(self):
         calls = []
         def repeated(*args, **kwargs):

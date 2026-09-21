@@ -19,7 +19,7 @@ Export interface reviews to MLflow to preserve the review history and eligible e
 
 Record-level extraction corrections have a separate review and export control in the Data panel. Applying those corrections creates a working copy rather than overwriting the original extraction.
 
-Choose two finished attempts in the Evidence tab to compare their outcomes and recorded model, runtime, harness, and sampling configuration. Missing task or model-input hashes prevent a matched-input claim. The comparison is descriptive: cache state, conversation history, and development-example reuse can affect results. A passed browser check does not establish factual correctness or good design.
+Choose two finished attempts in the Evidence tab to compare their outcomes and recorded model, runtime, harness, and sampling configuration. Missing task or model-input hashes prevent a matched-input claim. The comparison is descriptive: cache state, conversation history, and development-example reuse can affect results. A passed browser check does not establish factual correctness or good design. The completion message distinguishes baseline checks from supplied request checks. Baseline checks preserve data and core interactions; they do not prove every requested change was made.
 
 ## What intake reads
 
@@ -37,3 +37,11 @@ Choose two finished attempts in the Evidence tab to compare their outcomes and r
 Media processing is bounded. Check the coverage notice for the actual file rather than assuming the whole source was examined. Audio and video adapters currently limit duration to five minutes. Audio transcription uses a separate local speech model; it is not evidence of native Bonsai audio understanding.
 
 Spreadsheet workbooks, arbitrary URLs, connected inboxes, and every desktop file format are not yet supported. Export a supported format where appropriate. Current verification uses development fixtures, including synthetic audio, and does not establish quality across natural meetings or arbitrary documents.
+
+## Browser checks for harness experiments
+
+The edit API accepts optional `request_checks` alongside `request` and `base_revision`. Each check targets an exact accessible role and name, or a test ID, and performs one action: `visible`, `text`, `count`, or `click`. The checks run in order at desktop and mobile widths. They contain no executable code. At least one assertion is required. The caller fixes the checks before the attempt; Bonsai can read them but cannot change them through its tools.
+
+A failed request check returns diagnostics to the same bounded repair loop and prevents a completed attempt. MLflow stores the contract, its hash, screenshots, and results. Configuration comparisons include the contract hash. With no supplied checks, the attempt explicitly records `request_verification: not_assessed`. Passing supplied checks proves only those assertions, not complete understanding of a free-text request.
+
+This API is available for experiments. The conversational composer does not yet turn arbitrary requests into a reviewed acceptance plan. Human review remains necessary for interpretation, design quality, and requirements outside the supplied checks.

@@ -105,6 +105,21 @@ class WorkspaceTools:
             server.assets, server.revision = Path(build['assets']), build['revision']
             return {'url': f'http://127.0.0.1:{server.server_port}/', 'revision': build['revision']}
 
+    def check_request(self, workspace, preview, directory, cancel, checks):
+        from workspace_acceptance import validate_checks
+        checks = validate_checks(checks)
+        if not checks or preview['revision'] != workspace['head']:
+            raise ValueError('Request checks require a current preview and assertions')
+        directory.mkdir(parents=True, exist_ok=True)
+        contract = directory / 'request-checks.json'
+        contract.write_text(json.dumps(checks))
+        result = self.command([self.node, str(ROOT / 'scripts/workspace-tools/check_request.mjs'),
+                               preview['url'], str(contract), str(directory)], directory, cancel)
+        report = directory / 'report.json'
+        result.update(revision=workspace['head'], report=json.loads(report.read_text()) if report.exists() else None)
+        result['ok'] = result['ok'] and bool(result['report']) and result['report'].get('passed') is True
+        return result
+
     def check_browser(self, workspace, preview, directory, cancel, case='baseline'):
         if case not in ('baseline', 'W1', 'W2'):
             raise ValueError('Unknown authored browser check')

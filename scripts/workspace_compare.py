@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 
-MATCH_FIELDS = ('dataset_sha256', 'base_revision', 'prompt_sha256', 'case_id', 'request_sha256', 'initial_model_input_sha256')
+MATCH_FIELDS = ('dataset_sha256', 'base_revision', 'prompt_sha256', 'case_id', 'request_sha256', 'initial_model_input_sha256', 'request_checks_sha256')
 CONFIG_FIELDS = ('model_revision', 'runtime_revision', 'harness_revision',
                  'sampling_profile', 'sampling_seed', 'hardware_id', 'cache_condition')
 
@@ -39,7 +39,7 @@ def main():
             summary = json.loads(Path(client.download_artifacts(rid, 'attempt/summary.json', folder)).read_text())
         rows.append({'run_id': rid, 'url': f'{args.tracking_uri}/#/experiments/{run.info.experiment_id}/runs/{rid}',
                      'tags': {k: v for k, v in run.data.tags.items() if not k.startswith('mlflow.')},
-                     'outcome': {k: summary.get(k) for k in ('status', 'error', 'elapsed_seconds', 'repairs', 'trace_id', 'revision')},
+                     'outcome': {k: summary.get(k) for k in ('status', 'error', 'elapsed_seconds', 'repairs', 'trace_id', 'revision', 'verification_scope', 'request_verification')},
                      'browser_check': (summary.get('check') or {}).get('report'),
                      'loop_detection': summary.get('loop_detection')})
     report = compare(rows)

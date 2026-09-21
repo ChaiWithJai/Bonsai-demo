@@ -184,7 +184,7 @@
           {#if content}<article class="response"><p class="eyebrow">BONSAI</p><p>{content}</p></article>{/if}
           {#if activity.length}<div class="activity" aria-label="Attempt activity">{#each activity as event (event.sequence)}<div><span class="event-dot"></span><span>{event.kind.replaceAll('.', ' ')}{event.payload.name ? ' · ' + event.payload.name : ''}</span>{#if event.payload.ok === false}<strong>Needs repair</strong>{/if}</div>{/each}</div>{/if}
           {#if lastEvent?.kind === 'attempt.failed'}<p class="error">{lastEvent.payload.error ?? 'Attempt did not finish. Saved revisions are available.'}</p>{/if}
-          {#if lastEvent?.kind === 'attempt.completed'}<p class="verified">Build and authored browser checks passed.</p>{/if}
+          {#if lastEvent?.kind === 'attempt.completed'}<p class="verified">{lastEvent.payload.request_verification === 'passed_supplied_checks' ? 'Build, baseline checks, and supplied request checks passed. Ready for your review.' : 'Build and baseline checks passed. The requested behavior still needs review.'}</p>{/if}
         </div>
         <div class="composer">
           {#if project.fixture?.kind !== 'desktop'}<div class="suggestions">{#each suggestions as suggestion (suggestion.case)}<button disabled={running || busy} onclick={() => useSuggestion(suggestion)}>{suggestion.label}</button>{/each}</div>{/if}
