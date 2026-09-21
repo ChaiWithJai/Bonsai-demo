@@ -153,6 +153,9 @@ class WorkspaceWorker:
                 path.write_text(json.dumps(bundle, indent=2, ensure_ascii=False, allow_nan=False))
                 self.client.log_artifact(rid, str(path), 'review')
                 for candidate in bundle['training_candidates']:
+                    from workspace_review_evidence import source_evidence
+                    for evidence_path, artifact_path in source_evidence(self.store.root, candidate['source_fixture']):
+                        self.client.log_artifact(rid, str(evidence_path), artifact_path)
                     for attempt in candidate['attempts']:
                         summary = self.store.root / 'attempts' / attempt['id'] / 'summary.json'
                         if summary.exists():
