@@ -270,6 +270,7 @@ class SourceJobs:
                        source_examples=self.proposal_examples(proposal, packet))
                 return
             compiled=json.loads((folder/'compiled.json').read_text())
+            compiled['planning_coverage'] = status.get('source_coverage')
             if compiled.get('record_origin')=='model_structured_unreviewed':
                 compiled['grouping_origin']='model-structured fields, unreviewed; not learned similarity clusters'
                 compiled['original_record_count']=len(manifest['records'])
