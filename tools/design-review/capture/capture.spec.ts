@@ -160,3 +160,24 @@ test('Image upload extracts readable regions and exposes its limits',async({page
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/09-workspace-image.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Audio upload exposes timestamped transcript and playback',async({page},info)=>{
+ const fixture=path.resolve(import.meta.dirname,'../../../../bonsai-generative-ui/.local/media-example/team-notes.wav');
+ test.skip(!await fs.stat(fixture).catch(()=>null),'Requires the labeled synthetic speech fixture');
+ await page.goto('/#/workspace');
+ await page.locator('input[type=file]').setInputFiles({name:'synthetic-team-notes.wav',mimeType:'audio/wav',buffer:await fs.readFile(fixture)});
+ const evidence=page.getByRole('region',{name:'Audio evidence'});
+ await expect(evidence).toBeVisible({timeout:30000});
+ const audio=evidence.locator('audio');
+ await expect.poll(()=>audio.evaluate((node:HTMLAudioElement)=>node.readyState>=1)).toBe(true);
+ await evidence.getByRole('button').nth(1).click();
+ await expect.poll(()=>audio.evaluate((node:HTMLAudioElement)=>node.currentTime)).toBeGreaterThanOrEqual(5.5);
+ await audio.evaluate((node:HTMLAudioElement)=>node.pause());
+ await expect(page.getByLabel('Source record')).toHaveValue(/:segment:2$/);
+ await page.getByLabel('Decision').selectOption('correct');
+ await expect(page.getByLabel('Corrected text')).toHaveValue(/separate repository creation dates/);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await evidence.scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/10-workspace-audio.'+info.project.name+'.png'),fullPage:true});
+ // No review is saved and no model proposal or human confirmation is submitted.
+});

@@ -39,7 +39,7 @@ class WorkspaceSources:
     def upload(self, filename, content):
         with self.lock:
             manifest = ingest(self.root, filename, content)
-            if Path(manifest['filename']).suffix.lower() in ('.pdf','.png','.jpg','.jpeg','.webp') and manifest['status'] != 'extracted':
+            if Path(manifest['filename']).suffix.lower() in ('.pdf','.png','.jpg','.jpeg','.webp','.wav','.mp3','.m4a') and manifest['status'] != 'extracted':
                 return self.extract_media(manifest['source_id'])
             return self.get(manifest['source_id'])
 
@@ -87,11 +87,13 @@ class WorkspaceSources:
     def extract_media(self, source_id):
         from workspace_data.pdf import extract_pdf
         from workspace_data.image import extract_image
+        from workspace_data.audio import extract_audio
         with self.lock:
             manifest = self.manifest(source_id)
             is_pdf=manifest['filename'].lower().endswith('.pdf')
-            if not is_pdf and Path(manifest['filename']).suffix.lower() not in ('.png','.jpg','.jpeg','.webp'):
-                raise ValueError('Extraction is available for PDF and image files')
+            is_audio=manifest['kind']=='audio'
+            if not is_pdf and not is_audio and Path(manifest['filename']).suffix.lower() not in ('.png','.jpg','.jpeg','.webp'):
+                raise ValueError('Extraction is available for PDF, image, and audio files')
             if manifest['status'] == 'extracted':
                 return self.get(source_id)
             folder = self.root / source_id
@@ -103,12 +105,12 @@ class WorkspaceSources:
             (evidence / 'previous-manifest.json').write_text(json.dumps(manifest,indent=2))
             experiment = self.client.get_experiment_by_name('bonsai-workspace-data')
             eid = experiment.experiment_id if experiment else self.client.create_experiment('bonsai-workspace-data')
-            run = self.client.create_run(eid,tags={'mlflow.runName':'PDF page extraction' if is_pdf else 'Image text extraction','source_id':source_id,'source_sha256':manifest['sha256'],'extractor':'poppler+apple-vision' if is_pdf else 'apple-vision','bonsai_inference':'false'})
+            run = self.client.create_run(eid,tags={'mlflow.runName':'PDF page extraction' if is_pdf else ('Speech transcription' if is_audio else 'Image text extraction'),'source_id':source_id,'source_sha256':manifest['sha256'],'extractor':'poppler+apple-vision' if is_pdf else ('faster-whisper-cpu' if is_audio else 'apple-vision'),'bonsai_inference':'false'})
             run_id = run.info.run_id
             try:
-                result = extract_pdf(raw,evidence) if is_pdf else extract_image(raw,evidence)
+                result = extract_pdf(raw,evidence) if is_pdf else (extract_audio(raw,evidence) if is_audio else extract_image(raw,evidence))
                 for i,row in enumerate(result['records']):
-                    row.update(id=f'{source_id}:'+('page' if is_pdf else 'region')+f':{i+1}',source_id=source_id)
+                    row.update(id=f'{source_id}:'+('page' if is_pdf else ('segment' if is_audio else 'region'))+f':{i+1}',source_id=source_id)
                 manifest.update(result,extraction_run_id=run_id)
                 manifest.pop('extraction_error',None)
                 if is_pdf:
@@ -116,13 +118,13 @@ class WorkspaceSources:
                     self.client.log_metric(run_id,'pages_with_text',result['extraction_coverage']['pages_with_text'])
                     self.client.log_metric(run_id,'unresolved_pages',len(result['extraction_coverage']['unresolved_pages']))
                 else:
-                    self.client.log_metric(run_id,'text_regions',len(result['records']))
+                    self.client.log_metric(run_id,'speech_segments' if is_audio else 'text_regions',len(result['records']))
             except Exception as exc:
                 manifest.update(status='extraction_failed',extraction_error=str(exc),extraction_run_id=run_id)
                 (evidence/'failure.json').write_text(json.dumps({'error':str(exc)}))
             manifest['extraction_run_url']=f'{self.tracking_uri}/#/experiments/{eid}/runs/{run_id}'
             (evidence/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
-            self.client.log_artifacts(run_id,str(evidence),'pdf-extraction' if is_pdf else 'image-extraction')
+            self.client.log_artifacts(run_id,str(evidence),'pdf-extraction' if is_pdf else ('audio-extraction' if is_audio else 'image-extraction'))
             self.client.log_artifact(run_id,str(folder/'source.bin'),'source')
             self.client.set_terminated(run_id,'FINISHED' if manifest['status']=='extracted' else 'FAILED')
             temp=folder/'manifest.tmp'
@@ -160,7 +162,7 @@ class WorkspaceSources:
     def download(self, source_id, export_id=None):
         manifest=self.manifest(source_id)
         if export_id is None:
-            return (self.root / source_id / 'source.bin').read_bytes(), {'.pdf':'application/pdf','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp'}.get(Path(manifest['filename']).suffix.lower(),'application/octet-stream')
+            return (self.root / source_id / 'source.bin').read_bytes(), {'.pdf':'application/pdf','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.wav':'audio/wav','.mp3':'audio/mpeg','.m4a':'audio/mp4'}.get(Path(manifest['filename']).suffix.lower(),'application/octet-stream')
         if not re.fullmatch('[a-f0-9]{32}', export_id):
             raise ValueError('Invalid export ID')
         path = self.root / source_id / 'exports' / export_id / 'record-reviews.json'
