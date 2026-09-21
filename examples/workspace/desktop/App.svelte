@@ -32,7 +32,7 @@
 <main>
   {#if error}<p role="alert">{error}</p>{/if}
   {#if model}
-    <header><p class="eyebrow">BONSAI / YOUR DATA</p><h1>{model.plan.title}</h1><p>{model.plan.summary}</p><p class="provenance">{model.rows.length} {model.record_origin === 'model_structured_unreviewed' ? 'model-structured records' : 'source records'} · {model.chart.component === 'RecordTable' ? 'Source record table' : 'Semiotic ' + model.chart.component} · {model.excluded_record_ids.length} records without plotted coordinates</p></header>
+    <header><p class="eyebrow">BONSAI / YOUR DATA</p><h1>{model.plan.title}</h1><p>{model.plan.summary}</p><p class="provenance">{model.rows.length} {model.record_origin === 'model_structured_unreviewed' ? 'model-structured records' : 'source records'} · {model.chart.component === 'RecordTable' ? 'Source record table' : 'Semiotic ' + model.chart.component} {#if model.chart.component !== 'RecordTable'}· {model.excluded_record_ids.length} records without plotted coordinates{/if}</p></header>
     {#if model.chart.component === 'RecordTable'}
       <!-- Keyboard users must be able to focus and scroll a wide source table. -->
       <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
