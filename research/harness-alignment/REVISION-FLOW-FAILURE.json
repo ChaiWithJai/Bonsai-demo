@@ -1,0 +1,18 @@
+{
+  "job_id": "8b56526fe4af47cc94547aee7f41de8f",
+  "run_id": "fdb1e82b75f048218122eecde9f75235",
+  "status": "failed",
+  "request": "Development workflow verification. Propose an evidence review table for these Word and audio files. Keep measured observations distinct from spoken requirements. Preserve timestamps and source citations. Do not infer release dates or treat requirements as measured results.",
+  "purpose": "Development proposal revision-path verification; stopped before revision because initial planning failed",
+  "failures": [
+    {
+      "error": "Document and text sources require explicit source-grounded structured records for this view"
+    },
+    {
+      "error": "Evidence quote is not present in r1, field source_filename"
+    }
+  ],
+  "human_acceptance": false,
+  "revision_path_verified": false,
+  "next_hypothesis": "Explicitly distinguish data fields eligible for evidence quotes from locator metadata; test in a new run without changing these outputs."
+}
