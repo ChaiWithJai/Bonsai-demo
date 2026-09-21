@@ -1,0 +1,16 @@
+{
+  "scope": "Read-only export inspection; no review labels created",
+  "projects": [
+    {
+      "project_id": "9181446da63f4da5a486f8ce094df90b",
+      "example_count": 0,
+      "dataset_sha256": "6b9504b138d142d27de993aebb6445af09b75c587efe016b7957caa88025fb98"
+    },
+    {
+      "project_id": "dd2d5489a35c4dbcac513abc81f96a83",
+      "example_count": 0,
+      "dataset_sha256": "6b9504b138d142d27de993aebb6445af09b75c587efe016b7957caa88025fb98"
+    }
+  ],
+  "coverage_hash_test": "passed in isolated temporary test database"
+}

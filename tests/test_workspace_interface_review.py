@@ -27,6 +27,28 @@ class InterfaceReviewTest(unittest.TestCase):
         self.assertEqual(self.store.export_interface_reviews(self.key)['example_count'], 0)
         self.assertEqual(len(self.store.interface_reviews(self.key)['events']), 3)
 
+    def test_accepted_export_retains_input_coverage_and_hashes_it(self):
+        import json
+        import hashlib
+        from workspace_store import encoded
+        coverage={'records_shown':1,'records_total':3,'member_coverage':[
+            {'source_id':'omitted','records_shown':0,'records_total':2,'represented':False}]}
+        fixture={'kind':'desktop','compiled':{'planning_coverage':coverage},
+                 'source_job':{'proposal_sha256':'proposal-hash'}}
+        project=self.store.create('Coverage fixture',{'App.svelte':'<h1>Coverage</h1>'},fixture)
+        # The human enum is simulated only inside this temporary test database.
+        self.store.review_interface(project['id'],{'revision':project['head'],
+            'author':'Synthetic unit test','reviewer_kind':'human','action':'accept',
+            'note':'Isolated policy test, not a real review','previous_event_id':None})
+        result=self.store.export_interface_reviews(project['id'])
+        candidate=result['training_candidates'][0]
+        self.assertEqual(candidate['source_fixture'],fixture)
+        original_hash=result['dataset_sha256']
+        candidate['source_fixture']['compiled']['planning_coverage']['records_shown']=3
+        altered={'task':'generated_interface','examples':[candidate]}
+        self.assertNotEqual(hashlib.sha256(encoded(altered).encode()).hexdigest(),original_hash)
+        self.assertEqual(self.store.export_interface_reviews(project['id'])['dataset_sha256'],original_hash)
+
     def test_stale_review_and_changed_revision_are_rejected(self):
         self.store.review_interface(self.key, self.body())
         with self.assertRaises(RevisionConflict): self.store.review_interface(self.key, self.body())
