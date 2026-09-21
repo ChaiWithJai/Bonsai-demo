@@ -440,3 +440,30 @@ test('Structured proposal links quotes to their original sources',async({page},i
  await proposal.locator('.citation a').last().scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/22-proposal-source-links.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Workstreams opens conversations and starts with a clear file message',async({page},info)=>{
+ await page.goto('/#/workspace');
+ const sidebar=page.getByRole('complementary',{name:'Workstreams',exact:true});
+ await expect(sidebar.getByRole('heading',{name:'Workstreams',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'What are we working on?',exact:true})).toBeVisible();
+ await expect(page.getByLabel('Message Bonsai',{exact:true})).toBeVisible();
+ await expect(page.locator('iframe')).toHaveCount(0);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/23-workstreams-start.'+info.project.name+'.png'),fullPage:true});
+ await page.getByLabel('Search workstreams',{exact:true}).fill('S82065');
+ await sidebar.getByRole('button').filter({hasText:'S82065.pdf'}).click();
+ await expect(page.getByRole('region',{name:'Bonsai proposal'})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Yes, build this view'})).toBeEnabled();
+ // Read-only inspection: never confirm the real PDF.
+ await sidebar.getByRole('button',{name:'New workstream',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Bonsai proposal'})).toHaveCount(0);
+ await page.getByLabel('Search workstreams',{exact:true}).fill('Development Workbook');
+ await sidebar.getByRole('button').filter({hasText:'Development Workbook Evidence Audit'}).click();
+ await expect(page.getByLabel('Describe the next change')).toBeVisible();
+ await expect(page.getByRole('button',{name:'Evidence',exact:true})).toBeVisible();
+ const restoreView=page.getByRole('button',{name:'Build saved revision',exact:true});
+ if(await restoreView.isVisible())await restoreView.click();
+ await expect(page.locator('iframe')).toBeVisible({timeout:45000});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/24-workstreams-conversation.'+info.project.name+'.png'),fullPage:true});
+});

@@ -5,6 +5,8 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "23-workstreams-start": ("workstreams", "Start a conversation with files and a question"),
+    "24-workstreams-conversation": ("workstreams", "Continue a workstream beside its generated view"),
     "22-proposal-source-links": ("workspace", "Inspect original source passages before confirming structured records"),
     '21-retained-upload-failure': ('workspace', 'Failed extraction retains its original file and offers explicit retry'),
     '20-workbook-intake': ('workspace', 'Workbook cell locations, hidden-sheet coverage and missing formula caches'),

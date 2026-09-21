@@ -71,7 +71,7 @@ def main():
     nav = nav.replace("import { Package,", "import { Workflow, Activity, Columns2, Package,", 1)
     nav = nav.replace(settings_anchor, "\t\ttooltip: 'Settings'\n\t},\n\t{ activeRouteId: '/observability', icon: Activity, route: '#/observability', tooltip: 'Observability' },\n\t{ activeRouteId: '/comparison', icon: Columns2, route: '#/comparison', tooltip: 'Head-to-head' }\n];", 1)
     navigation.write_text(nav)
-    nav = nav.replace("tooltip: 'Head-to-head' }", "tooltip: 'Head-to-head' },\n\t{ activeRouteId: '/workspace', icon: Workflow, route: '#/workspace', tooltip: 'Workspace' }")
+    nav = nav.replace("tooltip: 'Head-to-head' }", "tooltip: 'Head-to-head' },\n\t{ activeRouteId: '/workspace', icon: Workflow, route: '#/workspace', tooltip: 'Workstreams' }")
     navigation.write_text(nav)
     with (stage / "src/app.css").open("a") as css:
         css.write('\n' + (root / "scripts/prism-ui/prism.css").read_text())
