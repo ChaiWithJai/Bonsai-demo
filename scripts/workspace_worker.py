@@ -11,6 +11,7 @@ import time
 from workspace_provider import GenerationCancelled
 from workspace_store import RevisionConflict
 from workspace_tools import starter
+from workspace_acceptance import validate_checks
 
 SYSTEM = '''You edit an existing Svelte 5 data exploration project. Preserve its working behavior and source data.
 Use read_file to inspect source, then apply_patch with exact unique old text and the current revision hash.
@@ -185,7 +186,7 @@ class WorkspaceWorker:
             run = self.client.get_run(summary['run_id'])
             rows.append({'run_id': summary['run_id'], 'url': summary.get('mlflow_url'),
                          'tags': {k: v for k, v in run.data.tags.items() if not k.startswith('mlflow.')},
-                         'outcome': {k: summary.get(k) for k in ('status', 'error', 'elapsed_seconds', 'repairs', 'trace_id', 'revision')},
+                         'outcome': {k: summary.get(k) for k in ('status', 'error', 'elapsed_seconds', 'repairs', 'trace_id', 'revision', 'verification_scope', 'request_verification')},
                          'browser_check': (summary.get('check') or {}).get('report'),
                          'loop_detection': summary.get('loop_detection')})
         return compare(rows)
@@ -201,7 +202,8 @@ class WorkspaceWorker:
             self.latest[key] = self.tools.preview(workspace, build)
             return {'ok': True, **self.latest[key]}
 
-    def start(self, key, base, request, case='baseline'):
+    def start(self, key, base, request, case='baseline', request_checks=None):
+        request_checks = validate_checks(request_checks)
         if case not in ('baseline', 'W1', 'W2'):
             raise ValueError('Unknown acceptance case')
         with self.guard:
@@ -209,7 +211,7 @@ class WorkspaceWorker:
                 raise RevisionConflict('A Workspace attempt is already using the local model')
             aid = self.store.start_attempt(key, base, request)
             cancel = threading.Event()
-            thread = threading.Thread(target=self._run, args=(key, aid, request, case, cancel), daemon=True)
+            thread = threading.Thread(target=self._run, args=(key, aid, request, case, cancel, request_checks), daemon=True)
             self.running[aid] = (cancel, thread)
             thread.start()
         return {'attempt_id': aid, 'workspace_id': key}
@@ -237,7 +239,8 @@ class WorkspaceWorker:
         if not any(thread.is_alive() for _, (_, thread) in active):
             self.ownership.close()
 
-    def _run(self, key, aid, request, case, cancel):
+    def _run(self, key, aid, request, case, cancel, request_checks=None):
+        request_checks = validate_checks(request_checks)
         folder = self.store.root / 'attempts' / aid
         folder.mkdir(parents=True)
         root = run_id = None
@@ -258,7 +261,9 @@ class WorkspaceWorker:
         deadline_timer.daemon = True
         deadline_timer.start()
         status = 'failed'
-        summary = {'attempt_id': aid, 'workspace_id': key, 'case': case}
+        summary = {'attempt_id': aid, 'workspace_id': key, 'case': case,
+                   'verification_scope': 'supplied_request_checks' if request_checks else 'baseline_only',
+                   'request_check_count': len(request_checks)}
 
         def save(name, value):
             (folder / name).write_text(json.dumps(value, indent=2, ensure_ascii=False) + '\n')
@@ -311,6 +316,10 @@ class WorkspaceWorker:
                     if preview is None:
                         raise ValueError('Build and preview the current revision first')
                     checked = self.tools.check_browser(workspace, preview, folder / f'check-{sequence}', cancel, case)
+                    if checked['ok'] and request_checks:
+                        baseline = checked
+                        acceptance = self.tools.check_request(workspace, preview, folder / f'request-check-{sequence}', cancel, request_checks)
+                        checked = {**baseline, 'ok': acceptance['ok'], 'request_check': acceptance}
                     output.update(checked)
                     self.store.event(aid, 'check.finished', checked)
                     if not checked['ok']:
@@ -338,7 +347,7 @@ class WorkspaceWorker:
                         sampling_seed=str(getattr(self.provider, 'seed', 'unspecified')))
             source_root = Path(__file__).resolve().parent
             sources = {name: hashlib.sha256((source_root / name).read_bytes()).hexdigest() for name in (
-                'workspace_worker.py', 'workspace_provider.py', 'workspace_store.py', 'workspace_tools.py',
+                'workspace_worker.py', 'workspace_acceptance.py', 'workspace-tools/check_request.mjs', 'workspace_provider.py', 'workspace_store.py', 'workspace_tools.py',
                 'workspace-tools/render.mjs', 'workspace-tools/check.mjs', 'workspace-tools/check_desktop.mjs',
                 'workspace-tools/package-lock.json')}
             release = self.model_info.get('checkpoint_release', {})
@@ -352,6 +361,9 @@ class WorkspaceWorker:
                 'runtime_revision': str(release.get('runtime', {}).get('runtime_sha256', 'unverified-test')),
                 'hardware_id': str(release.get('runtime', {}).get('hardware', 'unverified-test')),
                 'cache_condition': 'persistent_server_cache_prompt_enabled_not_cold_benchmark'})
+            tags['request_checks_sha256'] = hashlib.sha256(json.dumps(request_checks, sort_keys=True).encode()).hexdigest()
+            tags['verification_scope'] = summary['verification_scope']
+            save('request-checks.json', request_checks)
             save('source-hashes.json', sources)
             for name in sources:
                 target = folder / 'harness-source' / name
@@ -413,6 +425,8 @@ class WorkspaceWorker:
                     else:
                         budget.update(preflight)
                 check_active()
+                if request_checks:
+                    messages[0]['content'] = system_for(workspace) + '\nThe caller supplied these fixed browser checks. Preserve their targets and satisfy them; they cover only the stated assertions:\n' + json.dumps(request_checks, ensure_ascii=False)
                 save('messages.json', messages)
                 if turn == 0:
                     context_hash = hashlib.sha256(json.dumps({'messages': messages, 'tools': TOOLS, 'max_tokens': self.max_tokens}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
@@ -474,6 +488,7 @@ class WorkspaceWorker:
                 status = 'completed'
                 summary.setdefault('assistant_message', '')
                 summary['completion_source'] = 'authored_verification_of_current_revision'
+                summary['request_verification'] = 'passed_supplied_checks' if request_checks else 'not_assessed'
             if status != 'completed':
                 raise RuntimeError('Model call budget exhausted before a verified result')
         except Exception as exc:
@@ -485,6 +500,8 @@ class WorkspaceWorker:
                 if cancel.is_set():
                     status = 'failed' if timed_out.is_set() else 'cancelled'
                 self.finalizing.add(aid)
+            summary['request_verification'] = ('not_assessed' if not request_checks else
+                'passed_supplied_checks' if checked and checked.get('request_check', {}).get('ok') else 'failed_or_not_run')
             summary.update(status=status, revision=self.store.get(key)['head'], elapsed_seconds=time.monotonic() - started,
                            repairs=repairs, preview=preview, check=checked)
             save('messages.json', messages)

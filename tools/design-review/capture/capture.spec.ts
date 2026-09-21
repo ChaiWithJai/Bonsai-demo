@@ -286,3 +286,24 @@ test('Readable mixed records preserve values and selection',async({page},info)=>
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/16-readable-records.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Workspace distinguishes request checks from baseline verification',async({page},info)=>{
+ for(const [id,expected] of [
+  ['e13a4a3d2c214a688339afcd92ddb5fd','Build, baseline checks, and supplied request checks passed. Ready for your review.'],
+  ['a38c58f2fa114f029c5c8ee8f03a356b','Build and baseline checks passed. The requested behavior still needs review.']
+ ]) {
+  const project=await (await page.request.get('/api/workspace/'+id)).json();
+  expect(project.attempts.at(-1).status).toBe('completed');
+  await page.route('**/api/workspace',async route=>{
+   const response=await route.fetch();const state=await response.json();
+   await route.fulfill({json:{...state,workspaces:state.workspaces.filter((p:any)=>p.id===id)}});
+  });
+  await page.goto('/#/workspace');
+  await page.locator('.saved-projects summary').click();
+  await page.locator('.saved-projects').getByRole('button',{name:project.title,exact:true}).click();
+  await expect(page.getByText(expected,{exact:true})).toBeVisible();
+  await page.getByText(expected,{exact:true}).scrollIntoViewIfNeeded();
+  if(id==='e13a4a3d2c214a688339afcd92ddb5fd')await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/17-request-verification.'+info.project.name+'.png'),fullPage:true});
+  await page.unroute('**/api/workspace');
+ }
+});
