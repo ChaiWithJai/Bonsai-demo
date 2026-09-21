@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "30-generated-coverage": ("workstreams", "Isolated generated-view disclosure with explicit omitted-file warning"),
     "29-proposal-coverage": ("workstreams", "Display-only scenario showing an attachment omitted from model context"),
     "28-revised-workstream": ("workstreams", "Bonsai applies a proposal correction and builds the preserved evidence"),
     "26-role-composer": ("workstreams", "Role-based composer with tabs and explicit attachment requirement"),
