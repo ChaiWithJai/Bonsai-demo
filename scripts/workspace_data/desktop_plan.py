@@ -87,9 +87,12 @@ def compile_plan(manifest, plan):
     excluded = []
     membership = {}
     if component == 'RecordTable':
-        if set(view) != {'component'}:
-            raise ValueError('RecordTable requires only component; all classified source fields are shown')
-        props.update(columns=list(fields))
+        if set(view) not in ({'component'}, {'component', 'columns'}):
+            raise ValueError('RecordTable requires component and optional columns')
+        columns = view.get('columns', list(fields)[:6])
+        if not isinstance(columns, list) or not 1 <= len(columns) <= 6 or any(not isinstance(c, str) or c not in fields for c in columns) or len(set(columns)) != len(columns):
+            raise ValueError('Choose one to six distinct source fields for table overview columns; all fields remain in record details')
+        props.update(columns=columns)
     elif component == 'ForceDirectedGraph':
         if set(view) != {'component', 'groupBy'}:
             raise ValueError('Network view requires component and groupBy')
@@ -151,7 +154,7 @@ Classify every supplied field using {"name":"exact source name","type":"text|num
 Choose types that fit all supplied values; empty and null are missing, zero is measured.
 Dates must be YYYY-MM-DD. Do not invent fields, records, facts or classifications unsupported by the data.
 Choose one view:
-{"component":"RecordTable"} for sparse data, text-heavy evidence, or direct record inspection.
+{"component":"RecordTable","columns":["most useful source field","optional next field"]} for sparse data, text-heavy evidence, or direct record inspection. Choose one to six overview fields that answer the question. Keep technical identifiers and redundant metadata in record details unless essential; all classified fields remain preserved.
 Or {"component":"ForceDirectedGraph","groupBy":["first grouping field","optional second field"]}
 or {"component":"Scatterplot","x":"numeric or date field","y":"numeric field","color":null}
 or {"component":"LineChart","x":"numeric or date field","y":"numeric field","color":"source grouping field"}.

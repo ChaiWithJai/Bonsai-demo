@@ -21,3 +21,14 @@ class ViewSelectionTest(unittest.TestCase):
         self.assertEqual([row['data']['count'] for row in compiled['rows']], [0,None,12])
         self.assertEqual(compiled['excluded_record_ids'], [])
         self.assertEqual(compiled['chart']['props']['columns'], ['count'])
+
+    def test_overview_columns_do_not_discard_record_fields(self):
+        source = {'source_id':'s','sha256':'sha','filename':'counts.json','status':'extracted',
+                  'records':[{'id':'r','source_id':'s','locator':{'record':1},'data':{'label':'A','count':0,'detail':'Evidence'}}]}
+        plan = {'title':'Overview','summary':'Selected fields','fields':[{'name':'label','type':'text'},{'name':'count','type':'number'},{'name':'detail','type':'text'}], 'view':{'component':'RecordTable','columns':['label','count']}}
+        compiled = compile_plan(source, plan)
+        self.assertEqual(compiled['chart']['props']['columns'], ['label','count'])
+        self.assertEqual(compiled['rows'][0]['data']['detail'], 'Evidence')
+        for columns in ([], ['invented'], ['label','label']):
+            plan['view']['columns'] = columns
+            with self.assertRaisesRegex(ValueError, 'overview columns'): compile_plan(source, plan)
