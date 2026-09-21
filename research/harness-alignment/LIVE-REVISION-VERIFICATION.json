@@ -1,0 +1,17 @@
+{
+  "parent_job": "78ffb737bb3f46a3b47fd65d4af75466",
+  "revision_job": "60e5c6b2fe44425ba69f7bbcede0e1b7",
+  "parent_run": "9645cfeddc864210bdd489f467ecac3b",
+  "revision_run": "d27a08c609ac48dda432c182c6db6600",
+  "requested_title": "Observations and team requirements",
+  "actual_title": "Development Workflow Verification: Evidence Review Table",
+  "title_matches": false,
+  "source_records_preserved": true,
+  "stale_confirmation_rejected": true,
+  "human_acceptance": false,
+  "parent_repairs": 1,
+  "revision_repairs": 1,
+  "status": "awaiting_confirmation",
+  "workflow_success": false,
+  "limitation": "Schema and citation validation passed; explicit title correction was ignored."
+}
