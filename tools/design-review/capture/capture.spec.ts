@@ -379,3 +379,20 @@ test('Live composer sends fixed expected results to Bonsai',async({page},info)=>
  await page.getByRole('region',{name:'Checks for this attempt'}).scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/19-live-expected-results.desktop.png'),fullPage:true});
 });
+
+test('Workbook upload preserves cell locations and missing formula results',async({page},info)=>{
+ await page.goto('/#/workspace');
+ await page.locator('input[type=file]').setInputFiles(path.resolve(import.meta.dirname,'../../../.cache/workspace-checks/development-workbook.xlsx'));
+ await expect(page.getByText('9 nonempty cells · 2 worksheets · 2 formulas',{exact:true})).toBeVisible();
+ await expect(page.getByText(/1 formulas have no saved result/)).toBeVisible();
+ await page.getByText('Workbook sheets',{exact:true}).click();
+ await expect(page.getByText('Notes · hidden · 1 cells',{exact:true})).toBeVisible();
+ await page.getByText('Observations · B3',{exact:true}).click();
+ const missing=page.locator('.records pre').filter({hasText:'=1+1'});
+ await expect(missing).toContainText('"value": null');
+ await expect(missing).toContainText('formula_result_unavailable');
+ await page.getByText('Observations · B2',{exact:true}).click();
+ await expect(page.locator('.records pre').filter({hasText:'"cell": "B2"'})).toContainText('"value": 0');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/20-workbook-intake.'+info.project.name+'.png'),fullPage:true});
+});

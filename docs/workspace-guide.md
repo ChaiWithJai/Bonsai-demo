@@ -28,6 +28,7 @@ Choose two finished attempts in the Evidence tab to compare their outcomes and r
 | CSV, TSV, JSON arrays, JSONL | Records and supplied fields | Text must be UTF-8; field types still need review |
 | Text and Markdown | Nonempty lines | Structure and relationships are model proposals |
 | PDF | Page text, with local OCR fallback where needed | Inspect page coverage and OCR results |
+| Excel `.xlsx` | Nonempty cells, sheet and cell addresses, formula text, and saved formula caches | Includes hidden sheets. Formulas are never recalculated; caches may be stale or missing. Charts, images, merged layout, comments and external linked data are not interpreted |
 | Word `.docx` | Body paragraphs and table cells | Embedded media, headers, footers, notes, comments, text boxes, and tracked-change interpretation are not extracted |
 | EML and MBOX | Message headers and bodies | Attachments are listed, not read |
 | Images | Local OCR; optional Bonsai visual extraction | Extracted values remain unreviewed |
@@ -36,7 +37,7 @@ Choose two finished attempts in the Evidence tab to compare their outcomes and r
 
 Media processing is bounded. Check the coverage notice for the actual file rather than assuming the whole source was examined. Audio and video adapters currently limit duration to five minutes. Audio transcription uses a separate local speech model; it is not evidence of native Bonsai audio understanding.
 
-Spreadsheet workbooks, arbitrary URLs, connected inboxes, and every desktop file format are not yet supported. Export a supported format where appropriate. Current verification uses development fixtures, including synthetic audio, and does not establish quality across natural meetings or arbitrary documents.
+Legacy `.xls`, macro-enabled `.xlsm`, arbitrary URLs, connected inboxes, and every desktop file format are not yet supported. Export a supported format where appropriate. Current verification uses development fixtures, including synthetic audio, and does not establish quality across natural meetings or arbitrary documents.
 
 ## Browser checks for harness experiments
 
@@ -45,3 +46,5 @@ The edit API accepts optional `request_checks` alongside `request` and `base_rev
 A failed request check returns diagnostics to the same bounded repair loop and prevents a completed attempt. MLflow stores the contract, its hash, screenshots, and results. Configuration comparisons include the contract hash. With no supplied checks, the attempt explicitly records `request_verification: not_assessed`. Passing supplied checks proves only those assertions, not complete understanding of a free-text request.
 
 The conversational composer exposes visible headings, buttons, inputs, and record counts through **Expected results**. Incomplete checks prevent submission, and a failed submission preserves the draft. API callers can also supply ordered click and text assertions. The composer does not yet propose checks automatically from an arbitrary request. Human review remains necessary for interpretation, design quality, and requirements outside the supplied checks.
+
+Workbook intake requires the recording extra (`openpyxl==3.1.5`). It accepts up to 100 worksheets, 100,000 nonempty cell records, 100,000 scanned rows and 250,000 scanned cell positions, with a 100 MiB expanded archive limit. Workbooks beyond those limits fail with an extraction error. A workbook is structured from cell evidence before visualization; row headers and relationships are proposed for review rather than assumed during intake.

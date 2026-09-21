@@ -75,7 +75,7 @@ class WorkspaceSources:
                       'requires_structuring':any(m.get('requires_structuring') or m['kind'] in ('text','document','email') for m in manifests),
                       'sources':[{'source_id':m['source_id'],'sha256':m['sha256'],'filename':m['filename'],'records':len(m['records']),'review_application':m.get('review_application'),
                                   'extractor':m.get('extractor'),'review_status':m.get('review_status','source_values_unreviewed'),
-                                  'coverage':{key:m[key] for key in ('vision_coverage','audio_coverage','image_coverage','email_coverage','document_coverage','extraction_coverage') if key in m}} for m in manifests],
+                                  'coverage':{key:m[key] for key in ('vision_coverage','audio_coverage','image_coverage','email_coverage','document_coverage','workbook_coverage','extraction_coverage') if key in m}} for m in manifests],
                       'records':records}
             (folder/'source.bin').write_bytes(raw)
             (folder/'manifest.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False))
@@ -164,7 +164,7 @@ class WorkspaceSources:
     def download(self, source_id, export_id=None):
         manifest=self.manifest(source_id)
         if export_id is None:
-            return (self.root / source_id / 'source.bin').read_bytes(), {'.pdf':'application/pdf','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.wav':'audio/wav','.mp3':'audio/mpeg','.m4a':'audio/mp4','.mp4':'video/mp4','.mov':'video/quicktime','.webm':'video/webm'}.get(Path(manifest['filename']).suffix.lower(),'application/octet-stream')
+            return (self.root / source_id / 'source.bin').read_bytes(), {'.xlsx':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','.pdf':'application/pdf','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.wav':'audio/wav','.mp3':'audio/mpeg','.m4a':'audio/mp4','.mp4':'video/mp4','.mov':'video/quicktime','.webm':'video/webm'}.get(Path(manifest['filename']).suffix.lower(),'application/octet-stream')
         if not re.fullmatch('[a-f0-9]{32}', export_id):
             raise ValueError('Invalid export ID')
         path = self.root / source_id / 'exports' / export_id / 'record-reviews.json'

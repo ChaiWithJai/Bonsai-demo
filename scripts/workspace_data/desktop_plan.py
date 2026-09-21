@@ -19,7 +19,7 @@ def profile(manifest):
             'evidence_status':manifest.get('review_status','source_values_unreviewed'),
             'source_coverage':manifest.get('sources', []),
             'media_coverage':manifest.get('vision_coverage') or manifest.get('audio_coverage') or manifest.get('image_coverage'),
-            'document_coverage':manifest.get('document_coverage'), 'extractor':manifest.get('extractor'), 'extraction_coverage':manifest.get('extraction_coverage'),
+            'workbook_coverage':manifest.get('workbook_coverage'), 'document_coverage':manifest.get('document_coverage'), 'extractor':manifest.get('extractor'), 'extraction_coverage':manifest.get('extraction_coverage'),
             'record_count': len(rows), 'fields': [
                 {'name': key, 'missing': sum(row['data'].get(key) in (None, '') for row in rows),
                  'examples': [row['data'].get(key) for row in rows[:5]]} for key in fields]}

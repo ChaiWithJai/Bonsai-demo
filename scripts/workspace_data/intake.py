@@ -17,6 +17,9 @@ MEDIA = {'.png': 'image', '.jpg': 'image', '.jpeg': 'image', '.webp': 'image',
 
 def extract(name, content):
     suffix = Path(name).suffix.lower()
+    if suffix == '.xlsx':
+        from workspace_data.xlsx import extract_xlsx
+        return extract_xlsx(content, MAX_ROWS)
     if suffix == '.docx':
         from workspace_data.docx import extract_docx
         return extract_docx(content, MAX_ROWS)
