@@ -113,6 +113,47 @@ class WorkerTest(unittest.TestCase):
             self.assertFalse(active[1].is_alive())
         return self.store.get(self.workspace['id'])['attempts'][-1]
 
+    def test_trial_copies_freeze_files_without_inheriting_history(self):
+        source=self.store.get(self.workspace['id'])
+        left=self.worker.copy_for_trial(source['id'],source['head'],'Trial left')['workspace']
+        right=self.worker.copy_for_trial(source['id'],source['head'],'Trial right')['workspace']
+        self.assertNotEqual(left['id'],right['id'])
+        self.assertEqual(left['head'],right['head'])
+        self.assertEqual(left['files'],source['files'])
+        self.assertEqual(left['fixture'],source['fixture'])
+        self.assertEqual(left['attempts'],[])
+        self.assertEqual(self.store.get(source['id'])['head'],source['head'])
+        with self.assertRaises(RevisionConflict):
+            self.worker.copy_for_trial(source['id'],'stale','Invalid trial')
+        self.worker.source_jobs.add('active')
+        try:
+            with self.assertRaises(RevisionConflict):
+                self.worker.copy_for_trial(source['id'],source['head'],'Busy trial')
+        finally:self.worker.source_jobs.clear()
+
+    def test_attempt_configuration_is_isolated_and_recorded(self):
+        from workspace_provider import LocalProvider
+        self.provider.profile='legacy-greedy';self.provider.seed=42
+        override=Provider(self.store);override.key=self.workspace['id']
+        override.profile='bonsai2-instruct';override.seed=43
+        override.payload=LocalProvider('http://127.0.0.1:1','test-only',profile=override.profile,seed=override.seed).payload
+        self.provider.configured=lambda config: override
+        first=self.worker.start(self.workspace['id'],self.workspace['head'],'Change the title',
+                                generation_config={'profile':'bonsai2-instruct','seed':43})['attempt_id']
+        self.assertEqual(self.wait(first)['status'],'completed')
+        self.assertEqual(self.provider.calls,[])
+        self.assertTrue(override.calls)
+        self.assertEqual(self.client.runs[0]['tags']['sampling_profile'],'bonsai2-instruct')
+        settings=json.loads((self.store.root/'attempts'/first/'generation-settings.json').read_text())
+        self.assertEqual(settings['seed'],43)
+        self.assertNotIn('messages',settings)
+        current=self.store.get(self.workspace['id'])
+        second=self.worker.start(current['id'],current['head'],'Change the title again')['attempt_id']
+        self.assertEqual(self.wait(second)['status'],'completed')
+        self.assertTrue(self.provider.calls)
+        self.assertEqual(self.client.runs[1]['tags']['sampling_profile'],'legacy-greedy')
+        self.assertEqual((self.provider.profile,self.provider.seed),('legacy-greedy',42))
+
     def test_request_failure_cannot_be_hidden_by_passing_baseline(self):
         self.worker.tools.check_request = lambda workspace, *args: {'ok': False, 'revision': workspace['head'], 'report': {'passed': False, 'error': 'Requested heading is absent'}}
         checks = [{'target': {'role': 'heading', 'name': 'Requested heading'}, 'action': 'visible', 'value': True}]
