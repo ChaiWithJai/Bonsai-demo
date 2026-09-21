@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import WorkspaceData from '$lib/WorkspaceData.svelte';
   import WorkspaceAcceptance from '$lib/WorkspaceAcceptance.svelte';
+  import WorkspaceProposal from '$lib/WorkspaceProposal.svelte';
+  import WorkspaceProposalReview from '$lib/WorkspaceProposalReview.svelte';
   import { ArrowUp, Code2, ExternalLink, Layers, Monitor, Plus, Square, Workflow } from '@lucide/svelte';
   type Data = Record<string, any>;
   let status = $state<Data | null>(null);
@@ -241,7 +243,16 @@
           {:else}<div class="preview-empty"><Monitor size={32}/><h2>Your project preview</h2><p>Build the saved revision to open it here. This step does not call the model.</p><button onclick={restore} disabled={busy || running}>{busy ? 'Building…' : 'Build saved revision'}</button></div>{/if}
         {:else if tab === 'data'}<WorkspaceData initialSource={planningHistory.at(-1)?.source_id ?? ''} onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>
         {:else if tab === 'code'}<div class="source-title">App.svelte <span>{project.head.slice(0, 10)}</span></div><pre class="source"><code>{project.files['App.svelte']}</code></pre>
-        {:else}<div class="evidence"><h2>Review this interface</h2>
+        {:else}<div class="evidence">
+          {#if planningHistory.at(-1)?.proposal}
+            {@const interpretation=planningHistory.at(-1)!}
+            <details class="saved-interpretation"><summary>Review source interpretation</summary>
+              <p>Check the source-backed structure used to build this workstream. This judgment is separate from reviewing the interface below.</p>
+              <WorkspaceProposal proposal={interpretation.proposal} coverage={interpretation.source_coverage} evidence={interpretation.source_examples ?? []} readOnly={true} onConfirm={()=>{}} onRevise={()=>{}}/>
+              {#key interpretation.id}<WorkspaceProposalReview jobId={interpretation.id}/>{/key}
+            </details>
+          {/if}
+          <h2>Review this interface</h2>
           <p>Your judgment applies to saved revision {project.head.slice(0, 10)}. Automated checks do not count as human acceptance.</p>
           <form class="interface-review" onsubmit={saveInterfaceReview}>
             <label>Reviewer name<input bind:value={reviewer} required maxlength="100" /></label>
