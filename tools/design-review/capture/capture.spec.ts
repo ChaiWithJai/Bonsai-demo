@@ -726,3 +726,28 @@ test('Comparison discloses task changes and incomplete configuration',async({pag
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.locator('.comparison-context').screenshot({path:path.resolve(import.meta.dirname,'../shots/33-comparison-context.'+info.project.name+'.png')});
 });
+
+test('Proposal judgments are separate from build approval and exclude test labels',async({page},info)=>{
+ const jid='6e83f104314444c88a3cb5b93fe79240';
+ const response=await page.request.get('/api/workspace/source-jobs/'+jid);
+ expect(response.ok()).toBe(true);
+ const job=await response.json();
+ expect(job.status).toBe('completed');
+ // Expose this completed development source in the pending-source sidebar for navigation only.
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[{...job,workspace_id:undefined}]}}));
+ await page.goto('/#/workspace');
+ await page.getByRole('complementary',{name:'Workstreams',exact:true}).getByRole('button').filter({hasText:job.filename}).click();
+ await expect(page.getByRole('region',{name:'Bonsai proposal',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Yes, build this view',exact:true})).toHaveCount(0);
+ await page.getByText('Review interpretation for the example dataset',{exact:true}).click();
+ await page.getByLabel('Proposal reviewer',{exact:true}).fill('Codex browser verification');
+ await page.getByRole('combobox',{name:'Proposal reviewer kind',exact:true}).selectOption('test');
+ await page.getByLabel('Interpretation review note',{exact:true}).fill('Development UI check '+info.project.name+'; not a human acceptance.');
+ await page.getByRole('button',{name:'Accept interpretation',exact:true}).click();
+ await expect(page.getByText('Saved accept judgment by Codex browser verification (test).',{exact:true})).toBeVisible();
+ const bundle=await page.request.get('/api/workspace/source-jobs/'+jid+'/review-export').then(r=>r.json());
+ expect(bundle.example_count).toBe(0);
+ expect(bundle.review_events.at(-1).reviewer_kind).toBe('test');
+ expect((await page.request.get('/api/workspace/source-jobs/'+jid).then(r=>r.json())).status).toBe('completed');
+ await page.locator('.proposal-review').screenshot({path:path.resolve(import.meta.dirname,'../shots/34-proposal-review.'+info.project.name+'.png')});
+});

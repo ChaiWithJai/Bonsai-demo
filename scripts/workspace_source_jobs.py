@@ -69,6 +69,19 @@ class SourceJobs:
                     break
         return status
 
+    def proposal_reviews(self, jid, body=None):
+        from workspace_data import proposal_review
+        with self.worker.guard:
+            job = self.get(jid)
+            if body is not None:
+                return proposal_review.save(self.root / jid, job, body)
+            return proposal_review.state(self.root / jid, job)
+
+    def export_proposal_reviews(self, jid):
+        from workspace_data import proposal_review
+        with self.worker.guard:
+            return proposal_review.export(self.root / jid, self.get(jid))
+
     def list(self):
         return {'jobs': [self.get(p.parent.name) for p in sorted(self.root.glob('*/status.json'), key=lambda p:p.stat().st_mtime, reverse=True)]}
 

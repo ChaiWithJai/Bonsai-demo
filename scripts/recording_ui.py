@@ -320,6 +320,10 @@ class Handler(BaseHTTPRequestHandler):
                     result = jobs.list()
                 elif len(parts) == 4 and self.command == 'GET':
                     result = jobs.get(parts[3])
+                elif len(parts) == 5 and parts[4] == 'reviews' and self.command in ('GET', 'POST'):
+                    result = jobs.proposal_reviews(parts[3], payload if self.command == 'POST' else None)
+                elif len(parts) == 5 and parts[4] == 'review-export' and self.command == 'GET':
+                    result = jobs.export_proposal_reviews(parts[3])
                 elif len(parts) == 5 and parts[4] == 'cancel' and self.command == 'POST':
                     result = jobs.cancel(parts[3])
                 elif len(parts) == 5 and parts[4] == 'confirm' and self.command == 'POST':

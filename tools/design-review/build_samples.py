@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "34-proposal-review": ("workstreams", "Development interpretation judgment excluded from human example export"),
     "33-comparison-context": ("workstreams", "Historical comparison with display-only missing-configuration disclosure"),
     "32-node-zoom": ("workstreams", "Zoomed Semiotic nodes retain source membership and full labels"),
     "31-date-exploration": ("workstreams", "Synthetic release records filtered by parameter node and inclusive dates"),
