@@ -578,3 +578,19 @@ test('Proposal visibly discloses an attachment omitted from context',async({page
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await coverage.screenshot({path:path.resolve(import.meta.dirname,'../shots/29-proposal-coverage.'+info.project.name+'.png')});
 });
+
+test('Generated view keeps coverage behind an inspectable disclosure',async({page},info)=>{
+ test.skip(!process.env.COVERAGE_PREVIEW_URL,'Requires isolated starter preview');
+ await page.goto(process.env.COVERAGE_PREVIEW_URL!);
+ const summary=page.getByText('Source coverage · 3 of 5 records supplied to Bonsai',{exact:true});
+ await expect(summary).toBeVisible();
+ const warning=page.getByText(/Not included in model context; this view cannot establish findings/);
+ await expect(warning).not.toBeVisible();
+ await summary.click();
+ await expect(warning).toBeVisible();
+ await expect(page.getByText(/omitted-development.txt/)).toBeVisible();
+ await expect(page.getByTestId('record-row')).toHaveCount(3);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await summary.locator('..').screenshot({path:path.resolve(import.meta.dirname,'../shots/30-generated-coverage.'+info.project.name+'.png')});
+ await summary.click();await expect(warning).not.toBeVisible();
+});
