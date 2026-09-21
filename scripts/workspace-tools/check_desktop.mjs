@@ -36,6 +36,17 @@ try {
  await expect(page.getByTestId('record-row')).toHaveCount(0);
  await page.getByRole('button',{name:'Clear filters',exact:true}).click();
  await expect(page.getByTestId('record-row')).toHaveCount(compiled.rows.length);
+ const passages=compiled.rows[0].locator?.source_evidence ?? [];
+ if(passages.some(p=>/^[a-f0-9]{64}:/.test(p.record_id))) {
+  const row=page.getByTestId('record-row').first();
+  await row.locator('details summary').click();
+  for(const passage of passages.filter(p=>/^[a-f0-9]{64}:/.test(p.record_id))) {
+   const sid=passage.record_id.split(':')[0];
+   const links=row.getByRole('link').filter({hasText:'Open original'});
+   const hrefs=await links.evaluateAll(nodes=>nodes.map(node=>node.getAttribute('href')));
+   expect(hrefs.some(href=>href.includes('/sources/'+sid+'/file'))).toBe(true);
+  }
+ }
  const record=compiled.rows[0];
  await page.getByRole('button',{name:'Inspect '+record.id,exact:true}).click();
  const note='Automated source workflow check '+Date.now();
