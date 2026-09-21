@@ -137,6 +137,28 @@ class WorkspaceWorker:
         workspace['preview'] = self.latest.get(key)
         return workspace
 
+    def comparison(self, key, attempt_ids):
+        from workspace_compare import compare
+        workspace = self.store.get(key)
+        known = {a['id']: a for a in workspace['attempts']}
+        if len(attempt_ids) != 2 or len(set(attempt_ids)) != 2 or any(a not in known for a in attempt_ids):
+            raise ValueError('Choose two distinct attempts from this project')
+        rows = []
+        for aid in attempt_ids:
+            path = self.store.root / 'attempts' / aid / 'summary.json'
+            if known[aid]['status'] == 'running' or not path.exists():
+                raise ValueError('Wait until both attempts have finished recording evidence')
+            summary = json.loads(path.read_text())
+            if not summary.get('run_id'):
+                raise ValueError('This attempt has no MLflow run to compare')
+            run = self.client.get_run(summary['run_id'])
+            rows.append({'run_id': summary['run_id'], 'url': summary.get('mlflow_url'),
+                         'tags': {k: v for k, v in run.data.tags.items() if not k.startswith('mlflow.')},
+                         'outcome': {k: summary.get(k) for k in ('status', 'error', 'elapsed_seconds', 'repairs', 'trace_id', 'revision')},
+                         'browser_check': (summary.get('check') or {}).get('report'),
+                         'loop_detection': summary.get('loop_detection')})
+        return compare(rows)
+
     def restore_preview(self, key):
         with self.guard:
             if self.running or self.source_jobs:

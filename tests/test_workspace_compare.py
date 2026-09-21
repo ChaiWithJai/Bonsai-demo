@@ -13,3 +13,14 @@ class ComparisonTest(unittest.TestCase):
         report = compare([{'tags': {'sampling_seed': '42'}}, {'tags': {'sampling_seed': '43'}}])
         self.assertEqual(report['configuration_differences'], {'sampling_seed': ['42', '43']})
         with self.assertRaises(ValueError): compare([{'tags': {}}])
+
+class ProjectComparisonBoundaryTest(unittest.TestCase):
+    def test_cannot_compare_attempts_outside_selected_project(self):
+        from types import SimpleNamespace
+        from workspace_worker import WorkspaceWorker
+        store = SimpleNamespace(get=lambda key: {'attempts': [{'id': 'owned', 'status': 'completed'}]})
+        worker = SimpleNamespace(store=store)
+        with self.assertRaisesRegex(ValueError, 'from this project'):
+            WorkspaceWorker.comparison(worker, 'project', ['owned', 'foreign'])
+        with self.assertRaisesRegex(ValueError, 'distinct'):
+            WorkspaceWorker.comparison(worker, 'project', ['owned', 'owned'])
