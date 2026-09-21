@@ -112,6 +112,8 @@ def compile_plan(manifest, plan):
         if set(view) != {'component', 'x', 'y', 'color'}:
             raise ValueError('XY view requires component, x, y, and color (null when unused)')
         x, y, color = view['x'], view['y'], view['color']
+        if x == y:
+            raise ValueError('X and Y must be different source fields. Plotting a measure against itself adds no comparison. Use source-field grouping for record exploration, or ask for an additional measure; do not invent one.')
         if not isinstance(x,str) or not isinstance(y,str) or fields.get(x) not in {'number','date'} or fields.get(y) != 'number':
             raise ValueError('X must be numeric or a date; Y must be numeric')
         if color is not None and (not isinstance(color,str) or color not in fields):
@@ -148,6 +150,8 @@ Choose one view:
 {"component":"ForceDirectedGraph","groupBy":["first grouping field","optional second field"]}
 or {"component":"Scatterplot","x":"numeric or date field","y":"numeric field","color":null}
 or {"component":"LineChart","x":"numeric or date field","y":"numeric field","color":"source grouping field"}.
+X and Y must be distinct source fields. Never put the same measure on both axes merely to fit a chart.
+When only one measure exists, prefer source-field grouping for inspecting records and ask what additional evidence would support a comparison. State when the data is too sparse for a meaningful trend or relationship.
 For model families, prefer parameter size first, then release and runtime when supplied.
 Use Scatterplot for time observations with missing measures so a line cannot imply continuity.
 The harness supplies all data and renders Semiotic components. Never output code or chart data.
