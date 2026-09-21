@@ -1,6 +1,7 @@
 """A reviewable interpretation precedes visualization rendering."""
 import hashlib
 import json
+import re
 from workspace_data.desktop_plan import PLAN_INSTRUCTIONS, compile_plan
 
 PROPOSAL_INSTRUCTIONS = '''You are collaborating with a person on understanding their files and designing a useful interactive visualization.
@@ -24,23 +25,48 @@ The plan field contains the following object (these instructions apply to plan, 
 ''' + PLAN_INSTRUCTIONS + '\nWhen structure is provided, plan fields refer to the fields in structure.records values, not the original page metadata. Group only by those real structured fields. Findings still cite original source records.'
 
 
-def source_packet(manifest, max_chars=32000):
-    rows=manifest['records']
-    selected=[];used=0
-    # Evenly traverse the file so sampling does not imply only its beginning matters.
-    order=[]
-    for offset in range(10):
-        order.extend(range(offset,len(rows),10))
+def source_packet(manifest, max_chars=32000, request=''):
+    rows=manifest['records'];selected=[];used=0;excerpted=[]
+    terms=set(re.findall(r"[\w-]{4,}",request.lower()))-{'these','those','with','from','that','this','show','data','files','please','view'}
+    terms=sorted(terms)[:32]
+    # Long fields remain addressable; select verbatim windows, never a synthetic summary.
+    def prepare(index):
+        row=rows[index];data={};ranges={}
+        for field,value in row['data'].items():
+            if isinstance(value,str) and len(value)>4000:
+                starts=[0,max(0,len(value)-1200)]
+                lower=value.lower()
+                matches=sorted({max(0,lower.find(term)-400) for term in terms if term in lower})
+                starts=sorted(set(([matches[0]] if matches else [])+starts))
+                spans=[]
+                for start in starts:
+                    end=min(len(value),start+1200)
+                    if spans and start<=spans[-1][1]:spans[-1][1]=max(spans[-1][1],end)
+                    else:spans.append([start,end])
+                data[field]='\n[... omitted source text ...]\n'.join(value[start:end] for start,end in spans)
+                ranges[field]={'characters_total':len(value),'shown_ranges':spans,'offset_unit':'Unicode code points; end exclusive'}
+            else:data[field]=value
+        packet={'id':'r'+str(index+1),'locator':row['locator'],'data':data}
+        if ranges:packet['field_excerpts']=ranges
+        return packet
+    # Prefer question-relevant records, then spread the remaining sample over the file.
+    stride=[i for offset in range(10) for i in range(offset,len(rows),10)]
+    def score(index):
+        text=str(rows[index]['data']).lower()
+        return sum(term in text for term in terms)
+    scores={i:score(i) for i in stride}
+    order=sorted(stride,key=lambda i:-scores[i])
     for index in order:
-        row=rows[index]
-        value={'id':'r'+str(index+1),'locator':row['locator'],'data':row['data']}
-        size=len(json.dumps(value,ensure_ascii=False))
-        if used+size <= max_chars:
+        value=prepare(index);size=len(json.dumps(value,ensure_ascii=False))
+        if used+size<=max_chars:
             selected.append(value);used+=size
-    positions={'r'+str(i+1):i for i,r in enumerate(rows)}
-    selected.sort(key=lambda r:positions[r['id']])
-    return {'record_id_map':{r['id']:rows[positions[r['id']]]['id'] for r in selected},'records':selected,'records_shown':len(selected),'records_total':len(rows),
-            'coverage':'all records' if len(selected)==len(rows) else 'bounded sample; unshown records were not reviewed by the model'}
+            if 'field_excerpts' in value:excerpted.append(value['id'])
+    selected.sort(key=lambda r:int(r['id'][1:]))
+    complete=len(selected)==len(rows) and not excerpted
+    return {'record_id_map':{r['id']:rows[int(r['id'][1:])-1]['id'] for r in selected},'records':selected,
+            'records_shown':len(selected),'records_total':len(rows),'excerpted_record_ids':excerpted,
+            'selection_method':'question keyword ranking with distributed fallback; long fields use verbatim start, end, and first matching windows',
+            'coverage':'all records and fields' if complete else 'partial source coverage; omitted records and text were not reviewed by the model'}
 
 
 def structured_manifest(manifest, structure, aliases):

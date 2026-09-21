@@ -60,3 +60,9 @@ email/message adapters, visual interpretation of document figures, image/audio/v
 workflow integration, team identity and shared annotations, and promotion of
 reviewed structured records into training datasets remain unfinished. The current
 proposal is a working slice of the requested loop, not a claim of V0 parity.
+
+## Long-source prompt coverage repair
+
+A long single-field email could previously exceed the entire packet budget and be omitted, even though extraction succeeded. Source packet preparation now retains verbatim windows from long fields, with original character ranges and explicit partial-coverage reporting. Windows cover the beginning, end, and first question-keyword match. Question-relevant records are selected before the distributed fallback sample. Original records and citation identifiers remain unchanged.
+
+This is bounded lexical selection, not semantic retrieval or full-document understanding. Other matches and omitted text are not read by the model. A limited packet still cannot establish exhaustive coverage. Three regression tests cover an oversized email, a relevant late record under a tight budget, and unchanged zero/null values in a small complete source. All 164 Python tests passed before a bounded performance refinement; the three packet tests also passed after that refinement. No new model-quality claim or human approval is recorded.
