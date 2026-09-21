@@ -1,0 +1,8 @@
+{
+  "source_job": "60e5c6b2fe44425ba69f7bbcede0e1b7",
+  "correction": "Use the title Observations and team requirements. Keep the model A count of 12 separate from spoken requirements. Preserve the two audio segments and their timestamps. Keep a searchable RecordTable; do not convert the requirements into measured counts.",
+  "prior_citation_count": 10,
+  "all_prior_citations_in_current_namespace": true,
+  "archive_modified": false,
+  "fresh_model_success": false
+}
