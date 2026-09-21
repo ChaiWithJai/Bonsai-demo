@@ -217,6 +217,13 @@ class WorkerTest(unittest.TestCase):
         self.assertEqual(len(calls), 8)
         self.assertEqual(self.client.runs[-1]['summary']['completion_source'], 'authored_verification_of_current_revision')
 
+    def test_context_checkpoint_keeps_unicode_source_readable(self):
+        workspace = dict(self.workspace, files={'App.svelte': '<p>Evidence · café</p>'})
+        messages = checkpoint_context(workspace, 'Keep source labels', [])
+        self.assertIn('Evidence · café', messages[1]['content'])
+        packet = json.loads(messages[1]['content'].split('\n', 1)[1])
+        self.assertEqual(packet['files'], workspace['files'])
+
     def test_context_checkpoint_preserves_current_source_and_failure_evidence(self):
         events = [{'kind': 'build.finished', 'payload': {'ok': False, 'revision': self.workspace['head'], 'stderr': 'Exact compiler diagnostic'}}]
         messages = checkpoint_context(self.workspace, 'Keep runtime drilldown', events)
