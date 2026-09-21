@@ -92,7 +92,11 @@ def export_reviews(root, manifest):
                          'input': row['data'], 'target': event['corrected_data'] if event['action'] == 'correct' else row['data'],
                          'review_event_id': event['event_id'], 'author': event['author'],
                          'identity_basis': event['identity_basis'], 'action': event['action']})
-    return {'schema_version': 1, 'purpose': 'reviewed extraction examples for dataset curation; no training executed',
+    dataset = {'task': 'source_extraction', 'source_sha256': manifest['sha256'],
+               'snapshot_id': review['snapshot_id'], 'examples': examples}
+    return {'schema_version': 1, 'dataset_sha256': digest(dataset),
+            'dataset_task': dataset['task'], 'example_count': len(examples),
+            'purpose': 'reviewed extraction examples for dataset curation; no training executed',
             'source_id': manifest['source_id'], 'source_sha256': manifest['sha256'],
             'snapshot_id': review['snapshot_id'], 'source_manifest': manifest,
             'review_events': history(root, manifest), 'training_candidates': examples,
