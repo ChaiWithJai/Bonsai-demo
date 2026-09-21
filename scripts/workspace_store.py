@@ -62,6 +62,9 @@ class WorkspaceStore:
                 CREATE TABLE IF NOT EXISTS attempts (
                     id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, base_revision TEXT NOT NULL,
                     request TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS interface_reviews (
+                    id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL,
+                    revision TEXT NOT NULL, payload TEXT NOT NULL, created_at TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS events (
                     attempt_id TEXT NOT NULL, sequence INTEGER NOT NULL, kind TEXT NOT NULL,
                     payload TEXT NOT NULL, created_at TEXT NOT NULL,
@@ -193,3 +196,57 @@ class WorkspaceStore:
         if not isinstance(after,int) or after<0:raise ValueError('Event cursor must be nonnegative')
         with self.connect() as db:
             return [{**dict(row),'payload':json.loads(row['payload'])} for row in db.execute('SELECT * FROM events WHERE attempt_id=? AND sequence>? ORDER BY sequence',(attempt,after))]
+
+    def review_interface(self, key, body):
+        revision = body.get('revision')
+        author, kind, action, note = (body.get(k) for k in ('author', 'reviewer_kind', 'action', 'note'))
+        if not isinstance(author, str) or not 1 <= len(author.strip()) <= 100:
+            raise ValueError('Provide a reviewer name')
+        if kind not in ('human', 'codex', 'test') or action not in ('accept', 'reject'):
+            raise ValueError('Choose a reviewer kind and accept or reject')
+        if not isinstance(note, str) or not 1 <= len(note.strip()) <= 4000:
+            raise ValueError('Explain the judgment using 1 to 4000 characters')
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            workspace = db.execute('SELECT head FROM workspaces WHERE id=?', (key,)).fetchone()
+            if workspace is None or workspace['head'] != revision:
+                raise RevisionConflict('Project changed. Review the current saved revision.')
+            if db.execute("SELECT id FROM attempts WHERE workspace_id=? AND status='running'", (key,)).fetchone():
+                raise RevisionConflict('Wait for the active edit before reviewing')
+            rows = db.execute('SELECT payload FROM interface_reviews WHERE workspace_id=? AND revision=? ORDER BY rowid', (key, revision)).fetchall()
+            previous = json.loads(rows[-1]['payload']) if rows else None
+            if body.get('previous_event_id') != (previous['event_id'] if previous else None):
+                raise RevisionConflict('Another review was saved. Reload before reviewing.')
+            event = {'event_id': uuid.uuid4().hex, 'workspace_id': key, 'revision': revision,
+                     'created_at': timestamp(), 'author': author.strip(), 'reviewer_kind': kind,
+                     'action': action, 'note': note.strip(), 'previous_event_id': body.get('previous_event_id'),
+                     'identity_basis': 'self_declared_local_reviewer', 'scope': 'generated_interface'}
+            db.execute('INSERT INTO interface_reviews VALUES (?,?,?,?,?)',
+                       (event['event_id'], key, revision, encoded(event), event['created_at']))
+        return event
+
+    def interface_reviews(self, key):
+        workspace = self.get(key)
+        with self.connect() as db:
+            events = [json.loads(row['payload']) for row in db.execute(
+                'SELECT payload FROM interface_reviews WHERE workspace_id=? ORDER BY rowid', (key,))]
+        current = [event for event in events if event['revision'] == workspace['head']]
+        return {'revision': workspace['head'], 'events': events, 'latest': current[-1] if current else None}
+
+    def export_interface_reviews(self, key):
+        workspace = self.get(key)
+        reviews = self.interface_reviews(key)
+        if reviews['revision'] != workspace['head']:
+            raise RevisionConflict('Project changed during export. Try again.')
+        latest = reviews['latest']
+        candidates = []
+        if latest and latest['reviewer_kind'] == 'human' and latest['action'] == 'accept':
+            candidates.append({'workspace_id': key, 'revision': workspace['head'],
+                               'review': latest, 'files': workspace['files'],
+                               'source_fixture': workspace['fixture'], 'attempts': workspace['attempts']})
+        dataset = {'task': 'generated_interface', 'examples': candidates}
+        return {'schema_version': 1, 'dataset_sha256': hashlib.sha256(encoded(dataset).encode()).hexdigest(),
+                'dataset_task': dataset['task'], 'review_events': reviews['events'],
+                'training_candidates': candidates, 'example_count': len(candidates),
+                'policy': 'Only the latest human-declared acceptance of the current revision is a candidate. '
+                          'Automated checks and test reviews do not establish human acceptance.'}
