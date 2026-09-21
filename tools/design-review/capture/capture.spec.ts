@@ -211,3 +211,19 @@ test('Compare saved repair attempts',async({page},info)=>{
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/12-comparison.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Interface review is explicit and test feedback is excluded',async({page},info)=>{
+ await page.goto('/#/workspace');
+ await page.getByText(/Saved projects/).click();
+ await page.locator('.saved-projects button').filter({hasText:'Model Variant Node View'}).click();
+ await page.getByRole('button',{name:'Evidence',exact:true}).click();
+ await page.getByLabel('Reviewer name',{exact:true}).fill('Automated development check');
+ await page.getByLabel('Review origin',{exact:true}).selectOption('test');
+ await page.getByLabel('Review notes',{exact:true}).fill('Browser verification only; not human acceptance.');
+ await page.getByRole('button',{name:'Save interface review',exact:true}).click();
+ await expect(page.getByRole('status').filter({hasText:'Automated development check (test)'})).toBeVisible();
+ await page.getByRole('button',{name:'Export interface reviews to MLflow',exact:true}).click();
+ await expect(page.getByText('0 accepted human-reviewed examples.',{exact:false})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/13-interface-review.'+info.project.name+'.png'),fullPage:true});
+});
