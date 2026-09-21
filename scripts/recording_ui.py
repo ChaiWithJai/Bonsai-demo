@@ -298,6 +298,10 @@ class Handler(BaseHTTPRequestHandler):
                     result = jobs.get(parts[3])
                 elif len(parts) == 5 and parts[4] == 'cancel' and self.command == 'POST':
                     result = jobs.cancel(parts[3])
+                elif len(parts) == 5 and parts[4] == 'confirm' and self.command == 'POST':
+                    result = jobs.confirm(parts[3],payload.get('proposal_sha256'),self.headers.get('X-Eval-Actor','interactive-unattributed'))
+                elif len(parts) == 5 and parts[4] == 'revise' and self.command == 'POST':
+                    result = jobs.revise(parts[3],payload.get('feedback'),self.headers.get('X-Eval-Actor','interactive-unattributed'))
                 else:
                     raise ValueError('Unknown source job route')
             elif parts[:3] == ['api', 'workspace', 'sources']:

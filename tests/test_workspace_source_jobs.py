@@ -60,3 +60,52 @@ class SourceJobsTest(unittest.TestCase):
             self.assertEqual(compiled['rows'][0]['id'],manifest['records'][0]['id'])
             plan['fields'].append({'name':'invented','type':'number'})
             with self.assertRaises(ValueError):compile_plan(manifest,plan)
+
+    def test_proposal_cannot_build_until_its_exact_version_is_confirmed(self):
+        class Planner(BadPlanner):
+            def generate(self,messages,*args):
+                self.calls+=1;self.entered.set();self.release.wait(5)
+                packet=json.loads(messages[-1]['content'])['source_evidence']
+                proposal={'structure':None,'interpretation':{'findings':[{'text':'One zero-valued observation','record_ids':[packet['records'][0]['id']]}],'rationale':'Inspect the supplied values','uncertainties':['Only one observation'],'questions':['Is grouping by value useful?']},'plan':{'title':'Observed values','summary':'A supplied value group','fields':[{'name':'value','type':'number'}],'view':{'component':'ForceDirectedGraph','groupBy':['value']}}}
+                return {'message':{'role':'assistant','content':json.dumps(proposal)}}
+        class Tools:
+            node='node'
+            def __init__(self):self.renders=0
+            def command(self,argv,folder,cancel):
+                self.renders+=1;folder.mkdir(parents=True,exist_ok=True)
+                (folder/'render-evidence.json').write_text('{}');(folder/'chart.svg').write_text('<svg/>')
+                return {'ok':True}
+            def build(self,*args):return {'ok':True}
+            def preview(self,project,*args):return {'url':'http://test/','revision':project['head']}
+            def check_browser(self,*args):return {'ok':True}
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);store=WorkspaceStore(root/'workspace');client=Client();provider=Planner();tools=Tools()
+            worker=SimpleNamespace(store=store,client=client,provider=provider,tools=tools,latest={},guard=threading.Lock(),running={},source_jobs=set(),tracking_uri='http://localhost:5210',model_info={})
+            sources=WorkspaceSources(root/'sources',client,worker.tracking_uri)
+            source=sources.upload('data.json',b'[{"value":0}]');jobs=SourceJobs(worker,sources)
+            result=jobs.start(source['source_id'],'Explore these source records')
+            self.assertTrue(provider.entered.wait(5));thread=jobs.active[result['id']][1];provider.release.set();thread.join(10)
+            proposal=jobs.get(result['id']);self.assertEqual(proposal['status'],'awaiting_confirmation')
+            self.assertEqual(store.list(),[]);self.assertEqual(tools.renders,0)
+            with self.assertRaises(RevisionConflict):jobs.confirm(result['id'],'stale-or-forged-version')
+            jobs.confirm(result['id'],proposal['proposal_sha256'],'test')
+            active=jobs.active.get(result['id'])
+            if active:active[1].join(10)
+            complete=jobs.get(result['id']);self.assertEqual(complete['status'],'completed')
+            self.assertEqual(provider.calls,1);self.assertEqual(tools.renders,1);self.assertEqual(len(store.list()),1)
+            confirmation=json.loads((jobs.root/result['id']/'confirmation.json').read_text())
+            self.assertEqual(confirmation['actor'],'test')
+            self.assertEqual(confirmation['proposal_sha256'],proposal['proposal_sha256'])
+
+    def test_structured_entities_require_real_source_quotes_and_preserve_lineage(self):
+        from workspace_data.proposal import structured_manifest
+        manifest={'kind':'document','source_id':'source','records':[{'id':'original:page:2','locator':{'page':2},'data':{'text':'Bottleneck: metrics computation. Fix: vectorization.'}}]}
+        structure={'rationale':'One bottleneck and its fix','records':[{'values':{'bottleneck':'metrics computation','fix':'vectorization'},'evidence':[{'record_id':'r1','field':'text','quote':'Bottleneck: metrics computation. Fix: vectorization.'}]}]}
+        result=structured_manifest(manifest,structure,{'r1':'original:page:2'})
+        self.assertEqual(result['records'][0]['data']['fix'],'vectorization')
+        self.assertEqual(result['records'][0]['locator']['source_evidence'][0]['record_id'],'original:page:2')
+        self.assertEqual(result['records'][0]['evidence_status'],'model_structured_unreviewed')
+        self.assertNotEqual(result['records'][0]['id'],manifest['records'][0]['id'])
+        structure['records'][0]['evidence'][0]['quote']='Invented speedup 100x'
+        with self.assertRaisesRegex(ValueError,'not present'):structured_manifest(manifest,structure,{'r1':'original:page:2'})
+        with self.assertRaisesRegex(ValueError,'explicit source-grounded'):structured_manifest(manifest,None,{'r1':'original:page:2'})

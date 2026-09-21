@@ -57,8 +57,8 @@ test('Workspace starts with user data rather than a fixture preview',async({page
  await page.addInitScript(()=>localStorage.setItem('bonsai-workspace','9133f03e28d9407395f0f45829a780f9'));
  await page.goto('/#/workspace');
  await expect(page.getByRole('heading',{name:'What do you want to understand?'})).toBeVisible();
- await expect(page.getByRole('heading',{name:'Your source data'})).toBeVisible();
- await expect(page.getByText(/Describe a question to create a source-bound visualization/)).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Bring your files and a question.'})).toBeVisible();
+ await expect(page.getByText(/Files and a question/)).toBeVisible();
  await expect(page.locator('iframe')).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/05-workspace-start.'+info.project.name+'.png'),fullPage:true});
@@ -75,7 +75,7 @@ test('PDF upload shows page records and extraction coverage',async({page},info)=
  await page.locator('input[type=file]').setInputFiles({name:'S82065.pdf',mimeType:'application/pdf',buffer:await original.body()});
  await expect(page.getByRole('heading',{name:'S82065.pdf',exact:true})).toBeVisible();
  await expect(page.getByText('79 of 79 pages contain extracted text · 0 OCR pages',{exact:true})).toBeVisible();
- await expect(page.getByRole('button',{name:'Create visualization',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Understand these files',exact:true})).toBeVisible();
  const sourceResponse=await page.request.get('/api/workspace/sources/'+source);
  const data=await sourceResponse.json();
  expect(data.sha256).toBe('2ab8e898b0f0208138af7e71629e05925b333afe8d13e49953bfad6dfbc1cb93');
@@ -85,4 +85,24 @@ test('PDF upload shows page records and extraction coverage',async({page},info)=
  await page.locator('.records details').first().locator('summary').click();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/06-workspace-pdf.'+info.project.name+'.png'),fullPage:true});
+});
+
+test('Bonsai interpretation is reviewed before a view is built',async({page},info)=>{
+ test.skip(!process.env.WORKSPACE_PROPOSAL_JOB,'Requires a completed live proposal');
+ const response=await page.request.get('/api/workspace/source-jobs/'+process.env.WORKSPACE_PROPOSAL_JOB);
+ const job=await response.json();expect(job.status).toBe('awaiting_confirmation');expect(job.workspace_id).toBeUndefined();
+ const before=await (await page.request.get('/api/workspace')).json();
+ await page.goto('/#/workspace');
+ const card=page.getByRole('region',{name:'Bonsai proposal'}).first();
+ await expect(card.getByRole('heading',{name:'Here’s what I’m seeing'})).toBeVisible();
+ await expect(card.getByRole('button',{name:'Yes, build this view'})).toBeEnabled();
+ await card.getByLabel('Clarify or change this proposal').fill('Keep the source pages available alongside the proposed groups.');
+ await expect(card.getByRole('button',{name:'Discuss this change'})).toBeEnabled();
+ await card.locator('details').first().locator('summary').click();
+ await expect(card.locator('pre').first()).toContainText('page');
+ await card.scrollIntoViewIfNeeded();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/07-workspace-proposal.'+info.project.name+'.png'),fullPage:true});
+ const after=await (await page.request.get('/api/workspace')).json();expect(after.workspaces).toEqual(before.workspaces);
+ // Never submit a human confirmation during visual review.
 });
