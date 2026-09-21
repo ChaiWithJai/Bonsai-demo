@@ -5,7 +5,7 @@ import json
 import math
 
 TYPES = {'text', 'number', 'date', 'boolean'}
-COMPONENTS = {'Scatterplot', 'LineChart', 'ForceDirectedGraph'}
+COMPONENTS = {'Scatterplot', 'LineChart', 'ForceDirectedGraph', 'RecordTable'}
 
 
 def profile(manifest):
@@ -81,12 +81,16 @@ def compile_plan(manifest, plan):
         rows.append({'id': row['id'], 'source_id': row['source_id'], 'locator': row['locator'], 'data': typed})
     view = plan['view']
     if not isinstance(view,dict) or view.get('component') not in COMPONENTS:
-        raise ValueError('Choose Scatterplot, LineChart, or ForceDirectedGraph')
+        raise ValueError('Choose RecordTable, Scatterplot, LineChart, or ForceDirectedGraph')
     component = view['component']
     props = {'title': plan['title'], 'description': plan['summary'], 'width': 900, 'height': 520}
     excluded = []
     membership = {}
-    if component == 'ForceDirectedGraph':
+    if component == 'RecordTable':
+        if set(view) != {'component'}:
+            raise ValueError('RecordTable requires only component; all classified source fields are shown')
+        props.update(columns=list(fields))
+    elif component == 'ForceDirectedGraph':
         if set(view) != {'component', 'groupBy'}:
             raise ValueError('Network view requires component and groupBy')
         groups = view['groupBy']
@@ -147,11 +151,12 @@ Classify every supplied field using {"name":"exact source name","type":"text|num
 Choose types that fit all supplied values; empty and null are missing, zero is measured.
 Dates must be YYYY-MM-DD. Do not invent fields, records, facts or classifications unsupported by the data.
 Choose one view:
-{"component":"ForceDirectedGraph","groupBy":["first grouping field","optional second field"]}
+{"component":"RecordTable"} for sparse data, text-heavy evidence, or direct record inspection.
+Or {"component":"ForceDirectedGraph","groupBy":["first grouping field","optional second field"]}
 or {"component":"Scatterplot","x":"numeric or date field","y":"numeric field","color":null}
 or {"component":"LineChart","x":"numeric or date field","y":"numeric field","color":"source grouping field"}.
 X and Y must be distinct source fields. Never put the same measure on both axes merely to fit a chart.
-When only one measure exists, prefer source-field grouping for inspecting records and ask what additional evidence would support a comparison. State when the data is too sparse for a meaningful trend or relationship.
+When only one record or measure exists without a meaningful comparison, prefer RecordTable and ask what additional evidence would support a comparison. State when the data is too sparse for a meaningful trend or relationship.
 For model families, prefer parameter size first, then release and runtime when supplied.
 Use Scatterplot for time observations with missing measures so a line cannot imply continuity.
 The harness supplies all data and renders Semiotic components. Never output code or chart data.

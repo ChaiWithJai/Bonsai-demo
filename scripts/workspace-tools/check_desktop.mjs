@@ -15,8 +15,14 @@ try {
  expect(ids).toEqual(compiled.rows.map(r=>r.id).sort());
  const rendered=await page.getByTestId('record-data').allTextContents();
  expect(rendered.map(t=>JSON.parse(t))).toEqual(compiled.rows.map(r=>r.data));
- await expect(page.locator('.chart img')).toBeVisible();
- expect(await page.locator('.chart img').evaluate(el=>el.complete&&el.naturalWidth>0)).toBe(true);
+ if(compiled.chart.component==='RecordTable') {
+  await expect(page.getByRole('table')).toBeVisible();
+  const values=await page.locator('tbody tr').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('td')].slice(0,-1).map(cell=>cell.textContent)));
+  expect(values).toEqual(compiled.rows.map(row=>compiled.chart.props.columns.map(column=>row.data[column]==null?'Missing':String(row.data[column]))));
+ } else {
+  await expect(page.locator('.chart img')).toBeVisible();
+  expect(await page.locator('.chart img').evaluate(el=>el.complete&&el.naturalWidth>0)).toBe(true);
+ }
  if(compiled.chart.component==='ForceDirectedGraph') {
   const first=compiled.chart.props.nodes[0];
   await page.getByRole('button',{name:'Explore '+first.label,exact:true}).click();

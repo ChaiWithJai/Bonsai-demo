@@ -237,14 +237,21 @@ class SourceJobs:
             plan=compiled['plan']
             confirmation=json.loads((folder/'confirmation.json').read_text())
             span('human.confirmation',confirmation,lambda:confirmation)
-            update(stage='Rendering Semiotic component')
-            rendered = span('semiotic.render', compiled['chart'], lambda:w.tools.command(
-                [w.tools.node,str(ROOT/'scripts/workspace-tools/render_chart.mjs'),str(folder/'chart.json'),str(folder/'render')],folder/'render',cancel))
-            if not rendered['ok']:
-                raise ValueError('Semiotic rendering failed: '+rendered['stderr'][-2000:])
-            evidence = json.loads((folder/'render/render-evidence.json').read_text())
+            if compiled['chart']['component'] == 'RecordTable':
+                update(stage='Preparing source record table')
+                evidence = {'renderer': 'authored-accessible-html-table-v1', 'record_count': len(compiled['rows'])}
+                chart_svg = ''
+                self.save(folder, 'table-evidence.json', evidence)
+            else:
+                update(stage='Rendering Semiotic component')
+                rendered = span('semiotic.render', compiled['chart'], lambda:w.tools.command(
+                    [w.tools.node,str(ROOT/'scripts/workspace-tools/render_chart.mjs'),str(folder/'chart.json'),str(folder/'render')],folder/'render',cancel))
+                if not rendered['ok']:
+                    raise ValueError('Semiotic rendering failed: '+rendered['stderr'][-2000:])
+                evidence = json.loads((folder/'render/render-evidence.json').read_text())
+                chart_svg = (folder/'render/chart.svg').read_text()
             fixture = {'kind':'desktop','compiled':compiled,'render_evidence':evidence,
-                       'chart_svg':(folder/'render/chart.svg').read_text(),'source_job':status.copy()}
+                       'chart_svg':chart_svg,'source_job':status.copy()}
             check()
             project = w.store.create(title=plan['title'][:150], files={'App.svelte':(ROOT/'examples/workspace/desktop/App.svelte').read_text()}, fixture=fixture)
             update(workspace_id=project['id'], stage='Building editable project')
