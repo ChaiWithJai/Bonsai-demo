@@ -1,0 +1,168 @@
+{
+  "scope": "One repeated development task; no held-out or latency claim",
+  "task_metadata_matches": true,
+  "initial_model_input_sha256": "b78c14d8b3c272249344c6e6d954445f0375f4e512f5528fbdadaf29e201fa67",
+  "configuration_differences": {
+    "sampling_profile": [
+      "legacy-greedy",
+      "bonsai2-instruct",
+      "bonsai2-instruct",
+      "legacy-greedy"
+    ]
+  },
+  "trials": [
+    {
+      "trial": 1,
+      "workspace_id": "7eda27addd6943ebb127bea7dc852da9",
+      "attempt_id": "c96368c22ba441f393a3a1fbec483a00",
+      "run_id": "42133529eff44a1d8ce11414b3da9abb",
+      "profile": "legacy-greedy",
+      "seed": 42,
+      "status": "completed",
+      "repairs": 0,
+      "elapsed_seconds": 79.32994470791891,
+      "revision": "e65142d8f5a5f51c9e6118898b2950aace8580ab1bfee89a52fa7292cf9aec26",
+      "preview_url": "http://127.0.0.1:53597/",
+      "trace_verified": true,
+      "supplementary_checks": "desktop_mobile_passed",
+      "post_run_selection_semantics": [
+        {
+          "scope": "Post-run observational check; not a frozen success criterion",
+          "viewport": "desktop",
+          "aria_pressed": {
+            "All records": null,
+            "Measured observations": null,
+            "Spoken requirements": null
+          },
+          "selected_state_exposed": false
+        },
+        {
+          "scope": "Post-run observational check; not a frozen success criterion",
+          "viewport": "mobile",
+          "aria_pressed": {
+            "All records": null,
+            "Measured observations": null,
+            "Spoken requirements": null
+          },
+          "selected_state_exposed": false
+        }
+      ]
+    },
+    {
+      "trial": 2,
+      "workspace_id": "37c141eeb53446d6bb2ced44798d02ab",
+      "attempt_id": "732921f55b304f13b181e791e3f0c2e5",
+      "run_id": "dc61d4bf59634834a54305db42796ff6",
+      "profile": "bonsai2-instruct",
+      "seed": 42,
+      "status": "completed",
+      "repairs": 0,
+      "elapsed_seconds": 88.84861791715957,
+      "revision": "cba550b98d0813c4ad2e17de12523bd05e48f4c9312b8f525e20db4c81d809db",
+      "preview_url": "http://127.0.0.1:53838/",
+      "trace_verified": true,
+      "supplementary_checks": "desktop_mobile_passed",
+      "post_run_selection_semantics": [
+        {
+          "scope": "Post-run observational check; not a frozen success criterion",
+          "viewport": "desktop",
+          "aria_pressed": {
+            "All records": "false",
+            "Measured observations": "true",
+            "Spoken requirements": "false"
+          },
+          "selected_state_exposed": true
+        },
+        {
+          "scope": "Post-run observational check; not a frozen success criterion",
+          "viewport": "mobile",
+          "aria_pressed": {
+            "All records": "false",
+            "Measured observations": "true",
+            "Spoken requirements": "false"
+          },
+          "selected_state_exposed": true
+        }
+      ]
+    },
+    {
+      "trial": 3,
+      "workspace_id": "32403b0a26bd447abcfebd26c9ef3b59",
+      "attempt_id": "15a50b31c5494062936f77ff261ab8be",
+      "run_id": "b85558dabc9c4182b08d06395ae0c529",
+      "profile": "bonsai2-instruct",
+      "seed": 42,
+      "status": "completed",
+      "repairs": 0,
+      "elapsed_seconds": 89.61539320880547,
+      "revision": "cba550b98d0813c4ad2e17de12523bd05e48f4c9312b8f525e20db4c81d809db",
+      "preview_url": "http://127.0.0.1:54158/",
+      "trace_verified": true,
+      "supplementary_checks": "desktop_mobile_passed",
+      "post_run_selection_semantics": [
+        {
+          "scope": "Post-run observational check; not a frozen success criterion",
+          "viewport": "desktop",
+          "aria_pressed": {
+            "All records": "false",
+            "Measured observations": "true",
+            "Spoken requirements": "false"
+          },
+          "selected_state_exposed": true
+        },
+        {
+          "scope": "Post-run observational check; not a frozen success criterion",
+          "viewport": "mobile",
+          "aria_pressed": {
+            "All records": "false",
+            "Measured observations": "true",
+            "Spoken requirements": "false"
+          },
+          "selected_state_exposed": true
+        }
+      ]
+    },
+    {
+      "trial": 4,
+      "workspace_id": "cb745ba372a6488ea6c98bfe89d2395c",
+      "attempt_id": "b4a5f40cca7d49f389fcfcd796e24251",
+      "run_id": "6d68c6cf2ce34cdeb751b31b1e21ed2e",
+      "profile": "legacy-greedy",
+      "seed": 42,
+      "status": "completed",
+      "repairs": 0,
+      "elapsed_seconds": 80.76927841687575,
+      "revision": "e65142d8f5a5f51c9e6118898b2950aace8580ab1bfee89a52fa7292cf9aec26",
+      "preview_url": "http://127.0.0.1:54450/",
+      "trace_verified": true,
+      "supplementary_checks": "desktop_mobile_passed",
+      "post_run_selection_semantics": [
+        {
+          "scope": "Post-run observational check; not a frozen success criterion",
+          "viewport": "desktop",
+          "aria_pressed": {
+            "All records": null,
+            "Measured observations": null,
+            "Spoken requirements": null
+          },
+          "selected_state_exposed": false
+        },
+        {
+          "scope": "Post-run observational check; not a frozen success criterion",
+          "viewport": "mobile",
+          "aria_pressed": {
+            "All records": null,
+            "Measured observations": null,
+            "Spoken requirements": null
+          },
+          "selected_state_exposed": false
+        }
+      ]
+    }
+  ],
+  "finding": "Both profiles passed frozen and supplementary behavior checks. Only instruct outputs expose filter selection with aria-pressed. The selection-state finding is post-run and not part of the frozen completion gate.",
+  "recommendation": "Keep existing defaults pending a broader preregistered comparison; add selection-state checks to the next protocol.",
+  "backup_status": "failed_unverified",
+  "study_run_url": "http://127.0.0.1:5210/#/experiments/33/runs/6ada12f1cf664bc9a7a4fc370c5f60a2",
+  "backup_error": "MongoDB host connection refused; targeted container restart failed with a Docker filesystem I/O error. No broad Docker restart attempted."
+}
