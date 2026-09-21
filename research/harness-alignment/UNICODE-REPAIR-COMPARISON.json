@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "task_metadata_matches": true,
+  "matched_fields": {
+    "dataset_sha256": true,
+    "base_revision": true,
+    "prompt_sha256": true,
+    "case_id": true
+  },
+  "configuration_differences": {
+    "harness_revision": [
+      "df92da046c5809ba4cc64fe58f26ee690fd3653da33c8157550ea0ee7539e1c0",
+      "a85d40c028bb8a4f02a5e98739ee6ec008eed32575d0c63fabf96d212ff3223f"
+    ]
+  },
+  "interpretation": "Descriptive comparison only. Matching task metadata does not establish identical conversation history, cache state, or held-out performance. Missing outcomes remain unknown; MLflow run status alone is not task success.",
+  "runs": [
+    {
+      "run_id": "de95add866e740f88ebf931de57380f9",
+      "url": "http://127.0.0.1:5210/#/experiments/31/runs/de95add866e740f88ebf931de57380f9",
+      "tags": {
+        "workspace.id": "5c33e8f11a7c4f7a8f3f3ee74172cc5b",
+        "attempt_id": "6f35397b7bdb49d987b97b9c6a832ea5",
+        "case_id": "baseline",
+        "split": "development",
+        "research.plan_run_id": "37fe164f40c546339c688b40af523203",
+        "provider_contract_version": "bonsai-workspace-openai-tools-v2",
+        "base_revision": "af7538a2720a5d1edd80d2371bf665af082451ce39e0b6e4ca55b55ad979d4cd",
+        "sampling_profile": "legacy-greedy",
+        "sampling_seed": "42",
+        "research.plan_sha256": "75230b50dbc1ad332673f70e9a836bbf768a2810c46b72e452fe67cd59cc65b6",
+        "conversation_id": "5c33e8f11a7c4f7a8f3f3ee74172cc5b",
+        "harness_revision": "df92da046c5809ba4cc64fe58f26ee690fd3653da33c8157550ea0ee7539e1c0",
+        "dataset_sha256": "659c914561d620b8b2f65c39e3c47da9c44f6cbf517d05570944d95e3f4866c0",
+        "prompt_sha256": "8cd20f6066207b8176abe77ae9eb3ec690cfbc9065f86a9385af901c332b1c1d",
+        "model_revision": "6ed5e12bf84b7a63069882c91dd9e9218647d17b",
+        "runtime_revision": "1ad69ebaada923760c52c1dc50daf198a22c2adb4a9dcccd25779fa7079f353b",
+        "hardware_id": "Apple M5 Pro\n51539607552",
+        "cache_condition": "persistent_server_cache_prompt_enabled_not_cold_benchmark"
+      },
+      "outcome": {
+        "status": "failed",
+        "error": "Stopped repeated unmatched patch on the same revision; inspect the saved source before another attempt",
+        "elapsed_seconds": 117.67465225001797,
+        "repairs": 2,
+        "trace_id": "tr-6f2b1fa28304c8995af6379ab03eecf0",
+        "revision": "af7538a2720a5d1edd80d2371bf665af082451ce39e0b6e4ca55b55ad979d4cd"
+      },
+      "browser_check": {
+        "passed": false,
+        "scope": "Source fidelity, chart loading, filtering and note persistence; not human design quality",
+        "error": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false",
+        "runtime_errors": []
+      },
+      "loop_detection": {
+        "kind": "repeated_unmatched_patch",
+        "revision": "af7538a2720a5d1edd80d2371bf665af082451ce39e0b6e4ca55b55ad979d4cd",
+        "path": "App.svelte",
+        "old_text_sha256": "c00577f4d61c759f0230f8c7227e0719c72ddff38c2314fcefc6731e8c397603",
+        "repetitions": 2,
+        "threshold": 2
+      }
+    },
+    {
+      "run_id": "ade474061d6a477aaeb934833ea44beb",
+      "url": "http://127.0.0.1:5210/#/experiments/31/runs/ade474061d6a477aaeb934833ea44beb",
+      "tags": {
+        "workspace.id": "5c33e8f11a7c4f7a8f3f3ee74172cc5b",
+        "attempt_id": "88c91b6ce0ac40df91408d7d48dfc4dd",
+        "case_id": "baseline",
+        "split": "development",
+        "research.plan_run_id": "37fe164f40c546339c688b40af523203",
+        "provider_contract_version": "bonsai-workspace-openai-tools-v2",
+        "base_revision": "af7538a2720a5d1edd80d2371bf665af082451ce39e0b6e4ca55b55ad979d4cd",
+        "sampling_profile": "legacy-greedy",
+        "sampling_seed": "42",
+        "research.plan_sha256": "75230b50dbc1ad332673f70e9a836bbf768a2810c46b72e452fe67cd59cc65b6",
+        "conversation_id": "5c33e8f11a7c4f7a8f3f3ee74172cc5b",
+        "harness_revision": "a85d40c028bb8a4f02a5e98739ee6ec008eed32575d0c63fabf96d212ff3223f",
+        "dataset_sha256": "659c914561d620b8b2f65c39e3c47da9c44f6cbf517d05570944d95e3f4866c0",
+        "prompt_sha256": "8cd20f6066207b8176abe77ae9eb3ec690cfbc9065f86a9385af901c332b1c1d",
+        "model_revision": "6ed5e12bf84b7a63069882c91dd9e9218647d17b",
+        "runtime_revision": "1ad69ebaada923760c52c1dc50daf198a22c2adb4a9dcccd25779fa7079f353b",
+        "hardware_id": "Apple M5 Pro\n51539607552",
+        "cache_condition": "persistent_server_cache_prompt_enabled_not_cold_benchmark"
+      },
+      "outcome": {
+        "status": "completed",
+        "error": null,
+        "elapsed_seconds": 69.587644334184,
+        "repairs": 0,
+        "trace_id": "tr-6183c4a74bfc76cca00cad0f174ec925",
+        "revision": "5199fca9c5dd793d6cf7c67e6d43c7d0beefb44ca17296082f10c02123daf8f9"
+      },
+      "browser_check": {
+        "passed": true,
+        "scope": "Source fidelity, chart loading, filtering and note persistence; not human design quality",
+        "record_ids": [
+          "8cc403d0bfcc8e7140778b17ad52451ea587f47563192cf324535cb9242df2d3:structured:0:783fc5fac8d701d56a7a",
+          "8cc403d0bfcc8e7140778b17ad52451ea587f47563192cf324535cb9242df2d3:structured:1:3cc8b401771ff0061241",
+          "8cc403d0bfcc8e7140778b17ad52451ea587f47563192cf324535cb9242df2d3:structured:2:575ea8846078e0c721c5"
+        ],
+        "note_persistence": true,
+        "runtime_errors": []
+      },
+      "loop_detection": null
+    }
+  ]
+}

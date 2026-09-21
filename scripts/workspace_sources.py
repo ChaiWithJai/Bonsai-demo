@@ -147,7 +147,7 @@ class WorkspaceSources:
             path.write_text(json.dumps(bundle, indent=2, ensure_ascii=False, allow_nan=False))
             experiment = self.client.get_experiment_by_name('bonsai-workspace-data')
             experiment_id = experiment.experiment_id if experiment else self.client.create_experiment('bonsai-workspace-data')
-            run = self.client.create_run(experiment_id, tags={'mlflow.runName': 'Workspace review export', 'source_id': source_id, 'snapshot_id': bundle['snapshot_id'], 'training_executed': 'false'})
+            run = self.client.create_run(experiment_id, tags={'mlflow.runName': 'Workspace review export', 'source_id': source_id, 'snapshot_id': bundle['snapshot_id'], 'dataset_sha256': bundle['dataset_sha256'], 'dataset_task': bundle['dataset_task'], 'review_identity': 'self_declared_local', 'training_executed': 'false'})
             try:
                 self.client.log_artifact(run.info.run_id, str(path), 'review')
                 self.client.log_artifact(run.info.run_id, str(self.root / source_id / 'source.bin'), 'source')
@@ -157,7 +157,7 @@ class WorkspaceSources:
             except Exception:
                 self.client.set_terminated(run.info.run_id, 'FAILED')
                 raise
-            return {'url': f'/api/workspace/sources/{source_id}/exports/{eid}', 'run_url': f'{self.tracking_uri}/#/experiments/{experiment_id}/runs/{run.info.run_id}', 'training_candidates': len(bundle['training_candidates'])}
+            return {'url': f'/api/workspace/sources/{source_id}/exports/{eid}', 'run_url': f'{self.tracking_uri}/#/experiments/{experiment_id}/runs/{run.info.run_id}', 'training_candidates': len(bundle['training_candidates']), 'dataset_sha256': bundle['dataset_sha256'], 'dataset_task': bundle['dataset_task']}
 
     def download(self, source_id, export_id=None):
         manifest=self.manifest(source_id)

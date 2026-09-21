@@ -7,7 +7,9 @@ from workspace_sources import WorkspaceSources
 
 class Client:
     def get_experiment_by_name(self, name): return SimpleNamespace(experiment_id='test')
-    def create_run(self, *args, **kwargs): return SimpleNamespace(info=SimpleNamespace(run_id='test-export'))
+    def create_run(self, *args, **kwargs):
+        self.tags = kwargs['tags']
+        return SimpleNamespace(info=SimpleNamespace(run_id='test-export'))
     def log_artifact(self, *args): pass
     def log_metric(self, *args): pass
     def set_terminated(self, *args): pass
@@ -27,6 +29,9 @@ class SourcesTest(unittest.TestCase):
             exported=service.export(sid)
             self.assertEqual(exported['training_candidates'],0)
             bundle=json.loads(service.download(sid,exported['url'].rsplit('/',1)[1])[0])
+            self.assertEqual(exported['dataset_sha256'], bundle['dataset_sha256'])
+            self.assertEqual(service.client.tags['dataset_sha256'], bundle['dataset_sha256'])
+            self.assertEqual(service.client.tags['dataset_task'], 'source_extraction')
             self.assertEqual(bundle['source_manifest']['records'][0]['data']['value'],0)
             self.assertIsNone(bundle['source_manifest']['records'][1]['data']['value'])
             self.assertEqual(len(bundle['review_events']),1)
