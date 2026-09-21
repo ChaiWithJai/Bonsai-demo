@@ -137,6 +137,34 @@ class WorkspaceWorker:
         workspace['preview'] = self.latest.get(key)
         return workspace
 
+    def export_interface_reviews(self, key):
+        import tempfile
+        bundle = self.store.export_interface_reviews(key)
+        experiment = self.client.get_experiment_by_name('bonsai-workspace-data')
+        eid = experiment.experiment_id if experiment else self.client.create_experiment('bonsai-workspace-data')
+        run = self.client.create_run(eid, tags={
+            'mlflow.runName': 'Reviewed interface dataset', 'workspace.id': key,
+            'dataset_sha256': bundle['dataset_sha256'], 'dataset_task': bundle['dataset_task'],
+            'review_identity': 'self_declared_local', 'training_executed': 'false'})
+        rid = run.info.run_id
+        try:
+            with tempfile.TemporaryDirectory(prefix='workspace-review-') as folder:
+                path = Path(folder) / 'interface-reviews.json'
+                path.write_text(json.dumps(bundle, indent=2, ensure_ascii=False, allow_nan=False))
+                self.client.log_artifact(rid, str(path), 'review')
+                for candidate in bundle['training_candidates']:
+                    for attempt in candidate['attempts']:
+                        summary = self.store.root / 'attempts' / attempt['id'] / 'summary.json'
+                        if summary.exists():
+                            self.client.log_artifact(rid, str(summary), 'attempts/' + attempt['id'])
+            self.client.log_metric(rid, 'reviewed_examples', bundle['example_count'])
+            self.client.set_terminated(rid, 'FINISHED')
+        except Exception:
+            self.client.set_terminated(rid, 'FAILED')
+            raise
+        return {'dataset_sha256': bundle['dataset_sha256'], 'example_count': bundle['example_count'],
+                'run_url': f'{self.tracking_uri}/#/experiments/{eid}/runs/{rid}'}
+
     def comparison(self, key, attempt_ids):
         from workspace_compare import compare
         workspace = self.store.get(key)

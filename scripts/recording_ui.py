@@ -368,6 +368,8 @@ class Handler(BaseHTTPRequestHandler):
                     result = worker.store.interface_reviews(parts[2])
                 elif parts[3] == 'reviews' and self.command == 'POST':
                     result = worker.store.review_interface(parts[2], payload)
+                elif parts[3] == 'review-export' and self.command == 'POST':
+                    result = worker.export_interface_reviews(parts[2])
                 elif parts[3] == 'review-export' and self.command == 'GET':
                     result = worker.store.export_interface_reviews(parts[2])
                 elif parts[3] == 'comparison' and self.command == 'GET':
