@@ -185,7 +185,7 @@ class SourceJobs:
                             'workspace_provider.py','workspace-tools/package-lock.json']
             self.save(folder,'harness-hashes.json',{name:hashlib.sha256((ROOT/'scripts'/name).read_bytes()).hexdigest() for name in source_files})
             if not confirmed:
-                packet=source_packet(manifest)
+                packet=source_packet(manifest,request=status['request'])
                 self.save(folder,'source-packet.json',packet)
                 messages = [{'role':'system','content':PROPOSAL_INSTRUCTIONS},
                             {'role':'user','content':json.dumps({'request':status['request'],'source_profile':{k:v for k,v in context.items() if k!='extraction_coverage'},'source_evidence':{k:v for k,v in packet.items() if k!='record_id_map'},'revision':json.loads((folder/'revision-request.json').read_text()) if (folder/'revision-request.json').exists() else None},ensure_ascii=False)}]
