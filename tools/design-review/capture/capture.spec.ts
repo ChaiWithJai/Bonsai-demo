@@ -558,3 +558,23 @@ test('Shared file tool preserves message and edit drafts stay with their workstr
  await sidebar.getByRole('button').filter({hasText:'Development Workbook Evidence Audit'}).click();
  await expect(page.getByLabel('Describe the next change')).toHaveValue('Draft for the workbook only.');
 });
+
+test('Proposal visibly discloses an attachment omitted from context',async({page},info)=>{
+ const job=await (await page.request.get('/api/workspace/source-jobs/6e83f104314444c88a3cb5b93fe79240')).json();
+ // Display-only omission scenario. No stored evidence is rewritten.
+ job.status='awaiting_confirmation';delete job.workspace_id;
+ job.source_coverage={records_shown:1,records_total:3,coverage:'partial source coverage',member_coverage:[
+  {source_id:'shown',filename:'included-development.txt',records_shown:1,records_total:1,represented:true},
+  {source_id:'omitted',filename:'omitted-development.txt',records_shown:0,records_total:2,represented:false}]};
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.goto('/#/workspace');
+ await page.getByRole('complementary',{name:'Workstreams',exact:true}).getByRole('button').filter({hasText:'2 attached files'}).click();
+ const coverage=page.getByRole('region',{name:'Files included in this proposal'});
+ await expect(coverage).toContainText('omitted-development.txt');
+ await expect(coverage).toContainText('0 of 2 records included');
+ await expect(coverage).toContainText('This proposal cannot establish findings about this file.');
+ await expect(coverage).toContainText('Coverage describes the input, not verified understanding.');
+ await coverage.scrollIntoViewIfNeeded();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await coverage.screenshot({path:path.resolve(import.meta.dirname,'../shots/29-proposal-coverage.'+info.project.name+'.png')});
+});
