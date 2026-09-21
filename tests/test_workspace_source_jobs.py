@@ -48,6 +48,24 @@ class SourceJobsTest(unittest.TestCase):
             self.assertTrue((jobs.root/result['id']/'validation-1.json').exists())
             self.assertEqual(store.list(),[])
 
+    def test_collection_job_archives_each_original_before_planning(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);store=WorkspaceStore(root/'workspace');client=Client();provider=BadPlanner()
+            worker=SimpleNamespace(store=store,client=client,provider=provider,guard=threading.Lock(),running={},source_jobs=set(),tracking_uri='http://localhost:5210',model_info={})
+            sources=WorkspaceSources(root/'sources',client,worker.tracking_uri)
+            originals=[('first.json',b'[{"value":0}]'),('second.json',b'[{"value":2}]')]
+            members=[sources.upload(name,raw) for name,raw in originals]
+            source=sources.collection([m['source_id'] for m in members]);jobs=SourceJobs(worker,sources)
+            result=jobs.start(source['source_id'],'Compare values across these files')
+            self.assertTrue(provider.entered.wait(5));thread=jobs.active[result['id']][1]
+            provider.release.set();thread.join(10);self.assertFalse(thread.is_alive())
+            for member,(_,raw) in zip(members,originals):
+                archived=jobs.root/result['id']/'originals'/member['source_id']
+                self.assertEqual((archived/'source.bin').read_bytes(),raw)
+                self.assertEqual(json.loads((archived/'provenance.json').read_text())['sha256'],member['sha256'])
+            self.assertEqual(jobs.get(result['id'])['source_ids'],[m['source_id'] for m in members])
+            self.assertEqual(store.list(),[])
+
     def test_compiler_preserves_zero_null_ids_and_rejects_invented_fields(self):
         with tempfile.TemporaryDirectory() as folder:
             sources=WorkspaceSources(folder,Client(),'http://localhost:5210')

@@ -307,6 +307,8 @@ class Handler(BaseHTTPRequestHandler):
             elif parts[:3] == ['api', 'workspace', 'sources']:
                 if len(parts) == 3 and self.command == 'GET':
                     result = sources.list()
+                elif len(parts) == 4 and parts[3] == 'collection' and self.command == 'POST':
+                    result = sources.collection(payload.get('source_ids'),payload.get('apply_reviews',False))
                 elif len(parts) == 4 and self.command == 'GET':
                     result = sources.get(parts[3])
                 elif len(parts) == 5 and parts[4] == 'extract' and self.command == 'POST':

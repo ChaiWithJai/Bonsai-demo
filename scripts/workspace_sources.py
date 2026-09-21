@@ -43,6 +43,42 @@ class WorkspaceSources:
                 return self.extract_pdf(manifest['source_id'])
             return self.get(manifest['source_id'])
 
+    def collection(self, source_ids, apply_reviews=False):
+        if not isinstance(source_ids,list) or not 1<=len(source_ids)<=20 or any(not isinstance(s,str) for s in source_ids) or len(set(source_ids))!=len(source_ids):
+            raise ValueError('Choose one to twenty distinct files')
+        if type(apply_reviews) is not bool:raise ValueError('apply_reviews must be a boolean')
+        with self.lock:
+            if len(source_ids)==1:
+                return self.get(source_ids[0])
+            manifests=[];total=0
+            for sid in source_ids:
+                manifest=self.manifest(sid)
+                if manifest['status']!='extracted':raise ValueError(f"Extract {manifest['filename']} before including it")
+                if manifest['kind']=='collection':raise ValueError('Choose original files, not nested collections')
+                raw=(self.root/sid/'source.bin').read_bytes();total+=len(raw)
+                if hashlib.sha256(raw).hexdigest()!=manifest['sha256']:raise ValueError('Source integrity mismatch')
+                if apply_reviews:
+                    from workspace_data.record_review import apply_human_reviews
+                    manifest=apply_human_reviews(self.root,manifest)
+                manifests.append(manifest)
+            if total>100*1024*1024:raise ValueError('Choose files totaling at most 100 MiB')
+            if sum(len(m['records']) for m in manifests)>100000:raise ValueError('Collection exceeds 100,000 records')
+            snapshot={'purpose':'source collection snapshot, not replacement original files','sources':manifests}
+            raw=json.dumps(snapshot,sort_keys=True,ensure_ascii=False,allow_nan=False).encode()
+            if len(raw)>25*1024*1024:raise ValueError('Collection snapshot exceeds 25 MiB; choose fewer records')
+            digest=hashlib.sha256(raw).hexdigest();sid=hashlib.sha256((digest+'.collection').encode()).hexdigest()
+            folder=self.root/sid;folder.mkdir(exist_ok=True)
+            if (folder/'manifest.json').exists():return self.get(sid)
+            records=[{**row,'locator':{**row['locator'],'source_filename':m['filename']}} for m in manifests for row in m['records']]
+            manifest={'schema_version':1,'source_id':sid,'sha256':digest,'filename':f'{len(manifests)} attached files','bytes':len(raw),
+                      'origin':'derived source collection','extractor':'source-collection-v1','classification_status':'not_started','kind':'collection','status':'extracted',
+                      'requires_structuring':any(m['kind'] in ('text','document','email') for m in manifests),
+                      'sources':[{'source_id':m['source_id'],'sha256':m['sha256'],'filename':m['filename'],'records':len(m['records']),'review_application':m.get('review_application')} for m in manifests],
+                      'records':records}
+            (folder/'source.bin').write_bytes(raw)
+            (folder/'manifest.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False))
+            return self.get(sid)
+
     def extract_pdf(self, source_id):
         from workspace_data.pdf import extract_pdf
         with self.lock:
