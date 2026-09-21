@@ -33,3 +33,21 @@ class SourcePacketTest(unittest.TestCase):
         proposal={'interpretation':{'findings':[{'text':'Both frames repeat three records','record_ids':['r'+str(i) for i in range(1,7)]}],'rationale':'Compare duplicates','questions':['Group these records?'],'uncertainties':[]},'structure':None,'plan':{}}
         with self.assertRaisesRegex(ValueError,'This finding has 6. Split a finding'):
             validate_proposal({},proposal,{'r'+str(i):str(i) for i in range(1,7)})
+
+
+class PlanningCoverageTest(unittest.TestCase):
+    def test_pdf_summary_and_collection_gaps_survive_without_page_logs(self):
+        from workspace_data.proposal import planning_profile
+        coverage={'page_count':3,'pages_with_text':2,'unresolved_pages':[2],
+                  'ocr_pages':[3],'limitation':'Diagrams were not interpreted',
+                  'pages':[{'page':2,'status':'unresolved'}]}
+        original={'extraction_coverage':coverage,
+                  'source_coverage':[{'source_id':'pdf','coverage':{'extraction_coverage':coverage}}]}
+        result=planning_profile(original)
+        for value in [result['extraction_coverage'],result['source_coverage'][0]['coverage']['extraction_coverage']]:
+            self.assertEqual(value['unresolved_pages'],[2])
+            self.assertEqual(value['ocr_pages'],[3])
+            self.assertEqual(value['page_count'],3)
+            self.assertEqual(value['limitation'],'Diagrams were not interpreted')
+            self.assertNotIn('pages',value)
+        self.assertIn('pages',coverage)

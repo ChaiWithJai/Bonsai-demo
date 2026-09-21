@@ -26,6 +26,18 @@ The plan field contains the following object (these instructions apply to plan, 
 ''' + PLAN_INSTRUCTIONS + '\nWhen structure is provided, plan fields refer to the fields in structure.records values, not the original page metadata. Group only by those real structured fields. Findings still cite original source records.'
 
 
+def planning_profile(context):
+    """Retain extraction limits without repeating the per-page diagnostic log."""
+    result = json.loads(json.dumps(context))
+    def compact(coverage):
+        if isinstance(coverage, dict):
+            coverage.pop('pages', None)
+    compact(result.get('extraction_coverage'))
+    for member in result.get('source_coverage', []):
+        compact(member.get('coverage', {}).get('extraction_coverage'))
+    return result
+
+
 def revision_messages(revision, aliases):
     """Put the correction last, with prior citations in the current packet namespace."""
     previous = json.loads(json.dumps(revision['previous_proposal']))
