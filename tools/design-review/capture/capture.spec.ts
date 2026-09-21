@@ -253,3 +253,36 @@ test('Table proposal explains record inspection without chart axes',async({page}
  await proposal.scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/15-table-proposal.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Readable mixed records preserve values and selection',async({page},info)=>{
+ const response=await page.request.get('/api/workspace/e13a4a3d2c214a688339afcd92ddb5fd');
+ const project=await response.json();
+ expect(project.attempts.at(-1).status).toBe('completed');
+ expect(project.preview.revision).toBe(project.head);
+ await page.goto(project.preview.url);
+ const records=page.getByTestId('record-row');
+ await expect(records).toHaveCount(project.fixture.compiled.rows.length);
+ for(let i=0;i<project.fixture.compiled.rows.length;i++) {
+  const row=records.nth(i), data=project.fixture.compiled.rows[i].data;
+  const values=await row.locator('dd').allTextContents();
+  expect(values).toEqual(Object.values(data).map(value=>value===null?'null':String(value)));
+  const raw=row.locator('details').filter({has:page.locator('summary',{hasText:'Raw data'})});
+  await expect(raw).not.toHaveAttribute('open','');
+  await raw.locator('summary').click();
+  expect(JSON.parse(await row.getByTestId('record-data').innerText())).toEqual(data);
+  await raw.locator('summary').click();
+ }
+ const statementColumn=project.fixture.compiled.chart.props.columns.indexOf('statement');
+ expect(await page.locator('tbody tr').first().locator('td').nth(statementColumn).evaluate(el=>el.getBoundingClientRect().width)).toBeGreaterThan(200);
+ const first=records.first();
+ if(info.project.name==='desktop') {
+  const statement=first.locator('dd').filter({hasText:project.fixture.compiled.rows[0].data.statement});
+  expect(await statement.evaluate(el=>el.getBoundingClientRect().width)).toBeGreaterThan(200);
+ }
+ const inspect=first.getByRole('button',{name:'Inspect '+project.fixture.compiled.rows[0].id,exact:true});
+ await inspect.click();
+ await expect(inspect).toHaveAttribute('aria-pressed','true');
+ await expect(page.getByLabel('Evidence note',{exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/16-readable-records.'+info.project.name+'.png'),fullPage:true});
+});

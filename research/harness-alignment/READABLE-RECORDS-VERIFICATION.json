@@ -1,0 +1,33 @@
+{
+  "scope": "Development UI iteration, not human acceptance or a controlled model comparison",
+  "starter_commit": "3a9a90d",
+  "workspace_id": "e13a4a3d2c214a688339afcd92ddb5fd",
+  "revision": "0392ce27b2b84d49537b8577588ad20d03ce404ff60ffc1e963acbba752fd710",
+  "attempts": [
+    {
+      "attempt_id": "5b325e1255434e02a02747009322882c",
+      "run_id": "1a9a2bac76d04a3b98609595c8a7f620",
+      "elapsed_seconds": 173.8129534169566,
+      "repairs": 0
+    },
+    {
+      "attempt_id": "3ac7b79d6d554582a73c3446c1b5ad2a",
+      "run_id": "de5f7664a38f451e834547bca1cc0640",
+      "elapsed_seconds": 108.70890900003724,
+      "repairs": 0
+    }
+  ],
+  "checks": {
+    "starter_build": "passed with zero Svelte warnings",
+    "svelte_autofixer": "no issues or suggestions",
+    "source_browser_checks": "passed",
+    "desktop_and_mobile_request_checks": "2 passed: readable exact values, closed raw data, selection, statement width, no page overflow",
+    "npm_test_harness": "unavailable: package script references missing tests/render.test.mjs"
+  },
+  "remaining_findings": [
+    "Some machine-style categorical values still wrap awkwardly.",
+    "Automated verification notes remain visible and add clutter.",
+    "Human review has not approved this interface."
+  ],
+  "learning": "Baseline checks passing did not establish request completion. The first edit needed visual review and a focused layout follow-up. Keep task-specific acceptance checks separate from data-fidelity checks."
+}
