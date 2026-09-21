@@ -643,3 +643,36 @@ test('Unavailable draft storage is disclosed without blocking the composer',asyn
  await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:'Files',exact:true}).click();
  await expect(message).toHaveValue('Keep my question usable when browser storage is unavailable.');
 });
+
+test('Generated view combines node selection and inclusive date windows',async({page},info)=>{
+ test.skip(!process.env.DATE_PREVIEW_URL,'Requires isolated date exploration fixture');
+ await page.goto(process.env.DATE_PREVIEW_URL!);
+ await expect(page.getByTestId('record-row')).toHaveCount(5);
+ await page.getByText('Explore by date',{exact:true}).click();
+ await page.getByLabel('Group',{exact:true}).selectOption({label:'size: 27B (3)'});
+ await expect(page.getByTestId('record-row')).toHaveCount(3);
+ await page.getByLabel('From date',{exact:true}).fill('2026-07-01');
+ await page.getByLabel('Through date',{exact:true}).fill('2026-07-01');
+ await expect(page.getByTestId('record-row')).toHaveCount(1);
+ await expect(page.getByTestId('record-row')).toHaveAttribute('data-record-id','development:2');
+ await page.getByLabel('Include records without this date (1)',{exact:true}).check();
+ await expect(page.getByTestId('record-row')).toHaveCount(2);
+ await page.getByRole('button',{name:'Inspect development:2',exact:true}).click();
+ const noteText='Development note on the release boundary: '+info.project.name;
+ await page.getByLabel('Evidence note',{exact:true}).fill(noteText);
+ await page.getByRole('button',{name:'Save note',exact:true}).click();
+ await expect(page.getByText(noteText,{exact:true})).toBeVisible();
+ await page.getByLabel('From date',{exact:true}).fill('2026-09-01');
+ await expect(page.getByRole('alert')).toHaveText('From date must be on or before Through date.');
+ await expect(page.getByTestId('record-row')).toHaveCount(0);
+ await page.getByLabel('Through date',{exact:true}).fill('2026-09-30');
+ await expect(page.getByTestId('record-row')).toHaveCount(2);
+ await expect(page.getByText('The record selected for your note is outside the current filters.',{exact:true})).toBeVisible();
+ await expect(page.getByText(/The chart shows the full dataset/)).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/31-date-exploration.'+info.project.name+'.png'),fullPage:true});
+ await page.getByRole('button',{name:'Clear filters',exact:true}).click();
+ await expect(page.getByTestId('record-row')).toHaveCount(5);
+ await expect(page.getByLabel('From date',{exact:true})).toHaveValue('');
+ await expect(page.getByLabel('Through date',{exact:true})).toHaveValue('');
+});
