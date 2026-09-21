@@ -12,3 +12,12 @@ class ViewSelectionTest(unittest.TestCase):
         compiled = compile_plan(source, plan)
         self.assertEqual(compiled['rows'][0]['data']['count'], 12)
         self.assertEqual(list(compiled['node_membership'].values()), [['r']])
+
+    def test_table_keeps_missing_and_zero_without_plot_exclusions(self):
+        source = {'source_id':'s','sha256':'sha','filename':'counts.json','status':'extracted',
+                  'records':[{'id':str(i),'source_id':'s','locator':{'record':i},'data':{'count':value}} for i,value in enumerate([0,None,12])]}
+        plan = {'title':'Counts','summary':'Source values','fields':[{'name':'count','type':'number'}], 'view':{'component':'RecordTable'}}
+        compiled = compile_plan(source, plan)
+        self.assertEqual([row['data']['count'] for row in compiled['rows']], [0,None,12])
+        self.assertEqual(compiled['excluded_record_ids'], [])
+        self.assertEqual(compiled['chart']['props']['columns'], ['count'])
