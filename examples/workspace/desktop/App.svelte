@@ -4,10 +4,27 @@
   let selected = $state(null);
   let group = $state('');
   let search = $state('');
+  let dateField = $state('');
+  let dateFrom = $state('');
+  let dateTo = $state('');
+  let includeUndated = $state(false);
+  const dateFields = $derived((model?.plan.fields ?? []).filter(field => field.type === 'date'));
+  const activeDateField = $derived(dateField || dateFields[0]?.name || '');
+  const dateActive = $derived(Boolean(activeDateField && (dateFrom || dateTo)));
+  const invalidRange = $derived(Boolean(dateFrom && dateTo && dateFrom > dateTo));
+  const undatedCount = $derived((model?.rows ?? []).filter(row => row.data[activeDateField] == null).length);
+  function inDateWindow(row) {
+    if (!dateActive) return true;
+    if (invalidRange) return false;
+    const value = row.data[activeDateField];
+    if (value == null) return includeUndated;
+    return (!dateFrom || value >= dateFrom) && (!dateTo || value <= dateTo);
+  }
+  function clearFilters() { group='';search='';dateFrom='';dateTo='';includeUndated=false; }
   let note = $state('');
   let notes = $state([]);
   let error = $state('');
-  const visible = $derived((model?.rows ?? []).filter(row => (!group || model.node_membership[group]?.includes(row.id)) && JSON.stringify(row.data).toLowerCase().includes(search.toLowerCase())));
+  const visible = $derived((model?.rows ?? []).filter(row => (!group || model.node_membership[group]?.includes(row.id)) && JSON.stringify(row.data).toLowerCase().includes(search.toLowerCase()) && inDateWindow(row)));
   function locationLabel(locator) {
     if(locator.structured_record)return 'Structured record '+locator.structured_record;
     if(locator.page)return 'Page '+locator.page;
@@ -52,7 +69,11 @@
     <section class="chart" aria-label="Data visualization"><img src="/api/chart.svg" alt={model.plan.title}/>{#each model.interaction?.nodes ?? [] as node (node.id)}<button class="node-target" class:chosen={group === node.id} style:left={(node.x / model.interaction.width * 100) + '%'} style:top={(node.y / model.interaction.height * 100) + '%'} aria-label={'Explore '+node.label} title={node.label} onclick={()=>group=node.id}></button>{/each}</section>
     {/if}
     <p class="provenance">{model.grouping_origin}. Model field types and view choices need review.</p>
-    <div class="filters"><label>Search records<input bind:value={search} type="search"/></label>{#if model.chart.component === 'ForceDirectedGraph'}<label>Group<select aria-label="Group" bind:value={group}><option value="">All records</option>{#each model.chart.props.nodes as node (node.id)}<option value={node.id}>{node.label} ({model.node_membership[node.id].length})</option>{/each}</select></label>{/if}<button onclick={()=>{group='';search='';}}>Clear filters</button></div>
+    <div class="filters"><label>Search records<input bind:value={search} type="search"/></label>{#if model.chart.component === 'ForceDirectedGraph'}<label>Group<select aria-label="Group" bind:value={group}><option value="">All records</option>{#each model.chart.props.nodes as node (node.id)}<option value={node.id}>{node.label} ({model.node_membership[node.id].length})</option>{/each}</select></label>{/if}<button onclick={clearFilters}>Clear filters</button></div>
+    {#if dateFields.length}<details class="date-explorer"><summary>Explore by date{dateActive ? ' · filter applied' : ''}</summary><div class="filters"><label>Date field<select value={activeDateField} onchange={event=>dateField=event.currentTarget.value}>{#each dateFields as field (field.name)}<option value={field.name}>{fieldLabel(field.name)}</option>{/each}</select></label><label>From date<input type="date" bind:value={dateFrom}/></label><label>Through date<input type="date" bind:value={dateTo}/></label></div><label class="undated-option"><input type="checkbox" bind:checked={includeUndated}/> Include records without this date ({undatedCount})</label><p class="provenance">Dates include both endpoints. Undated records stay visible until a date boundary is set.</p>{#if invalidRange}<p role="alert">From date must be on or before Through date.</p>{/if}</details>{/if}
+    <p role="status">Showing {visible.length} of {model.rows.length} records matching your filters.</p>
+    {#if model.chart.component !== 'RecordTable' && (group || search || dateActive)}<p class="provenance">The chart shows the full dataset. The record list follows your selected group, search, and date window.</p>{/if}
+    {#if selected && !visible.some(row=>row.id===selected.id)}<p class="provenance">The record selected for your note is outside the current filters.</p>{/if}
     <div class="panes"><section aria-label="Source records"><h2>Records <small>{visible.length}</small></h2>{#each visible as row (row.id)}<article data-testid="record-row" data-record-id={row.id} class:selected={selected?.id === row.id}>
       <div class="record-heading"><h3>{String(row.data.title ?? row.data.model ?? locationLabel(row.locator))}</h3><button onclick={()=>selected=row} aria-pressed={selected?.id === row.id} aria-label={'Inspect '+row.id}>{selected?.id === row.id ? 'Selected' : 'Add note'}</button></div>
       <dl class="record-fields">{#each Object.entries(row.data) as [field,value] (field)}<div><dt>{fieldLabel(field)}</dt><dd class:missing={value == null}>{fieldValue(value)}</dd></div>{/each}</dl>
@@ -61,6 +82,7 @@
   {:else}<p role="status">Loading source records…</p>{/if}
 </main>
 <style>
+  .date-explorer{border:1px solid #d9ddd6;border-radius:10px;padding:12px 16px;margin-bottom:16px}.date-explorer .filters{margin:12px 0}.undated-option{display:flex;align-items:center;gap:8px;font-size:12px}.undated-option input{width:auto;margin:0}.date-explorer [role=alert]{color:#ac3434}
   .record-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.record-heading h3{margin:0;font-size:16px;font-weight:600;overflow-wrap:anywhere}.record-heading button{flex-shrink:0;white-space:nowrap}.record-fields{margin:18px 0}.record-fields>div{display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,2fr);gap:16px;padding:9px 0;border-bottom:1px solid #e5e7e0}.record-fields dt{color:#68736c;font-size:12px;overflow-wrap:anywhere}.record-fields dd{margin:0;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.record-fields .missing{color:#68736c;font-style:italic}.raw-data{margin:12px 0}summary{cursor:pointer;padding:5px 0}article.selected{border-color:#566f42;box-shadow:0 0 0 1px #566f42}.selected-context{padding:12px;background:#e5eadd;border-radius:7px}.table-scroll table{min-width:900px}
 
   .table-scroll{max-width:100%;overflow-x:auto;border:1px solid #d9ddd6;border-radius:10px}table{width:100%;border-collapse:collapse;background:white}th,td{text-align:left;padding:12px;border-bottom:1px solid #d9ddd6;vertical-align:top;overflow-wrap:break-word}th{font-size:12px}td:last-child{min-width:100px}.table-scroll button{white-space:nowrap;min-width:72px}
