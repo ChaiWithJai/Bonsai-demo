@@ -1,0 +1,26 @@
+# Current goal acceptance
+
+This is an incomplete-work audit, not a declaration of completion. The original goal is Bonsai 2 27B inside a persistent, conversational generative UI harness for real desktop data, with source review, Semiotic-based views, execution evidence, and reviewed example curation, and MLflow comparisons of model and harness configurations. The user confirmed this first-version scope on September 21, 2026. Weight fine-tuning is outside this version.
+
+The adjacent PROTOTYPE-COMPARISON.md preserves the existing Horthy/Trivedy comparison from frozen bonsai-generative-ui commit a69afd8290de71a18755f934516a0ed9f649afe6. Its implementation status is historical. Current implementation evidence follows.
+
+| Requirement | Current evidence | What it does not yet prove |
+| --- | --- | --- |
+| Pinned Bonsai 2 27B and image support | Native runtime identity, projector hash, shared queue; vision-runtime and visual-source reports | General visual reasoning quality |
+| Desktop files and multiple sources | Immutable originals, collection snapshots, table/text/PDF/email/image/audio/video adapters | Every desktop format, fetch intake, full-document coverage |
+| Interpret data before generating UI | Persisted structured proposals, source-quote validation, exact-version confirmation | Correctness of inferred relationships; the user PDF remains unreviewed |
+| Collaboration on interpretation | Proposal revision and source correction events | Authenticated team identity, real multi-person review, reviewed proposal-to-training targets |
+| Semiotic interactive UI | Source-bound graph/scatter/line plans, generated project scaffold, drilldown and annotation checks | Full v0 parity, arbitrary complex visualization families, reliable end-to-end outcomes across sources |
+| Reuse and edit working projects | Persistent revisions, context checkpoints, bounded patch loop and failed-attempt traces | Robust model edit quality; profile trials had unresolved Svelte/interaction failures |
+| Media-to-view examples | Vision and speech extraction execute locally with provenance | Native audio reasoning, natural-video understanding, successful current video-to-view build |
+| Trace-informed harness research | Preserved comparison and MLflow failures tied to context, schema, validation, and loop interventions | A causal improvement estimate from reused development examples |
+| Reviewed examples and configuration comparisons | Human-declared extraction review exports exclude tests/Codex/unreviewed records; MLflow records configuration trials and failures | Curation across proposals and generated interfaces, versioned comparison datasets, and a reviewable comparison of configurations on the same examples |
+| Recoverable evidence | Last verified full archive 2026-09-21T181036287671+0000 | Newer audio/vision checkpoints: MongoDB upload failed; those remain local/MLflow artifacts |
+
+Next decisive evidence is completing a labeled development media-to-view run through proposal validation, explicit test confirmation, rendering, build, and source-aware interaction checks. That test confirmation must not be represented as the user's approval or as a human training label. The real PDF proposal must remain untouched until its actual review.
+
+A curated example must link the original source hash, question, reviewed interpretation, accepted or corrected result, reviewer identity and origin, and relevant MLflow run and trace. Development confirmations stay separate from human review. Configuration comparisons must use the same versioned examples and record model/runtime identity, prompt and harness revision, generation settings, extraction and source-fidelity checks, interaction checks, latency, and loop failures. Reused development examples cannot establish held-out quality.
+
+The latest development repair attempt, 6f35397b7bdb49d987b97b9c6a832ea5, failed after repeating an unmatched patch twice on the unchanged revision. MLflow run de95add866e740f88ebf931de57380f9 preserves the trace. The loop guard stopped the attempt; the mobile layout failure remains unresolved in that saved project.
+
+The maintained starter now passes the source-aware desktop and 390px mobile browser checks on the same three structured video records. The verification used an isolated development project, not the failed saved project. MLflow run 883c8361c55e4849ae5d4db9f0710165 stores the checks and code. Unicode source text is now sent without ASCII escaping in tool results and context checkpoints; ten worker tests pass. Whether this change improves Bonsai patch success remains unproven until a fresh model attempt.

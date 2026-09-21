@@ -72,7 +72,7 @@ def checkpoint_context(workspace, request, events):
               'prior_requests': [attempt['request'] for attempt in workspace['attempts'][-3:]],
               'recent_diagnostics': diagnostics[-3:]}
     return [{'role': 'system', 'content': system_for(workspace)},
-            {'role': 'user', 'content': 'Continue the saved project represented by this deterministic context checkpoint. Full transcripts remain in MLflow and local attempt artifacts. The files below are the current saved source.\n' + json.dumps(packet)},
+            {'role': 'user', 'content': 'Continue the saved project represented by this deterministic context checkpoint. Full transcripts remain in MLflow and local attempt artifacts. The files below are the current saved source.\n' + json.dumps(packet, ensure_ascii=False)},
             {'role': 'user', 'content': request}]
 
 
@@ -381,7 +381,7 @@ class WorkspaceWorker:
                             check_active()
                             output = {'ok': False, 'error': str(exc), 'current_revision': self.store.get(key)['head']}
                             self.store.event(aid, 'tool.finished', {'name': call['function']['name'], 'result': output})
-                        messages.append({'role': 'tool', 'tool_call_id': call['id'], 'content': json.dumps(output)})
+                        messages.append({'role': 'tool', 'tool_call_id': call['id'], 'content': json.dumps(output, ensure_ascii=False)})
                         stalled = failed_patches.observe(call['function']['name'], args, output)
                         if stalled:
                             save('loop-detected.json', stalled)
