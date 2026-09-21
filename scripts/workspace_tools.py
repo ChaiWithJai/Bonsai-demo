@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
+import re
+import math
 from pathlib import Path
 import signal
 import subprocess
@@ -20,6 +22,27 @@ def starter():
     task = json.loads((FIXTURE / 'task.json').read_text())
     return {'title': 'Bonsai source explorer', 'files': {'App.svelte': (FIXTURE / 'App.svelte').read_text()},
             'fixture': {'provenance': provenance, 'task': task}}
+
+
+def evidence_links(compiled, parent_origin):
+    links = {}
+    for row in compiled['rows']:
+        for passage in row.get('locator', {}).get('source_evidence', []):
+            rid = passage.get('record_id', '')
+            sid = rid.split(':', 1)[0]
+            if not re.fullmatch(r'[a-f0-9]{64}', sid):
+                continue
+            locator = passage.get('locator', {})
+            fragment, label = '', 'Open original source'
+            page = locator.get('page')
+            seconds = locator.get('start_seconds', locator.get('time_seconds'))
+            if type(page) is int and page > 0:
+                fragment, label = '#page=' + str(page), 'Open original page ' + str(page)
+            elif type(seconds) in (int, float) and math.isfinite(seconds) and seconds >= 0:
+                fragment, label = '#t=' + str(seconds), f'Open original at {seconds:g}s'
+            links[rid] = {'url': parent_origin.rstrip('/') + '/api/workspace/sources/' + sid + '/file' + fragment,
+                          'label': label}
+    return links
 
 
 class WorkspaceTools:
@@ -135,7 +158,7 @@ class WorkspaceTools:
                     filename = 'index.html' if parsed.path == '/' else 'app.js'
                     return self.send((self.server.assets / filename).read_bytes(), content_type='text/html' if filename == 'index.html' else 'text/javascript')
                 if desktop and parsed.path == '/api/desktop':
-                    return self.send(fixture['compiled'] | {'interaction':fixture['render_evidence'].get('interaction', {})})
+                    return self.send(fixture['compiled'] | {'interaction':fixture['render_evidence'].get('interaction', {}), 'evidence_links':evidence_links(fixture['compiled'], owner.parent_origin)})
                 if desktop and parsed.path == '/api/chart.svg':
                     return self.send(fixture['chart_svg'].encode(), content_type='image/svg+xml')
                 if parsed.path == '/api/task' and not desktop:
