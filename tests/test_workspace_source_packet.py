@@ -28,6 +28,19 @@ class SourcePacketTest(unittest.TestCase):
         self.assertEqual(packet['records'][0]['data'],data)
         self.assertEqual(packet['coverage'],'all records and fields')
 
+    def test_collection_sample_represents_smaller_file_and_discloses_omission(self):
+        rows=[{'id':f'a:{i}','source_id':'a','locator':{},'data':{'text':'latency '*12}} for i in range(20)]
+        rows.append({'id':'b:0','source_id':'b','locator':{},'data':{'text':'team requirement'}})
+        manifest={'records':rows,'sources':[{'source_id':'a','filename':'large.txt','records':20},
+                                           {'source_id':'b','filename':'small.txt','records':1}]}
+        packet=source_packet(manifest,max_chars=400,request='latency')
+        self.assertIn('b:0',packet['record_id_map'].values())
+        self.assertTrue(all(m['represented'] for m in packet['member_coverage']))
+        self.assertLessEqual(sum(len(json.dumps(r,ensure_ascii=False)) for r in packet['records']),400)
+        tiny=source_packet(manifest,max_chars=1,request='latency')
+        self.assertFalse(any(m['represented'] for m in tiny['member_coverage']))
+        self.assertIn('partial',tiny['coverage'])
+
     def test_excess_citations_have_actionable_feedback(self):
         from workspace_data.proposal import validate_proposal
         proposal={'interpretation':{'findings':[{'text':'Both frames repeat three records','record_ids':['r'+str(i) for i in range(1,7)]}],'rationale':'Compare duplicates','questions':['Group these records?'],'uncertainties':[]},'structure':None,'plan':{}}
