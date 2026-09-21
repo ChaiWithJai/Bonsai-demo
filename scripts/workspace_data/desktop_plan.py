@@ -17,6 +17,7 @@ def profile(manifest):
         raise ValueError('Choose a source with between 1 and 100 fields')
     return {'source_id': manifest['source_id'], 'filename': manifest['filename'],
             'evidence_status':manifest.get('review_status','source_values_unreviewed'),
+            'source_coverage':manifest.get('sources', []),
             'media_coverage':manifest.get('vision_coverage') or manifest.get('audio_coverage') or manifest.get('image_coverage'),
             'document_coverage':manifest.get('document_coverage'), 'extractor':manifest.get('extractor'), 'extraction_coverage':manifest.get('extraction_coverage'),
             'record_count': len(rows), 'fields': [

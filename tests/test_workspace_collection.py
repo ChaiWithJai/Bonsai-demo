@@ -40,6 +40,21 @@ class CollectionTest(unittest.TestCase):
             self.assertEqual(raw['records'][0]['data']['value'],1);self.assertEqual(corrected['records'][0]['data']['value'],3)
             self.assertNotEqual(raw['source_id'],corrected['source_id']);self.assertEqual(sources.get(first['source_id'])['records'][0]['data']['value'],1)
 
+    def test_collection_exposes_member_coverage_to_planner(self):
+        from workspace_data.desktop_plan import profile
+        from test_workspace_docx import document
+        with tempfile.TemporaryDirectory() as root:
+            sources=WorkspaceSources(root,Client(),'http://localhost:5210')
+            word=sources.upload('notes.docx',document('<w:p><w:r><w:t>Team note</w:t></w:r></w:p>'))
+            email=sources.upload('review.eml',MAIL)
+            combined=sources.collection([word['source_id'],email['source_id']])
+            manifest=sources.manifest(combined['source_id'])
+            coverage=profile(manifest)['source_coverage']
+            self.assertEqual(coverage[0]['coverage']['document_coverage']['embedded_media_not_read'],1)
+            self.assertIn('email_coverage',coverage[1]['coverage'])
+            self.assertEqual(coverage[0]['source_id'],word['source_id'])
+            self.assertEqual(json.loads(sources.download(combined['source_id'])[0])['schema_version'],2)
+
     def test_email_and_mbox_parse_headers_thread_ids_and_bodies(self):
         result=extract_email('message.eml',MAIL,100)
         row=result['records'][0]['data'];self.assertEqual(row['sent_date'],'2026-09-21');self.assertEqual(row['message_id'],'<one@example.test>')

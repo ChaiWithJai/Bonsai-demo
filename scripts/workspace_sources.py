@@ -63,7 +63,7 @@ class WorkspaceSources:
                 manifests.append(manifest)
             if total>100*1024*1024:raise ValueError('Choose files totaling at most 100 MiB')
             if sum(len(m['records']) for m in manifests)>100000:raise ValueError('Collection exceeds 100,000 records')
-            snapshot={'purpose':'source collection snapshot, not replacement original files','sources':manifests}
+            snapshot={'schema_version':2,'purpose':'source collection snapshot, not replacement original files','sources':manifests}
             raw=json.dumps(snapshot,sort_keys=True,ensure_ascii=False,allow_nan=False).encode()
             if len(raw)>25*1024*1024:raise ValueError('Collection snapshot exceeds 25 MiB; choose fewer records')
             digest=hashlib.sha256(raw).hexdigest();sid=hashlib.sha256((digest+'.collection').encode()).hexdigest()
@@ -71,9 +71,11 @@ class WorkspaceSources:
             if (folder/'manifest.json').exists():return self.get(sid)
             records=[{**row,'locator':{**row['locator'],'source_filename':m['filename']}} for m in manifests for row in m['records']]
             manifest={'schema_version':1,'source_id':sid,'sha256':digest,'filename':f'{len(manifests)} attached files','bytes':len(raw),
-                      'origin':'derived source collection','extractor':'source-collection-v1','classification_status':'not_started','kind':'collection','status':'extracted',
+                      'origin':'derived source collection','extractor':'source-collection-v2','classification_status':'not_started','kind':'collection','status':'extracted',
                       'requires_structuring':any(m.get('requires_structuring') or m['kind'] in ('text','document','email') for m in manifests),
-                      'sources':[{'source_id':m['source_id'],'sha256':m['sha256'],'filename':m['filename'],'records':len(m['records']),'review_application':m.get('review_application')} for m in manifests],
+                      'sources':[{'source_id':m['source_id'],'sha256':m['sha256'],'filename':m['filename'],'records':len(m['records']),'review_application':m.get('review_application'),
+                                  'extractor':m.get('extractor'),'review_status':m.get('review_status','source_values_unreviewed'),
+                                  'coverage':{key:m[key] for key in ('vision_coverage','audio_coverage','image_coverage','email_coverage','document_coverage','extraction_coverage') if key in m}} for m in manifests],
                       'records':records}
             (folder/'source.bin').write_bytes(raw)
             (folder/'manifest.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False))
