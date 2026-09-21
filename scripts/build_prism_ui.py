@@ -52,6 +52,9 @@ def main():
     workspace = stage / 'src/routes/workspace'
     workspace.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(root / 'scripts/prism-ui/Workspace.svelte', workspace / '+page.svelte')
+    for component in ('WorkspaceData', 'WorkspaceRecordReview'):
+        shutil.copyfile(root / f'scripts/prism-ui/{component}.svelte', stage / f'src/lib/{component}.svelte')
+    shutil.copyfile(root / 'scripts/prism-ui/workspace-data-types.ts', stage / 'src/lib/workspace-data-types.ts')
     shutil.copyfile(root / "scripts/prism-ui/SvgPreview.svelte", stage / "src/lib/SvgPreview.svelte")
     shutil.copyfile(root / "scripts/prism-ui/BrowserLiveView.svelte", stage / "src/lib/BrowserLiveView.svelte")
     layout = stage / "src/routes/+layout.svelte"

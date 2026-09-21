@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import WorkspaceData from '$lib/WorkspaceData.svelte';
   import { ArrowUp, Code2, ExternalLink, Layers, Monitor, Plus, Square, Workflow } from '@lucide/svelte';
   type Data = Record<string, any>;
   let status = $state<Data | null>(null);
@@ -139,10 +140,11 @@
         </div>
       </section>
       <section class="output" aria-label="Workspace output">
-        <nav aria-label="Workspace views"><button class:chosen={tab === 'preview'} onclick={() => tab = 'preview'}><Monitor size={15}/> Preview</button><button class:chosen={tab === 'code'} onclick={() => tab = 'code'}><Code2 size={15}/> Source</button><button class:chosen={tab === 'trace'} onclick={() => tab = 'trace'}><Workflow size={15}/> Evidence</button>{#if preview}<a href={preview.url} target="_blank" rel="noreferrer" aria-label="Open preview in a new tab"><ExternalLink size={15}/></a>{/if}</nav>
+        <nav aria-label="Workspace views"><button class:chosen={tab === 'preview'} onclick={() => tab = 'preview'}><Monitor size={15}/> Preview</button><button class:chosen={tab === 'code'} onclick={() => tab = 'code'}><Code2 size={15}/> Source</button><button class:chosen={tab === 'trace'} onclick={() => tab = 'trace'}><Workflow size={15}/> Evidence</button><button class:chosen={tab === 'data'} onclick={() => tab = 'data'}><Layers size={15}/> Data</button>{#if preview}<a href={preview.url} target="_blank" rel="noreferrer" aria-label="Open preview in a new tab"><ExternalLink size={15}/></a>{/if}</nav>
         {#if tab === 'preview'}
           {#if preview}<div class="preview-caption">{preview.revision === project.head ? 'Current revision' : 'Earlier successful build'} · {preview.revision.slice(0, 10)}</div><iframe title="Generated project preview" src={preview.url + '?revision=' + preview.revision} sandbox="allow-scripts allow-same-origin"></iframe>
           {:else}<div class="preview-empty"><Monitor size={32}/><h2>Your project preview</h2><p>Build the saved revision to open it here. This step does not call the model.</p><button onclick={restore} disabled={busy || running}>{busy ? 'Building…' : 'Build saved revision'}</button></div>{/if}
+        {:else if tab === 'data'}<WorkspaceData/>
         {:else if tab === 'code'}<div class="source-title">App.svelte <span>{project.head.slice(0, 10)}</span></div><pre class="source"><code>{project.files['App.svelte']}</code></pre>
         {:else}<div class="evidence"><h2>Evidence for this attempt</h2><p>The complete attempt links model exchanges, patches, build diagnostics, and browser checks.</p>{#if trace}<a href={trace.mlflow_url} target="_blank" rel="noreferrer">Open complete MLflow attempt <ExternalLink size={14}/></a>{:else}<p>No model attempt recorded yet.</p>{/if}{#each activity as event (event.sequence)}<details><summary>{event.sequence}. {event.kind}</summary><pre>{JSON.stringify(event.payload, null, 2)}</pre></details>{/each}</div>{/if}
       </section>

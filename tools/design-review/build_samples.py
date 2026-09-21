@@ -8,6 +8,7 @@ META = {
     '01-workspace-preview': ('workspace', 'Existing source explorer inside the Bonsai Workspace'),
     '02-workspace-source': ('workspace', 'Saved project source'),
     '03-workspace-evidence': ('workspace', 'Attempt evidence and trace entrypoint'),
+    '04-workspace-data': ('workspace', 'Uploaded source and persisted automated review'),
 }
 
 files = os.listdir(SHOTS)
