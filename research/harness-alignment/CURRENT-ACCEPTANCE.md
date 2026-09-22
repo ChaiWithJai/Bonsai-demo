@@ -279,3 +279,9 @@ Desktop/mobile checks passed for the exact values, page-1 source links returning
 The generated starter now groups supporting quotes by their full source URL, including page or timestamp fragments. Each source card retains all quotes and identifies their fields, with a single original-source link. Timestamp metadata is labeled as a source position. Missing links fall back to grouping by record identity rather than mixing unrelated records.
 
 The scanned-PDF development project retains its previous revision and has an authored test revision. Four desktop/mobile checks passed: all five PDF quotes remain, one page link returns the original PDF, note context remains Orchard, and a browser-only second-location fixture stays in its own group. The fixture did not change server data or claim a real second PDF page. Generated build and Svelte autofixer passed. No model inference or human review labels were created.
+
+### Repeatable planning trace audit
+
+scripts/workspace_planning_audit.py indexes saved planning jobs by hashed source/request case, model metadata, sampling settings, schema mode and harness version. It counts completed responses separately from transport failures, keeps unreadable jobs explicit, and excludes active or incompletely specified jobs from matched cohorts. It exports no prompt text, filenames or source content. Semantic quality and human review remain not_assessed.
+
+The current snapshot indexes 31 planning jobs, 24 validated proposals and 12 first-pass proposals, with eight matched cohorts and no unreadable jobs. These are descriptive development-history counts, not accuracy rates. Spot checks reproduce the known two-call failure, two-call repair, pre-generation grammar failure and one-call constrained success. The report and audit script were published to MLflow and downloaded byte-for-byte for verification. Use the script with a source-jobs directory and --output path to regenerate it; archived snapshots remain immutable.
