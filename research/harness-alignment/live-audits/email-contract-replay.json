@@ -1,0 +1,42 @@
+{
+  "scope": "Matched development replay; not randomized or held-out",
+  "job_id": "c34131b3a9314598bb860287054e6fe3",
+  "run_id": "cba914b420274cd1bf5e8cb6f64b5f43",
+  "matching": {
+    "source_packet_identical": true,
+    "model_metadata_identical": true,
+    "initial_request_identical": true,
+    "initial_response_identical": true
+  },
+  "model_calls": 2,
+  "first_failure": "Each status group had one observation",
+  "repaired_view": {
+    "component": "Scatterplot",
+    "x": "sent_date",
+    "y": "open_issue_count",
+    "color": null
+  },
+  "structured_records_and_citations_unchanged": true,
+  "findings_unchanged": true,
+  "regression_check": {
+    "case_id": "email-thread",
+    "scope": "Exact development regression contract, not semantic accuracy",
+    "checks": {
+      "source_identity": true,
+      "record_values": true,
+      "view_mapping": false,
+      "no_excluded_records": true
+    },
+    "passed": false,
+    "not_assessed": [
+      "Rendered geometry",
+      "Citation support",
+      "Human acceptance",
+      "Interpretation completeness"
+    ],
+    "field_policy": "Exact expected field names; equivalent renamed fields require review"
+  },
+  "outcome": "Compiler-valid scatterplot; exact preferred line-view contract failed",
+  "confirmation": "Not confirmed; remains awaiting review",
+  "interpretation": "The intervention caught the identical invalid first proposal and supplied actionable feedback. The repair avoided isolated lines but did not choose the preferred stable project grouping. This is not evidence of broad accuracy or user acceptance."
+}
