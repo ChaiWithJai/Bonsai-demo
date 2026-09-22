@@ -148,6 +148,39 @@ def source_packet(manifest, max_chars=32000, request='', source_scope=None):
             'coverage':(('all scoped records and fields; other pages were not supplied' if scope else 'all records and fields') if complete else 'partial source coverage; omitted records and text were not reviewed by the model')}
 
 
+def resolve_evidence(manifest, item, aliases, original):
+    """Validate one citation independently of the proposed record schema."""
+    if not isinstance(item,dict) or set(item)!={'record_id','field','quote'}:
+        raise ValueError('Evidence requires record_id, field, and quote')
+    ref=item['record_id'];field=item['field'];quote=item['quote']
+    if not isinstance(ref,str) or ref not in aliases or not isinstance(field,str) or not isinstance(quote,str) or not 1<=len(quote)<=2000:
+        raise ValueError('Cite a shown record and a nonempty source quote')
+    row=original[aliases[ref]]
+    timestamp_key = field.removeprefix('locator.') if field.startswith('locator.') else None
+    if timestamp_key in ('time_seconds', 'start_seconds', 'end_seconds'):
+        value = row['locator'].get(timestamp_key)
+        try:
+            quoted_value = json.loads(quote)
+        except (ValueError, TypeError):
+            quoted_value = None
+        if (type(value) not in (int, float) or not math.isfinite(value) or value < 0
+            or type(quoted_value) not in (int, float) or not math.isfinite(quoted_value)
+            or quoted_value != value):
+            raise ValueError(f'Timestamp evidence must exactly match numeric locator {timestamp_key} in {ref}')
+        member=next((entry for entry in manifest.get('sources',[]) if entry['source_id']==row.get('source_id')), manifest)
+        locator={**row['locator'],'source_filename':member.get('filename',row['locator'].get('source_filename','')),'source_kind':member.get('kind','')}
+        return {'record_id':row['id'],'locator':locator,'field':field,'quote':quote,**{key:row[key] for key in ('evidence_status','extraction_id') if key in row}}
+    if field not in row['data']:
+        raise ValueError(f'Evidence field {field} is not a data field in {ref}. Use one of: '+', '.join(row['data'])+'. Locator metadata is not content evidence.')
+    value=row['data'][field]
+    matches = quote.strip() in (json.dumps(value), str(value)) if type(value) is bool else value is not None and ' '.join(quote.split()) in ' '.join(str(value).split())
+    if not matches:
+        raise ValueError(f'Evidence quote is not present in {ref}, field {field}')
+    member=next((item for item in manifest.get('sources',[]) if item['source_id']==row.get('source_id')), manifest)
+    locator={**row['locator'],'source_filename':member.get('filename',row['locator'].get('source_filename','')),'source_kind':member.get('kind','')}
+    return {'record_id':row['id'],'locator':locator,'field':field,'quote':quote,**{key:row[key] for key in ('evidence_status','extraction_id') if key in row}}
+
+
 def structured_manifest(manifest, structure, aliases):
     if structure is None:
         if requires_structure(manifest):
@@ -182,36 +215,7 @@ def structured_manifest(manifest, structure, aliases):
             raise ValueError('Every structured record needs one to five supporting source passages')
         resolved=[]
         for item in evidence:
-            if not isinstance(item,dict) or set(item)!={'record_id','field','quote'}:
-                raise ValueError('Evidence requires record_id, field, and quote')
-            ref=item['record_id'];field=item['field'];quote=item['quote']
-            if not isinstance(ref,str) or ref not in aliases or not isinstance(field,str) or not isinstance(quote,str) or not 1<=len(quote)<=2000:
-                raise ValueError('Cite a shown record and a nonempty source quote')
-            row=original[aliases[ref]]
-            timestamp_key = field.removeprefix('locator.') if field.startswith('locator.') else None
-            if timestamp_key in ('time_seconds', 'start_seconds', 'end_seconds'):
-                value = row['locator'].get(timestamp_key)
-                try:
-                    quoted_value = json.loads(quote)
-                except (ValueError, TypeError):
-                    quoted_value = None
-                if (type(value) not in (int, float) or not math.isfinite(value) or value < 0
-                    or type(quoted_value) not in (int, float) or not math.isfinite(quoted_value)
-                    or quoted_value != value):
-                    raise ValueError(f'Timestamp evidence must exactly match numeric locator {timestamp_key} in {ref}')
-                member=next((entry for entry in manifest.get('sources',[]) if entry['source_id']==row.get('source_id')), manifest)
-                locator={**row['locator'],'source_filename':member.get('filename',row['locator'].get('source_filename','')),'source_kind':member.get('kind','')}
-                resolved.append({'record_id':row['id'],'locator':locator,'field':field,'quote':quote,**{key:row[key] for key in ('evidence_status','extraction_id') if key in row}})
-                continue
-            if field not in row['data']:
-                raise ValueError(f'Evidence field {field} is not a data field in {ref}. Use one of: '+', '.join(row['data'])+'. Locator metadata is not content evidence.')
-            value=row['data'][field]
-            matches = quote.strip() in (json.dumps(value), str(value)) if type(value) is bool else value is not None and ' '.join(quote.split()) in ' '.join(str(value).split())
-            if not matches:
-                raise ValueError(f'Evidence quote is not present in {ref}, field {field}')
-            member=next((item for item in manifest.get('sources',[]) if item['source_id']==row.get('source_id')), manifest)
-            locator={**row['locator'],'source_filename':member.get('filename',row['locator'].get('source_filename','')),'source_kind':member.get('kind','')}
-            resolved.append({'record_id':row['id'],'locator':locator,'field':field,'quote':quote,**{key:row[key] for key in ('evidence_status','extraction_id') if key in row}})
+            resolved.append(resolve_evidence(manifest,item,aliases,original))
         digest=hashlib.sha256(json.dumps(record,sort_keys=True).encode()).hexdigest()[:20]
         output.append({'id':manifest['source_id']+':structured:'+str(index)+':'+digest,'source_id':manifest['source_id'],
                        'locator':{'structured_record':index+1,'source_evidence':resolved},'data':values,
@@ -259,6 +263,19 @@ def repair_diagnostics(manifest, value, aliases, first_error):
     if values is not None:
         fields=sorted({field for row in values for field in row})
         errors.append('Make every structured record contain the union of existing fields: '+', '.join(fields)+'. Preserve record order and all existing values, labels and units. Add null only where a field was absent; do not remove fields or replace measurements with null. Declare the full union in plan.fields; overview columns may show a subset.')
+    structure=value.get('structure')
+    records=structure.get('records') if isinstance(structure,dict) else None
+    if isinstance(records,list):
+        original={row['id']:row for row in manifest.get('records',[])}
+        for index,record in enumerate(records):
+            evidence=record.get('evidence') if isinstance(record,dict) else None
+            if not isinstance(evidence,list):
+                continue
+            for citation_index,item in enumerate(evidence):
+                try:
+                    resolve_evidence(manifest,item,aliases,original)
+                except (ValueError,TypeError,KeyError) as exc:
+                    errors.append(f'structure.records[{index}].evidence[{citation_index}]: {exc}')
     interpretation = value.get('interpretation')
     if isinstance(interpretation, dict) and isinstance(interpretation.get('findings'), list):
         for index, finding in enumerate(interpretation['findings']):

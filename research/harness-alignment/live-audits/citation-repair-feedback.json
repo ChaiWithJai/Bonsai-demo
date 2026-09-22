@@ -1,0 +1,24 @@
+{
+  "case": "Repair feedback for saved scoped PDF proposal",
+  "parent_job_id": "e447aaf47075462cb9ba5e09760cf50c",
+  "parent_run_id": "b5cffc1686764eb691dc9dcfee7407da",
+  "model_response_sha256": "f2e097f044eb61b20f034e9245a8a7435c5c915da6499cbb68da75557ec68095",
+  "previous_diagnostics": [
+    "All structured records must use the same fields; use null for missing values",
+    "Make every structured record contain the union of existing fields: columns, evidence_status, extraction_id, extraction_method, extraction_status, page, record_id, region, rows, text, title. Preserve record order and all existing values, labels and units. Add null only where a field was absent; do not remove fields or replace measurements with null. Declare the full union in plan.fields; overview columns may show a subset."
+  ],
+  "current_diagnostics": [
+    "All structured records must use the same fields; use null for missing values",
+    "Make every structured record contain the union of existing fields: columns, evidence_status, extraction_id, extraction_method, extraction_status, page, record_id, region, rows, text, title. Preserve record order and all existing values, labels and units. Add null only where a field was absent; do not remove fields or replace measurements with null. Declare the full union in plan.fields; overview columns may show a subset.",
+    "structure.records[1].evidence[2]: Evidence field evidence_status is not a data field in r80. Use one of: region, text. Locator metadata is not content evidence.",
+    "structure.records[2].evidence[3]: Evidence field evidence_status is not a data field in r81. Use one of: region, columns, rows. Locator metadata is not content evidence.",
+    "structure.records[3].evidence[2]: Evidence field evidence_status is not a data field in r82. Use one of: region, text. Locator metadata is not content evidence."
+  ],
+  "model_calls": 0,
+  "result": "Citation errors previously masked by heterogeneous fields are now available in the first repair request. No new generation or task success established.",
+  "limitations": [
+    "Offline replay of a development failure, not held-out model evaluation",
+    "Numeric task structuring remains unresolved",
+    "No human acceptance or new verified MongoDB archive"
+  ]
+}
