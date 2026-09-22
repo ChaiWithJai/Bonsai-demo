@@ -1,0 +1,18 @@
+{
+  "project_id": "87b461493c5c4a548eee8ec6d6603d9c",
+  "revision": "e79f47a15b902738928dd0fb011de0d500309d0e4fa17e4d158f740b5215ec81",
+  "scope": "Authored development copy of dated-series view; no new model inference or human labels",
+  "checks": [
+    "Six observation targets retain source record IDs",
+    "Pointer and Enter selection update record note context",
+    "Drafts remain with their record across selections",
+    "Desktop and mobile browser checks passed",
+    "Point positions align with rendered series in visual review",
+    "Renderer tests passed"
+  ],
+  "limitations": [
+    "Only linear/time x and linear y axes receive targets",
+    "Dense overlapping observations still need a selection interface",
+    "Existing saved project fixtures retain their original render metadata"
+  ]
+}
