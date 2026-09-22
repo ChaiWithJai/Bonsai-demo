@@ -1287,6 +1287,7 @@ test('Constrained model family graph preserves node membership and source links'
    for(const row of await page.getByTestId('record-row').all()){
      const data=JSON.parse((await row.getByTestId('record-data').textContent())!);
      expect(memberIds.some((id:string)=>model.rows.find((r:any)=>r.id===id).data.id===data.id)).toBe(true);
+     await expect(row.getByRole('heading',{name:data.id,exact:true})).toBeVisible();
      await expect(row.getByRole('link',{name:data.source_url,exact:true})).toHaveAttribute('href',data.source_url);
    }
  }
@@ -1294,4 +1295,24 @@ test('Constrained model family graph preserves node membership and source links'
  await expect(page.getByTestId('record-row')).toHaveCount(14);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/49-model-family-graph.'+info.project.name+'.png'),fullPage:true});
+});
+
+
+test('Evidence note context names the selected model record',async({page},info)=>{
+ const preview=JSON.parse(await fs.readFile(path.resolve('.cache/record-title-verification/preview.json'),'utf8'));
+ await page.goto(preview.url);
+ const rows=page.getByTestId('record-row');
+ await expect(rows).toHaveCount(14);
+ const first=rows.first();
+ const name=await first.getByRole('heading').innerText();
+ expect(name).toContain('prism-ml/');
+ await first.getByRole('button',{name:/Inspect /}).click();
+ await expect(page.locator('aside .selected-context')).toHaveText('Adding a note to '+name);
+ await page.getByRole('textbox',{name:'Evidence note',exact:true}).fill('Draft remains attached to this model');
+ const second=rows.nth(1);await second.getByRole('button',{name:/Inspect /}).click();
+ await expect(page.locator('aside .selected-context')).toHaveText('Adding a note to '+await second.getByRole('heading').innerText());
+ await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toHaveValue('');
+ await first.getByRole('button',{name:/Inspect /}).click();
+ await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toHaveValue('Draft remains attached to this model');
+ await first.screenshot({path:path.resolve(import.meta.dirname,'../shots/50-record-title.'+info.project.name+'.png')});
 });
