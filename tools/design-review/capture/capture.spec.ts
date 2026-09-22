@@ -1584,3 +1584,33 @@ test('PDF extraction refresh is explicit and preserves visible text on failure',
  await page.getByText('Refresh PDF extraction',{exact:true}).scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/58-pdf-refresh.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Source inspection reaches records beyond the initial page',async({page},info)=>{
+ const sid='3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e';
+ const original=await (await page.request.get('/api/workspace/sources/'+sid)).json();
+ const records=Array.from({length:205},(_,i)=>({id:sid+':row:'+i,locator:{line:i+1},data:{index:i}}));
+ await page.route('**/api/workspace/sources/'+sid+'*',async route=>{
+  const url=new URL(route.request().url());
+  if(url.pathname!='/api/workspace/sources/'+sid)return route.fallback();
+  const offset=Number(url.searchParams.get('offset') ?? 0);
+  await route.fulfill({json:{...original,filename:'Development pagination fixture.json',kind:'table',record_count:205,records:records.slice(offset,offset+100),record_offset:offset,next_record_offset:offset+100<205?offset+100:null,review:{...original.review,latest:{}}}});
+ });
+ await page.goto('/#/workspace');
+ await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);
+ const rows=page.locator('.records > details');
+ await expect(rows).toHaveCount(100);
+ const nav=page.getByRole('navigation',{name:'Source record pages'});
+ await expect(nav.getByRole('button',{name:'Previous records'})).toBeDisabled();
+ await nav.getByRole('button',{name:'Next records'}).click();
+ await expect(page.getByText(/Showing records 101–200 of 205/)).toBeVisible();
+ await nav.getByRole('button',{name:'Next records'}).click();
+ await expect(rows).toHaveCount(5);
+ await rows.last().locator('summary').click();
+ await expect(rows.last()).toContainText('204');
+ await expect(nav.getByRole('button',{name:'Next records'})).toBeDisabled();
+ await nav.scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/59-source-pagination.'+info.project.name+'.png'),fullPage:true});
+ await nav.getByRole('button',{name:'Previous records'}).click();
+ await expect(page.getByText(/Showing records 101–200 of 205/)).toBeVisible();
+});

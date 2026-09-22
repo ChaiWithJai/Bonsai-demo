@@ -57,3 +57,14 @@ class SourcesTest(unittest.TestCase):
             for value in ('../../escape','f'*63,'G'*64):
                 with self.assertRaises(ValueError): service.get(value)
             with self.assertRaises(ValueError):service.download(sid,'../../escape')
+
+    def test_record_pages_cover_the_source_without_changing_review_snapshot(self):
+        with tempfile.TemporaryDirectory() as root:
+            service=WorkspaceSources(root,Client(),'http://localhost:5210')
+            source=service.upload('large.json',json.dumps([{'index':i} for i in range(205)]).encode())
+            sid=source['source_id'];pages=[service.get(sid,offset=i) for i in (0,100,200)]
+            self.assertEqual([r['data']['index'] for p in pages for r in p['records']],list(range(205)))
+            self.assertEqual([p['next_record_offset'] for p in pages],[100,200,None])
+            self.assertEqual(len({p['review']['snapshot_id'] for p in pages}),1)
+            for offset,limit in [(-1,100),(False,100),(0,101),(0,0)]:
+                with self.assertRaises(ValueError):service.get(sid,offset,limit)

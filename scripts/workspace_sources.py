@@ -31,10 +31,14 @@ class WorkspaceSources:
     def list(self):
         return {'sources': [self.summary(json.loads(p.read_text())) for p in sorted(self.root.glob('*/manifest.json'))]}
 
-    def get(self, source_id):
+    def get(self, source_id, offset=0, limit=100):
+        if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 100:
+            raise ValueError('Record pagination requires a nonnegative offset and a limit from 1 to 100')
         with self.lock:
             m = self.manifest(source_id)
-            return self.summary(m) | {'records': m['records'][:100], 'sample_limit': 100, 'review': state(self.root, m)}
+            end = offset + limit
+            return self.summary(m) | {'records': m['records'][offset:end], 'sample_limit': limit,
+                'record_offset':offset,'next_record_offset':end if end < len(m['records']) else None, 'review': state(self.root, m)}
 
     def upload(self, filename, content):
         with self.lock:
