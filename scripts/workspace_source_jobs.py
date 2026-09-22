@@ -19,6 +19,8 @@ class SourceJobs:
         self.worker, self.sources = worker, sources
         provider=worker.provider
         self.planner = LocalProvider(f'http://{provider.host}:{provider.port}',provider.model,timeout=240,max_bytes=provider.max_bytes,profile=provider.profile,seed=provider.seed) if isinstance(provider,LocalProvider) else provider
+        from workspace_data.proposal_schema import GENERATION_SCHEMA
+        self.proposal_planner = LocalProvider(f'http://{provider.host}:{provider.port}',provider.model,timeout=240,max_bytes=provider.max_bytes,profile=provider.profile,seed=provider.seed,response_schema=GENERATION_SCHEMA) if isinstance(provider,LocalProvider) else provider
         self.root = worker.store.root / 'source-jobs'
         self.root.mkdir(exist_ok=True)
         self.active = {}
@@ -297,7 +299,7 @@ class SourceJobs:
             update(status='running', stage='Planning visualization', run_id=run_id, trace_id=root.trace_id,
                    mlflow_url=f'{w.tracking_uri}/#/experiments/{eid}/runs/{run_id}')
             self.save(folder, 'model-info.json', w.model_info)
-            source_files = ['workspace_data/intake.py','workspace_data/xlsx.py','workspace_sources.py','workspace_source_jobs.py','workspace_data/proposal.py','workspace_data/desktop_plan.py','workspace-tools/render_chart.mjs',
+            source_files = ['workspace_data/intake.py','workspace_data/xlsx.py','workspace_sources.py','workspace_source_jobs.py','workspace_data/proposal.py','workspace_data/proposal_schema.py','workspace_provider.py','workspace_data/desktop_plan.py','workspace-tools/render_chart.mjs',
                             'workspace_provider.py','workspace_intake_chat.py','workspace-tools/package-lock.json']
             self.save(folder,'harness-hashes.json',{name:hashlib.sha256((ROOT/'scripts'/name).read_bytes()).hexdigest() for name in source_files})
             if not confirmed:
@@ -313,11 +315,11 @@ class SourceJobs:
                 failures = set()
                 for turn in range(2):
                     check()
-                    preflight = span('context.preflight', {'turn':turn}, lambda:self.planner.preflight(messages, [], 4096))
+                    preflight = span('context.preflight', {'turn':turn}, lambda:self.proposal_planner.preflight(messages, [], 4096))
                     self.save(folder, f'preflight-{turn}.json', preflight)
                     if not preflight['fits']:
                         raise ValueError('Source profile exceeds the model context; choose fewer fields or a smaller source')
-                    response = span('model.plan', {'turn':turn,'messages':messages}, lambda:self.planner.generate(messages, [], 'source-'+status['id'], cancel, lambda delta:None, 4096))
+                    response = span('model.plan', {'turn':turn,'messages':messages}, lambda:self.proposal_planner.generate(messages, [], 'source-'+status['id'], cancel, lambda delta:None, 4096))
                     self.save(folder, f'model-{turn}.json', response)
                     try:
                         proposal = json.loads(response['message']['content'])

@@ -24,7 +24,7 @@ class LocalProvider:
     contract_version = 'bonsai-workspace-openai-tools-v2'
 
     def __init__(self, endpoint, model, timeout=120, max_bytes=2_000_000,
-                 profile='legacy-greedy', seed=42):
+                 profile='legacy-greedy', seed=42, response_schema=None):
         url = urlsplit(endpoint)
         if (url.scheme != 'http' or url.hostname not in ('localhost', '127.0.0.1', '::1')
                 or url.username or url.password or url.query or url.fragment
@@ -41,6 +41,7 @@ class LocalProvider:
         if not isinstance(seed, int) or isinstance(seed, bool) or not 0 <= seed < 2**32:
             raise ValueError('Seed must be an unsigned 32-bit integer')
         self.profile, self.seed = profile, seed
+        self.response_schema = json.loads(json.dumps(response_schema)) if response_schema is not None else None
 
     def configured(self, settings):
         """Return an independent provider; never mutate the workstream default."""
@@ -48,7 +49,7 @@ class LocalProvider:
             raise ValueError('Generation configuration requires exactly profile and seed')
         host = f'[{self.host}]' if ':' in self.host else self.host
         return LocalProvider(f'http://{host}:{self.port}', self.model, timeout=self.timeout,
-                             max_bytes=self.max_bytes, profile=settings['profile'], seed=settings['seed'])
+                             max_bytes=self.max_bytes, profile=settings['profile'], seed=settings['seed'], response_schema=self.response_schema)
 
     def generate(self, messages, tools, session, cancel, emit, max_tokens):
         if not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}', session):
@@ -208,7 +209,8 @@ class LocalProvider:
                 'chat_template_kwargs': {'enable_thinking': False}}
         if not tools:
             payload.pop('tools')
-            payload['response_format'] = {'type': 'json_object'}
+            payload['response_format'] = ({'type':'json_schema','json_schema':{'name':'workspace_proposal','strict':True,'schema':self.response_schema}}
+                                          if self.response_schema is not None else {'type':'json_object'})
         if self.profile != 'legacy-greedy':
             thinking = self.profile == 'bonsai2-medium'
             payload.update(temperature=1.0 if thinking else 0.7,
