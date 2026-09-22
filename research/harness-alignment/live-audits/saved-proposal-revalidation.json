@@ -1,0 +1,29 @@
+{
+  "case": "Recover the saved PDF timing proposal after a validation-rule update",
+  "parent_job_id": "9b8f3a0784c54934a14a2bbf63ccd5c5",
+  "recovered_job_id": "c21c8b0de34e4279a91f3f320ae28b3f",
+  "run_id": "d56757a7914b414bb94ef21ea15faa7d",
+  "status": "awaiting_confirmation",
+  "model_calls": 0,
+  "frozen_evidence_matches": {
+    "source-manifest.json": true,
+    "source-packet.json": true,
+    "model-0.json": true,
+    "model-1.json": true,
+    "model-info.json": true
+  },
+  "response_sha256": "ba6a5519f40ad5e4b222d7be611ab2f48f33ab02066c8b57bc0c2efa30643a71",
+  "confirmation_created": false,
+  "scope": "Revalidated saved model output. Not a new model generation, human review, or confirmed build.",
+  "checks": [
+    "282 Python tests passed",
+    "Desktop and mobile recovery flow preserves measurements and does not submit confirmation",
+    "Svelte check and production build passed",
+    "MLflow run finished with model_calls=0 and exact provenance artifact readback"
+  ],
+  "limitations": [
+    "Source classifications remain unreviewed",
+    "Current source updates are not substituted into frozen evidence",
+    "Local MongoDB backup remains unavailable; no new verified archive"
+  ]
+}

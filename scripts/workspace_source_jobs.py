@@ -57,6 +57,7 @@ class SourceJobs:
         if not path.exists():
             raise ValueError('Source job not found')
         status = json.loads(path.read_text())
+        status['can_revalidate'] = status['status']=='failed' and not status.get('planning_run_id') and status.get('kind')!='source_revalidation' and any((path.parent/f'model-{i}.json').is_file() for i in range(2))
         packet_path = path.parent / 'source-packet.json'
         if status.get('proposal') and packet_path.is_file():
             status['source_examples'] = self.proposal_examples(status['proposal'], json.loads(packet_path.read_text()))
@@ -181,6 +182,10 @@ class SourceJobs:
     def start_vision(self, source_id, page=None):
         from workspace_vision_jobs import start_vision
         return start_vision(self,source_id,page)
+
+    def revalidate(self, jid):
+        from workspace_revalidation import revalidate
+        return revalidate(self,jid)
 
     def confirm(self, jid, proposal_sha256, actor='interactive-unattributed'):
         with self.worker.guard:

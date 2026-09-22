@@ -1766,3 +1766,30 @@ test('Wide timing comparison keeps units and values accessible without page over
  await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toBeEnabled();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/63-wide-timing-table.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Saved response recovery returns measurements for review without confirming',async({page},info)=>{
+ const recovered=JSON.parse(await fs.readFile(path.resolve('.cache/pdf-revalidation/job.json'),'utf8'));
+ const parent=await (await page.request.get('/api/workspace/source-jobs/'+recovered.parent_job_id)).json();
+ let shown=parent;let calls=0;let confirmations=0;
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[shown]}}));
+ await page.route('**/api/workspace/source-jobs/'+parent.id+'/revalidate',route=>{
+  calls++;shown=recovered;return route.fulfill({json:recovered});
+ });
+ await page.route('**/api/workspace/source-jobs/*/confirm',route=>{confirmations++;return route.fulfill({status:400,json:{error:'No confirmation in development check'}});});
+ await page.goto('/#/workspace');
+ const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(parent.source_id);
+ await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ await page.getByRole('button',{name:'Check saved response again',exact:true}).click();
+ await expect(page.getByText(/Saved response is ready for your review/)).toBeVisible();
+ expect(calls).toBe(1);expect(confirmations).toBe(0);
+ await page.getByText('Review 4 proposed records',{exact:true}).click();
+ const values=page.locator('.structured-records');
+ await expect(values.getByText('402.1',{exact:true})).toBeVisible();
+ await expect(values.getByText('389.1',{exact:true})).toBeVisible();
+ await expect(values.getByText('520',{exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Yes, build this view',exact:true})).toBeEnabled();
+ await values.scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/64-recovered-proposal.'+info.project.name+'.png'),fullPage:true});
+});

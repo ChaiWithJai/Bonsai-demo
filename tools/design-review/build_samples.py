@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    '64-recovered-proposal': ('workspace', 'Saved response revalidation restores a proposal for review without model calls or build confirmation'),
     '63-wide-timing-table': ('workspace', 'Eight-field saved timing proposal tested in an intercepted development preview'),
     '62-pdf-visual-observation': ('workspace', 'Selected PDF page observations stay separate from OCR and marked unreviewed'),
     '61-original-pdf-page': ('workspace', 'Original PDF page rendered on demand beside searchable extracted text'),
