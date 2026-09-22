@@ -1958,3 +1958,23 @@ test('Saved-view editor sends explicit model profile without changing defaults',
  await profile.selectOption('');await page.getByRole('button',{name:'Send request',exact:true}).click();
  await expect.poll(()=>submitted.length).toBe(2);expect(submitted[1].generation_config).toBeUndefined();
 });
+
+test('Source proposal profile persists with draft and resets on clear',async({page},info)=>{
+ const sid='a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4';const sent:any[]=[];
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[]}}));
+ await page.route('**/api/workspace/sources/'+sid+'/generate',route=>{sent.push(route.request().postDataJSON());return route.fulfill({json:{id:'development-intercept'}});});
+ await page.goto('/#/workspace');const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);
+ await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const settings=page.locator('details.model-settings');await settings.locator('summary').click();
+ const profile=page.getByRole('combobox',{name:'Proposal generation profile',exact:true});await expect(profile).toHaveValue('');
+ await profile.selectOption('bonsai2-bounded');await page.getByLabel('Message Research analyst',{exact:true}).fill('Development check: structure these meeting observations.');
+ await page.reload();await settings.locator('summary').click();await expect(profile).toHaveValue('bonsai2-bounded');expect(sent).toHaveLength(0);
+ await page.getByRole('button',{name:'Send ↑',exact:true}).click();await expect.poll(()=>sent.length).toBe(1);expect(sent[0].generation_config).toEqual({profile:'bonsai2-bounded',seed:42});
+ await settings.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/73-source-model-settings.'+info.project.name+'.png'),fullPage:true});
+ await profile.selectOption('');await page.getByRole('button',{name:'Send ↑',exact:true}).click();await expect.poll(()=>sent.length).toBe(2);expect(sent[1].generation_config).toBeUndefined();
+ await profile.selectOption('bonsai2-instruct');await page.getByRole('button',{name:'Clear draft',exact:true}).click();
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ await settings.locator('summary').click();await expect(profile).toHaveValue('');
+});

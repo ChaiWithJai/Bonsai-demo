@@ -1,0 +1,27 @@
+{
+  "scope": "Select model profile before generating a file-based proposal",
+  "behavior": [
+    "Server default initially selected and no override sent",
+    "Custom profile submits selected name with seed 42",
+    "Profile survives browser reload with the attachment draft",
+    "Clear draft resets profile",
+    "Only known profile names restored from local storage",
+    "Controls apply to new attached-file proposals; revisions inherit existing saved configuration"
+  ],
+  "checks": [
+    "Svelte check zero errors and warnings",
+    "Production build passed",
+    "Autofixer no issues; existing persistence and focus suggestions reviewed",
+    "Desktop/mobile checks passed with generation requests intercepted",
+    "Mobile screenshot inspected for overflow and disclosure"
+  ],
+  "screens": [
+    "73-source-model-settings.desktop.png",
+    "73-source-model-settings.mobile.png"
+  ],
+  "limits": [
+    "No inference started by UI checks",
+    "No new model quality or human acceptance claim",
+    "No new verified MongoDB backup"
+  ]
+}
