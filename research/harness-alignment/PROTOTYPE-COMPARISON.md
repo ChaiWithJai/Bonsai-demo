@@ -79,6 +79,8 @@ The revised repair contract requires the union of existing fields, adding null o
 
 The matched replay retained the measurements after the clearer repair feedback, but failed because it selected eight overview columns and the harness allowed six. The renderer already supported focusable horizontal scrolling. The revised contract allows up to twenty distinct source fields while keeping a six-field default. The saved model response then compiled unchanged, and desktop/mobile checks verified its values, units, horizontal keyboard scrolling and record selection using an intercepted development preview. This was validation of saved output under a changed harness, not another model success, a confirmed build, or human approval. The [numeric repair audit](live-audits/pdf-visual-numeric-repair.json) keeps these outcomes separate.
 
+The [saved-response recovery](live-audits/saved-proposal-revalidation.json) then created a separate reviewable attempt from the failed run's frozen source, packet and model response. It made zero model calls and did not create a build confirmation. This lets a harness correction reuse prior model work while retaining the failed run, the changed validation rules and the new review boundary. It does not apply newer source edits or carry forward human acceptance automatically.
+
 ## What must be measured next
 
 | Stage | Evidence currently available | Evidence still needed |
