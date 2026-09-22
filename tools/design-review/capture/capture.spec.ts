@@ -1744,3 +1744,25 @@ test('Old vision completion does not keep resetting a refreshed source search',a
  await expect.poll(()=>polls,{timeout:7000}).toBeGreaterThan(settledPolls+1);
  expect(sourceRequests).toBe(settledRequests);
 });
+
+test('Wide timing comparison keeps units and values accessible without page overflow',async({page},info)=>{
+ const compiled=JSON.parse(await fs.readFile(path.resolve('.cache/pdf-visual-structure/wide-table-compiled.json'),'utf8'));
+ const project=await (await page.request.get('/api/workspace/cecb54fb6b604fdd85c8230f7dabaa53')).json();
+ expect(project.preview?.url).toBeTruthy();
+ await page.route('**/api/desktop',route=>route.fulfill({json:{...compiled,evidence_links:{}}}));
+ await page.route('**/api/annotations',route=>route.fulfill({json:[]}));
+ await page.goto(project.preview.url);
+ const table=page.getByRole('region',{name:'Source record table',exact:true});
+ await expect(table.getByRole('columnheader')).toHaveCount(9);
+ await expect(table.getByRole('cell',{name:'402.1',exact:true})).toBeVisible();
+ await expect(table.getByRole('cell',{name:'389.1',exact:true})).toBeVisible();
+ await expect(table.getByRole('cell',{name:'520',exact:true})).toBeVisible();
+ await expect(table.getByRole('cell',{name:'us',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await table.focus();
+ const overflow=await table.evaluate(node=>node.scrollWidth>node.clientWidth);
+ if(overflow){await page.keyboard.press('ArrowRight');await expect.poll(()=>table.evaluate(node=>node.scrollLeft)).toBeGreaterThan(0);}
+ await table.getByRole('button',{name:/Review table record/}).first().click();
+ await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toBeEnabled();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/63-wide-timing-table.'+info.project.name+'.png'),fullPage:true});
+});

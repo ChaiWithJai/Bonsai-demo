@@ -74,3 +74,14 @@ class PlanningContractTest(unittest.TestCase):
         self.assertEqual(result['chart']['props']['lineBy'],'group')
         plan['view'].update(component='Scatterplot',color='status')
         self.assertEqual(len(compile_plan(source,plan)['rows']),2)
+
+class WideTableContractTest(unittest.TestCase):
+    def test_wide_overview_keeps_measurement_fields_and_rejects_excess_columns(self):
+        columns=['field_'+str(i) for i in range(21)]
+        source={'source_id':'s','sha256':'sha','filename':'wide.json','status':'extracted','records':[{'id':'r','source_id':'s','locator':{},'data':dict.fromkeys(columns,0)}]}
+        plan={'title':'Wide comparison','summary':'Keep measurements together','fields':[{'name':key,'type':'number'} for key in columns],'view':{'component':'RecordTable','columns':columns[:8]}}
+        compiled=compile_plan(source,plan)
+        self.assertEqual(compiled['chart']['props']['columns'],columns[:8])
+        self.assertEqual(compiled['rows'][0]['data'],source['records'][0]['data'])
+        plan['view']['columns']=columns
+        with self.assertRaisesRegex(ValueError,'overview columns'):compile_plan(source,plan)

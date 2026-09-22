@@ -77,6 +77,8 @@ The first subsequent numeric proposal exposed a different failure. Its initial r
 
 The revised repair contract requires the union of existing fields, adding null only where a field was absent. A preservation check rejects the loss or alteration of existing values during this schema repair. This applies the execution-feedback approach to a concrete data-loss failure. It does not verify whether the original values or classifications were correct. That remains a source-review question, consistent with reviewing the model's interpretation before building the interface.
 
+The matched replay retained the measurements after the clearer repair feedback, but failed because it selected eight overview columns and the harness allowed six. The renderer already supported focusable horizontal scrolling. The revised contract allows up to twenty distinct source fields while keeping a six-field default. The saved model response then compiled unchanged, and desktop/mobile checks verified its values, units, horizontal keyboard scrolling and record selection using an intercepted development preview. This was validation of saved output under a changed harness, not another model success, a confirmed build, or human approval. The [numeric repair audit](live-audits/pdf-visual-numeric-repair.json) keeps these outcomes separate.
+
 ## What must be measured next
 
 | Stage | Evidence currently available | Evidence still needed |

@@ -87,12 +87,12 @@ class RepairDiagnosticsTest(unittest.TestCase):
         from workspace_data.proposal import repair_diagnostics
         manifest={'records':[{'id':'source','locator':{},'data':{'x':1,'extra':2}}]}
         value={'interpretation':{'findings':[{'text':'Example','record_ids':['r1']*6}]},'structure':None,
-               'plan':{'fields':[{'name':'x','type':'number'}],'view':{'component':'RecordTable','columns':['x']*7}}}
+               'plan':{'fields':[{'name':'x','type':'number'}],'view':{'component':'RecordTable','columns':['x']*21}}}
         before=json.dumps(value,sort_keys=True)
         result=repair_diagnostics(manifest,value,{'r1':'source'},ValueError('First validation failure'))
         self.assertTrue(any('6 entries' in error for error in result))
         self.assertTrue(any('Missing: extra' in error for error in result))
-        self.assertTrue(any('7 entries' in error for error in result))
+        self.assertTrue(any('21 entries' in error for error in result))
         self.assertEqual(json.dumps(value,sort_keys=True),before)
         self.assertEqual(repair_diagnostics(manifest,None,{},'Malformed JSON'),['Malformed JSON'])
 
