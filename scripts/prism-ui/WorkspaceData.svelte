@@ -181,6 +181,7 @@
   }
   onMount(() => {
     let stopped=false;let timer:ReturnType<typeof setTimeout>;
+    const refreshedVisionRuns=new Set<string>();
     draftStorageKey='bonsai-workstream-draft:v1:'+encodeURIComponent(role)+':'+(initialIntake || initialSource || 'new');
     async function restoreDraft() {
       busy=true;
@@ -208,7 +209,10 @@
     async function poll() {
       try { jobs=(await jobRequest()).jobs;
         const done=jobs.find(job=>job.kind==='vision_extraction' && job.status==='completed' && job.source_id===source?.source_id);
-        if(done?.run_id && source?.extraction_run_id!==done.run_id) {await choose(done.source_id);await refresh();}
+        if(done?.run_id && !refreshedVisionRuns.has(done.run_id)) {
+          if(source?.extraction_run_id!==done.run_id) {await refreshCurrentSource();await refresh();}
+          refreshedVisionRuns.add(done.run_id);
+        }
       } catch(e) { if(!stopped) error=String(e); }
       if(!stopped) timer=setTimeout(poll,1500);
     }

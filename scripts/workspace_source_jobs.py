@@ -7,7 +7,7 @@ import threading
 import time
 import uuid
 from workspace_data.desktop_plan import profile, compile_plan, PLAN_INSTRUCTIONS, ensure_group_root
-from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal, revision_messages, planning_profile, repair_diagnostics
+from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal, revision_messages, planning_profile, repair_diagnostics, validate_schema_repair_preservation
 from workspace_data.record_review import apply_human_reviews
 from workspace_provider import GenerationCancelled, LocalProvider
 from workspace_store import RevisionConflict
@@ -326,6 +326,7 @@ class SourceJobs:
                 else:
                     raise ValueError('The request and available evidence do not fit the model context after six bounded packing attempts. Narrow the question or choose specific pages.')
                 failures = set()
+                previous_invalid_proposal = None
                 for turn in range(2):
                     check()
                     preflight = span('context.preflight', {'turn':turn}, lambda:self.proposal_planner.preflight(messages, [], 4096))
@@ -337,6 +338,7 @@ class SourceJobs:
                     self.save(folder, f'model-{turn}.json', response)
                     try:
                         proposal = json.loads(response['message']['content'])
+                        validate_schema_repair_preservation(previous_invalid_proposal, proposal)
                         compiled = span('plan.validate', {'proposal':proposal}, lambda:validate_proposal(manifest, proposal, packet['record_id_map']))
                         for finding in proposal['interpretation']['findings']:
                             finding['record_ids']=[packet['record_id_map'][ref] for ref in finding['record_ids']]
@@ -353,6 +355,7 @@ class SourceJobs:
                         if error in failures or turn == 1:
                             raise ValueError('Plan validation failed within the two-call budget: '+error) from exc
                         failures.add(error)
+                        previous_invalid_proposal = proposal
                         messages += [response['message'], {'role':'user','content':'Correct the complete JSON proposal using this validation error: '+error}]
                         update(stage='Repairing invalid plan once')
                 self.save(folder, 'compiled.json', compiled)
