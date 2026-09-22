@@ -1,6 +1,7 @@
 """A reviewable interpretation precedes visualization rendering."""
 import hashlib
 import json
+import math
 import re
 from workspace_data.desktop_plan import PLAN_INSTRUCTIONS, compile_plan, requires_structure
 
@@ -11,7 +12,7 @@ When source_profile.requires_structuring is true, structure MUST contain rationa
 For documents whose page fields do not express the requested entities, structure MUST be an object with rationale and records. Keep it compact: use only the fields needed for the requested view. Put supporting detail in evidence quotes, not redundant description fields.
 Each structured record has exactly values (a flat object of scalar string/number/boolean/null fields) and evidence (one to five objects containing record_id, field, quote).
 Create at most 30 records. Each quote must occur verbatim in that source field, allowing whitespace normalization. Cite only supplied record IDs.
-Evidence field must be an exact key inside the cited record data object. locator contains provenance such as source_filename, page, sheet, or timestamps; locator keys are not data fields and cannot be quoted as content evidence. For document or transcript records with data.text, cite field text and quote the actual passage. Source locations are retained automatically with each citation.
+Evidence field must be an exact key inside the cited record data object. locator contains provenance such as source_filename, page, sheet, or timestamps; locator keys are not data fields and cannot be quoted as content evidence. For document or transcript records with data.text, cite field text and quote the actual passage. Source locations are retained automatically with each citation. To explicitly support a media timestamp value, cite field locator.time_seconds, locator.start_seconds, or locator.end_seconds only when that exact numeric key is present in the cited record locator; quote its full numeric value (including zero). Never cite a bare timestamp key as a data field. These are source positions, not event dates or text observed in the image.
 Use consistent field names across records. Separate different measurements and units. Do not mix an operation time with whole-training time. Leave unsupported values null; explain uncertain inferred classifications.
 For a bottleneck/fix question, extract actual bottleneck/fix records with evidence before proposing their relationships. Do not substitute page-title groups for these entities.
 The person will inspect and correct these model-structured records before confirming the view. They remain unreviewed, not verified facts.
@@ -151,6 +152,21 @@ def structured_manifest(manifest, structure, aliases):
             if not isinstance(ref,str) or ref not in aliases or not isinstance(field,str) or not isinstance(quote,str) or not 1<=len(quote)<=2000:
                 raise ValueError('Cite a shown record and a nonempty source quote')
             row=original[aliases[ref]]
+            timestamp_key = field.removeprefix('locator.') if field.startswith('locator.') else None
+            if timestamp_key in ('time_seconds', 'start_seconds', 'end_seconds'):
+                value = row['locator'].get(timestamp_key)
+                try:
+                    quoted_value = json.loads(quote)
+                except (ValueError, TypeError):
+                    quoted_value = None
+                if (type(value) not in (int, float) or not math.isfinite(value) or value < 0
+                    or type(quoted_value) not in (int, float) or not math.isfinite(quoted_value)
+                    or quoted_value != value):
+                    raise ValueError(f'Timestamp evidence must exactly match numeric locator {timestamp_key} in {ref}')
+                member=next((entry for entry in manifest.get('sources',[]) if entry['source_id']==row.get('source_id')), manifest)
+                locator={**row['locator'],'source_filename':member.get('filename',row['locator'].get('source_filename','')),'source_kind':member.get('kind','')}
+                resolved.append({'record_id':row['id'],'locator':locator,'field':field,'quote':quote})
+                continue
             if field not in row['data']:
                 raise ValueError(f'Evidence field {field} is not a data field in {ref}. Use one of: '+', '.join(row['data'])+'. Locator metadata is not content evidence.')
             value=row['data'][field]
