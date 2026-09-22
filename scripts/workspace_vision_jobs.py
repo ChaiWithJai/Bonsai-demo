@@ -60,7 +60,7 @@ def run_vision(jobs,folder,manifest,status,cancel):
         speech=[row for row in manifest['records'] if row.get('locator',{}).get('evidence_channel')=='speech']
         updated={**manifest,'records':speech+records,'status':'extracted','extractor':'Bonsai 2 27B vision','requires_structuring':True,
                  'review_status':'model_extracted_unreviewed','extraction_run_id':run_id,'extraction_run_url':status['mlflow_url'],
-                 'vision_coverage':{'samples':len(units),'records':len(records),'limitation':'Visual content is model-extracted and unreviewed. '+('One frame every 15 seconds. This visual pass does not read speech or unsampled motion; speech coverage is reported separately.' if manifest['kind']=='video' else 'Visible text/table extraction is not verified semantic understanding.')}}
+                 'vision_coverage':{'samples':len(units),'records':len(records),'limitation':'Visual content is model-extracted and unreviewed. '+('Up to 20 frames distributed across the video, including beginning, middle and near the end for clips of at least half a second. This visual pass does not read speech or unsampled motion; speech coverage is reported separately.' if manifest['kind']=='video' else 'Visible text/table extraction is not verified semantic understanding.')}}
         updated.pop('visual_extraction_pending',None);updated.pop('image_coverage',None);updated.pop('extraction_error',None)
         with jobs.sources.lock:
             current=jobs.sources.manifest(manifest['source_id'])
