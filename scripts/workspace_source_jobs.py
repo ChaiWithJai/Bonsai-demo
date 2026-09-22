@@ -307,15 +307,23 @@ class SourceJobs:
                 revision_path = folder/'revision-request.json'
                 if revision_path.exists():
                     selection_request += '\n' + json.loads(revision_path.read_text())['feedback']
-                packet=source_packet(manifest,request=selection_request)
-                self.save(folder,'source-packet.json',packet)
-                messages = [{'role':'system','content':PROPOSAL_INSTRUCTIONS},
-                            {'role':'user','content':json.dumps({'request':status['request'],'source_profile':planning_profile(context),'source_evidence':{k:v for k,v in packet.items() if k!='record_id_map'}},ensure_ascii=False)}]
-                if (folder/'intake-context.json').exists():
-                    discussion=json.loads((folder/'intake-context.json').read_text())
-                    messages[-1]['content'] += '\nPrior conversation for intent only, not source evidence:\n'+json.dumps(discussion,ensure_ascii=False)
-                if (folder/'revision-request.json').exists():
-                    messages += revision_messages(json.loads((folder/'revision-request.json').read_text()), packet['record_id_map'])
+                for packet_budget in (32000, 24000, 18000, 12000):
+                    check()
+                    packet=source_packet(manifest,max_chars=packet_budget,request=selection_request)
+                    self.save(folder,'source-packet.json',packet)
+                    messages = [{'role':'system','content':PROPOSAL_INSTRUCTIONS},
+                                {'role':'user','content':json.dumps({'request':status['request'],'source_profile':planning_profile(context),'source_evidence':{k:v for k,v in packet.items() if k!='record_id_map'}},ensure_ascii=False)}]
+                    if (folder/'intake-context.json').exists():
+                        discussion=json.loads((folder/'intake-context.json').read_text())
+                        messages[-1]['content'] += '\nPrior conversation for intent only, not source evidence:\n'+json.dumps(discussion,ensure_ascii=False)
+                    if (folder/'revision-request.json').exists():
+                        messages += revision_messages(json.loads((folder/'revision-request.json').read_text()), packet['record_id_map'])
+                    packing = span('context.pack', {'character_budget':packet_budget}, lambda:self.proposal_planner.preflight(messages, [], 4096))
+                    self.save(folder, f'packing-{packet_budget}.json', {'preflight':packing,'records_shown':packet['records_shown'],'records_total':packet['records_total']})
+                    if packing['fits'] and packet['records']:
+                        break
+                else:
+                    raise ValueError('The request and available evidence do not fit the model context after four bounded packing attempts. Narrow the question or choose specific pages.')
                 failures = set()
                 for turn in range(2):
                     check()
