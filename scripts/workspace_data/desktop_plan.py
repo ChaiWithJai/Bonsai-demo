@@ -148,6 +148,7 @@ def compile_plan(manifest, plan):
             raise ValueError('LineChart would bridge missing observations; use Scatterplot or explicitly segment the series')
         props.update(data=sorted(data,key=lambda r:r['x']) if component=='LineChart' else data,
                      xAccessor='x', yAccessor='y', colorBy='group', pointIdAccessor='record_id', xLabel=x, yLabel=y)
+        if component == 'LineChart':props['lineBy']='group'
         if fields[x]=='date':props['xScaleType']='time'
     return ensure_group_root({'schema_version':1, 'source_id':manifest['source_id'], 'source_sha256':manifest['sha256'],
             'plan':plan, 'rows':rows, 'chart':{'component':component,'props':props},

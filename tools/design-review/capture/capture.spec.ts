@@ -1382,3 +1382,24 @@ test('Failed saved project offers confirmed build retry',async({page},info)=>{
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/52-saved-build-retry.'+info.project.name+'.png'),fullPage:true});
  await button.click();await expect.poll(()=>retried).toBe(true);
 });
+
+test('Dated series preserves separate teams and zero values',async({page},info)=>{
+ const status=JSON.parse(await fs.readFile(path.resolve('.cache/dated-series-experiment/build-status.json'),'utf8'));
+ const current=await (await page.request.get('/api/workspace/'+status.workspace_id)).json();
+ status.preview=current.preview;
+ await page.goto(status.preview.url);
+ const model=await (await page.request.get(new URL('/api/desktop',status.preview.url).href)).json();
+ expect(model.rows.map((r:any)=>[r.data.date,r.data.team,r.data.open_issues])).toEqual([
+  ['2026-09-20','Orchard',3],['2026-09-18','Meadow',7],['2026-09-18','Orchard',0],
+  ['2026-09-20','Meadow',4],['2026-09-19','Orchard',2],['2026-09-19','Meadow',6]]);
+ const xs=model.chart.props.data.map((d:any)=>d.x);
+ expect(xs).toEqual([...xs].sort((a,b)=>a-b));
+ await expect(page.getByTestId('record-row')).toHaveCount(6);
+ await expect(page.locator('.chart img')).toBeVisible();
+ expect(await page.locator('.chart-viewport').evaluate(el=>el.scrollHeight<=el.clientHeight+1)).toBe(true);
+ expect(await page.locator('.chart img').evaluate((img:HTMLImageElement)=>img.complete && img.naturalWidth>0)).toBe(true);
+ await page.getByTestId('record-row').nth(2).getByRole('button',{name:/Inspect /}).click();
+ await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/53-dated-series.'+info.project.name+'.png'),fullPage:true});
+});
