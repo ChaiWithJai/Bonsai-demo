@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "scope": "Synthetic regression cases derived from observed development failures. Not held-out evaluation or human labels.",
+  "cases": [
+    {
+      "id": "dated-series",
+      "file": "dated-review-observations.csv",
+      "upload_name": "development-dated-review-observations.csv",
+      "sha256": "5189c9575e85898e833866c15465b947339099513a1d00cf86980bc7f96bb9b9",
+      "request": "Create a time-based view of open issues for Orchard and Meadow, one separate line per team. Preserve every dated observation, including zero, sort dates chronologically, and let me inspect the source records. These are synthetic daily observations, not release dates or evidence of causation. Do not combine the teams into one line.",
+      "expected_records": [
+        {
+          "date": "2026-09-20",
+          "team": "Orchard",
+          "open_issues": 3
+        },
+        {
+          "date": "2026-09-18",
+          "team": "Meadow",
+          "open_issues": 7
+        },
+        {
+          "date": "2026-09-18",
+          "team": "Orchard",
+          "open_issues": 0
+        },
+        {
+          "date": "2026-09-20",
+          "team": "Meadow",
+          "open_issues": 4
+        },
+        {
+          "date": "2026-09-19",
+          "team": "Orchard",
+          "open_issues": 2
+        },
+        {
+          "date": "2026-09-19",
+          "team": "Meadow",
+          "open_issues": 6
+        }
+      ],
+      "expected_view": {
+        "component": "LineChart",
+        "x": "date",
+        "y": "open_issues",
+        "color": "team"
+      }
+    },
+    {
+      "id": "email-thread",
+      "file": "development-review-thread.mbox",
+      "upload_name": "development-review-thread.mbox",
+      "sha256": "88e5d51d2c00933195219bc8bd59f879e640147f745f5e76f218f7faec237a4b",
+      "request": "Structure these two related emails into one review record per message, preserving each sent date, project, owner, open issue count, and review status with source citations. Show how the reported issue count changed over time and let me inspect each message. Keep both observations. Ready for review is not approval. These are synthetic development messages.",
+      "expected_records": [
+        {
+          "sent_date": "2026-09-18",
+          "project": "Orchard",
+          "owner": "Maya",
+          "open_issue_count": 5,
+          "review_status": "Needs revision"
+        },
+        {
+          "sent_date": "2026-09-20",
+          "project": "Orchard",
+          "owner": "Maya",
+          "open_issue_count": 2,
+          "review_status": "Ready for review"
+        }
+      ],
+      "expected_view": {
+        "component": "LineChart",
+        "x": "sent_date",
+        "y": "open_issue_count",
+        "color": "project"
+      }
+    }
+  ]
+}

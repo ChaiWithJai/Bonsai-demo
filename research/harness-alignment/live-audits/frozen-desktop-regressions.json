@@ -1,0 +1,8 @@
+{
+  "run_id": "91109068992c4b9684ca0d8862eac382",
+  "scope": "Post-hoc development regression corpus",
+  "baseline_email_mapping": "failed as expected",
+  "corrected_email": "passed",
+  "dated_series_data": "passed; rendering remains a separate check",
+  "suite_readback_matched": true
+}
