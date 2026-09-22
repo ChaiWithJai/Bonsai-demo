@@ -146,6 +146,11 @@ def compile_plan(manifest, plan):
             raise ValueError('More than 10,000 plotted observations; aggregate or filter the dataset first')
         if component == 'LineChart' and excluded:
             raise ValueError('LineChart would bridge missing observations; use Scatterplot or explicitly segment the series')
+        if component == 'LineChart':
+            positions = {}
+            for point in data:positions.setdefault(point['group'], set()).add(point['x'])
+            if any(len(xs)<2 for xs in positions.values()):
+                raise ValueError('Each LineChart series needs at least two distinct X observations. The grouping splits a series into isolated points. Use a stable source grouping field, or Scatterplot to preserve isolated observations; do not invent or discard records.')
         props.update(data=sorted(data,key=lambda r:r['x']) if component=='LineChart' else data,
                      xAccessor='x', yAccessor='y', colorBy='group', pointIdAccessor='record_id', xLabel=x, yLabel=y)
         if component == 'LineChart':props['lineBy']='group'

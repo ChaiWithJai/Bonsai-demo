@@ -59,3 +59,18 @@ class PlanningContractTest(unittest.TestCase):
                 self.assertEqual(locator['source_filename'],source['filename'])
                 self.assertEqual(locator['start_seconds'],5.58)
                 self.assertNotIn('source_kind',source['records'][0]['locator'])
+
+    def test_changing_status_cannot_split_timeline_into_single_point_lines(self):
+        source={'source_id':'s','sha256':'sha','filename':'emails.json','status':'extracted',
+                'records':[{'id':str(i),'source_id':'s','locator':{'message':i+1},
+                            'data':{'date':date,'status':status,'project':'Orchard','count':count}}
+                           for i,(date,status,count) in enumerate([('2026-09-18','Needs revision',5),('2026-09-20','Ready for review',2)])]}
+        plan={'title':'Review','summary':'Two observations','fields':[{'name':'date','type':'date'},{'name':'status','type':'text'},{'name':'project','type':'text'},{'name':'count','type':'number'}],
+              'view':{'component':'LineChart','x':'date','y':'count','color':'status'}}
+        with self.assertRaisesRegex(ValueError,'isolated points'):compile_plan(source,plan)
+        plan['view']['color']='project'
+        result=compile_plan(source,plan)
+        self.assertEqual([row['y'] for row in result['chart']['props']['data']],[5,2])
+        self.assertEqual(result['chart']['props']['lineBy'],'group')
+        plan['view'].update(component='Scatterplot',color='status')
+        self.assertEqual(len(compile_plan(source,plan)['rows']),2)

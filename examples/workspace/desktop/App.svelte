@@ -54,6 +54,7 @@
   function locationLabel(locator) {
     if(locator.structured_record)return 'Structured record '+locator.structured_record;
     if(locator.page)return 'Page '+locator.page;
+    if(locator.message)return 'Message '+locator.message;
     if(locator.time_seconds !== undefined)return 'Video at '+Number(locator.time_seconds).toFixed(1)+'s';
     if(locator.start_seconds !== undefined)return 'Audio at '+Number(locator.start_seconds).toFixed(1)+'s';
     if(locator.line)return 'Line '+locator.line;
@@ -64,7 +65,7 @@
     const groups=new Map();
     for(const passage of row.locator.source_evidence ?? []) {
       const link=model.evidence_links?.[passage.record_id];
-      const key=link?.url ?? 'record:'+passage.record_id;
+      const key=(link?.url ?? 'record:'+passage.record_id)+(passage.locator.message ? '|message:'+passage.locator.message : '');
       if(!groups.has(key))groups.set(key,{key,link,label:(passage.locator.source_filename || 'Source')+' · '+locationLabel(passage.locator),passages:[]});
       groups.get(key).passages.push(passage);
     }
