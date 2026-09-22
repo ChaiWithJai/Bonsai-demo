@@ -25,6 +25,7 @@ class SourceJobs:
         self.root = worker.store.root / 'source-jobs'
         self.root.mkdir(exist_ok=True)
         self.active = {}
+        self.preview_guard = threading.Lock()
         # Workspace's process ownership lock has already been acquired.
         for path in self.root.glob('*/status.json'):
             value = json.loads(path.read_text())
