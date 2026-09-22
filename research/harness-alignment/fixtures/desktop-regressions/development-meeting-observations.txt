@@ -1,0 +1,6 @@
+Synthetic development meeting notes. These are reported observations, not verified outcomes.
+
+2026-09-14: Cedar review. Owner: Lina. Open issues: 5. Status: Needs revision.
+2026-09-15: Cedar review. Owner: Lina. Open issues: 0. Status: Ready for review. Ready for review does not mean approved.
+2026-09-16: Cedar review. Owner: Lina. Open issue count was not reported. Status: Awaiting update. Do not infer a count from the prior day.
+2026-09-17: Cedar review. Owner: Omar. Open issues: 2. Status: Needs revision.
