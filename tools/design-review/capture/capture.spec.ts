@@ -1246,3 +1246,24 @@ test('Workstream sidebar separates conversations from file activity',async({page
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/47-workstream-sidebar.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Generated video stage view preserves values and cited playback',async({page},info)=>{
+ const preview=JSON.parse(await fs.readFile(path.resolve('.cache/video-three-stage-explicit-repair/preview.json'),'utf8'));
+ await page.goto(preview.url);
+ await expect(page.getByTestId('record-row')).toHaveCount(3);
+ const media=page.getByRole('region',{name:'Selected source media'});
+ for(const [index,stage,count,seconds] of [[0,'Intake',12,0],[1,'Review',7,2.875],[2,'Approved',3,5.75]] as const){
+   const row=page.getByTestId('record-row').nth(index);
+   await row.locator('details.raw-data summary').click();
+   expect(JSON.parse(await row.getByTestId('record-data').innerText())).toEqual({stage,record_count:count,sample_seconds:seconds});
+   await row.getByRole('button',{name:/Inspect /}).click();
+   await expect(media.locator('video')).toHaveCount(1);
+   await expect.poll(()=>media.locator('video').evaluate((v:HTMLVideoElement)=>v.readyState)).toBeGreaterThanOrEqual(1);
+   await expect.poll(()=>media.locator('video').evaluate((v:HTMLVideoElement)=>v.currentTime)).toBeCloseTo(seconds,1);
+   expect(await media.locator('video').evaluate((v:HTMLVideoElement)=>v.videoWidth)).toBeGreaterThan(0);
+   await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toBeVisible();
+ }
+ await media.scrollIntoViewIfNeeded();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/48-three-stage-video.'+info.project.name+'.png'),fullPage:true});
+});

@@ -1,0 +1,32 @@
+{
+  "job_id": "22d37ef82dc74b388fb67075546b8eb1",
+  "planning_run_id": "e20aefa9a55a4432b6b7b6fea9ff65b6",
+  "build_run_id": "d6c60cce5ce849d8b98928bdff756e4a",
+  "project_id": "aa0eebed03a7444f9db0ab3934431a8b",
+  "preview": {
+    "url": "http://127.0.0.1:51120/",
+    "revision": "97c2a11a2c426da7c78236dcf5202fec7d1177daaf5e6f154c5ed3a84df571b6"
+  },
+  "comparison": {
+    "same_source_packet": true,
+    "same_model_metadata": true,
+    "same_first_response": true,
+    "baseline_repair_valid": false,
+    "explicit_feedback_repair_valid": true
+  },
+  "exact_structured_values": true,
+  "structured_evidence_preserved": true,
+  "browser_checks": {
+    "desktop": "passed",
+    "mobile": "passed",
+    "scope": "Exact values, one decoded video per selected record, correct seek position at 0/2.875/5.75 seconds, visible note input, no horizontal overflow"
+  },
+  "confirmation_actor": "codex-development-explicit-repair",
+  "limitations": [
+    "Synthetic development case, not held-out model accuracy",
+    "Two model calls still required",
+    "Authored HTML RecordTable selected by model, not a Semiotic chart in this case",
+    "No human acceptance or training label",
+    "MongoDB backup remains unverified"
+  ]
+}
