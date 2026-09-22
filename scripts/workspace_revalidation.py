@@ -25,7 +25,7 @@ def revalidate(jobs, jid):
         for name in required+['original-manifest.json']:
             if (source/name).is_file():shutil.copy2(source/name,folder/name)
         for response in responses:shutil.copy2(response,folder/response.name)
-        status={key:parent[key] for key in ('source_id','source_ids','filename','request','intake_job_id','apply_reviews','source_scope','generation_config','task_contract','task_record_ids') if key in parent}
+        status={key:parent[key] for key in ('source_id','source_ids','filename','request','intake_job_id','apply_reviews','source_scope','generation_config','task_contract','task_record_ids','source_review_record_ids') if key in parent}
         status.update(id=ident,parent_job_id=jid,kind='source_revalidation',status='running',stage='Checking saved model response',created_at=time.time(),model_calls=0)
         jobs.save(folder,'status.json',status)
         client=jobs.worker.client;run_id=None
@@ -35,7 +35,7 @@ def revalidate(jobs, jid):
             run_id=client.create_run(eid,tags={'mlflow.runName':'Revalidate saved source proposal','parent_job_id':jid,'parent_run_id':parent.get('run_id',''),'model_calls':'0','review_status':'unreviewed','job_id':ident}).info.run_id
             status.update(run_id=run_id,mlflow_url=f'{jobs.worker.tracking_uri}/#/experiments/{eid}/runs/{run_id}')
             scripts=Path(__file__).parent
-            jobs.save(folder,'harness-hashes.json',{name:hashlib.sha256((scripts/name).read_bytes()).hexdigest() for name in ['workspace_revalidation.py','workspace_data/proposal.py','workspace_data/desktop_plan.py','workspace_data/proposal_schema.py']})
+            jobs.save(folder,'harness-hashes.json',{name:hashlib.sha256((scripts/name).read_bytes()).hexdigest() for name in ['workspace_revalidation.py','workspace_data/source_review.py','workspace_data/proposal.py','workspace_data/desktop_plan.py','workspace_data/proposal_schema.py']})
             jobs.save(folder,'revalidation.json',{'parent_job_id':jid,'parent_run_id':parent.get('run_id'),'response_file':responses[-1].name,'response_sha256':hashlib.sha256(responses[-1].read_bytes()).hexdigest(),'model_calls':0,'source_snapshot':'frozen parent evidence; current source is not substituted'})
             read=lambda name:json.loads((folder/name).read_text())
             proposal=json.loads(read(responses[-1].name)['message']['content'])
@@ -48,6 +48,9 @@ def revalidate(jobs, jid):
             from workspace_data.task_contract import validate_task_records, validate_compiled_retention
             validate_task_records(proposal,packet,status.get('task_record_ids',[]))
             compiled=validate_proposal(read('source-manifest.json'),proposal,packet['record_id_map'])
+            from workspace_data.source_review import validate_source_review, expand_review_ids
+            validate_source_review(read('source-manifest.json'),proposal,packet['record_id_map'],status.get('source_review_record_ids',[]))
+            expand_review_ids(proposal,packet['record_id_map'])
             validate_compiled_retention(compiled,status.get('task_record_ids',[]))
             for finding in proposal['interpretation']['findings']:
                 finding['record_ids']=[packet['record_id_map'][ref] for ref in finding['record_ids']]

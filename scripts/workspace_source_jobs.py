@@ -42,6 +42,10 @@ class SourceJobs:
         cited = {rid for finding in proposal['interpretation']['findings'] for rid in finding['record_ids']}
         for record in (proposal.get('structure') or {}).get('records', []):
             cited.update(item['record_id'] for item in record['evidence'])
+        if proposal.get('structure') is not None:
+            # The unused-source disclosure must also show records absent from prose.
+            cited.update(packet['record_id_map'].values())
+        cited.update(entry['evidence']['record_id'] for entry in proposal.get('source_review',[]))
         return [{**row, 'id': packet['record_id_map'][row['id']]}
                 for row in packet['records'] if packet['record_id_map'][row['id']] in cited]
 
@@ -179,6 +183,7 @@ class SourceJobs:
                       'source_ids':[s['source_id'] for s in manifest.get('sources',[])] or [source_id],
                       'intake_job_id':intake_job_id, 'source_scope':source_scope, 'generation_config':generation_config, 'task_contract':task_contract, 'task_record_ids':required_records, 'apply_reviews':apply_reviews, 'status':'queued', 'stage':'Preparing source', 'created_at':time.time()}
             if revision:
+                status['source_review_record_ids'] = revision.get('source_review_record_ids',[])
                 status['parent_job_id'] = revision['parent_job_id']
                 status['feedback'] = revision['feedback']
                 status['parent_proposal_sha256'] = revision.get('parent_proposal_sha256')
@@ -243,14 +248,23 @@ class SourceJobs:
             cancel=threading.Event();thread=threading.Thread(target=self.run,args=(folder,manifest,context,status,cancel,True),daemon=True)
             self.active[jid]=(cancel,thread);self.worker.source_jobs.add(jid);thread.start();return status
 
-    def revise(self, jid, feedback, actor='interactive-unattributed'):
+    def revise(self, jid, feedback, actor='interactive-unattributed', review_unused_sources=False):
         status=self.get(jid)
         if status['status'] not in ('awaiting_confirmation','needs_revision'):
             raise RevisionConflict('Only a pending proposal can be revised')
         if not isinstance(feedback,str) or not 1<=len(feedback.strip())<=4000:
             raise ValueError('Describe what to change in the proposal')
+        if type(review_unused_sources) is not bool:
+            raise ValueError('review_unused_sources must be a boolean')
+        review_ids=status.get('source_review_record_ids',[])
+        if review_unused_sources:
+            packet=json.loads((self.root/jid/'source-packet.json').read_text())
+            usage=structured_source_usage(status['proposal'],packet)
+            review_ids=list(dict.fromkeys(review_ids+(usage or {}).get('uncited_record_ids',[])))
+            if not review_ids or len(review_ids)>30:
+                raise ValueError('Choose a proposal with 1 to 30 unused source records to review')
         return self.start(status['source_id'],status['request'],status['apply_reviews'],
-                          {'parent_job_id':jid,'feedback':feedback.strip(),'actor':actor,'previous_proposal':status['proposal'],
+                          {'parent_job_id':jid,'feedback':feedback.strip(),'actor':actor,'previous_proposal':status['proposal'],'source_review_record_ids':review_ids,
                            'parent_proposal_sha256':status.get('proposal_sha256'),
                            'parent_planning_run_id':status.get('run_id'),
                            'parent_source_snapshot_sha256':hashlib.sha256((self.root/jid/'source-manifest.json').read_bytes()).hexdigest(),
@@ -299,6 +313,10 @@ class SourceJobs:
                 # configured() owns a deep copy of the schema; never mutate shared defaults.
                 planner=planner.configured({'profile':planner.profile,'seed':planner.seed})
                 planner.response_schema['properties']['structure']['anyOf'][0]['properties']['records']['minItems']=len(status['task_record_ids'])
+            if status.get('source_review_record_ids') and isinstance(planner,LocalProvider):
+                from workspace_data.source_review import review_schema
+                planner=planner.configured({'profile':planner.profile,'seed':planner.seed})
+                planner.response_schema=review_schema(planner.response_schema)
             self.save(folder,'generation-config.json',{'profile':planner.profile,'seed':planner.seed})
             if hasattr(planner,'payload'):
                 self.save(folder,'generation-settings.json',{key:value for key,value in planner.payload([],[],4096).items() if key not in ('messages','tools')})
@@ -327,7 +345,7 @@ class SourceJobs:
             update(status='running', stage='Planning visualization', run_id=run_id, trace_id=root.trace_id,
                    mlflow_url=f'{w.tracking_uri}/#/experiments/{eid}/runs/{run_id}')
             self.save(folder, 'model-info.json', w.model_info)
-            source_files = ['workspace_data/task_contract.py','workspace_data/intake.py','workspace_data/xlsx.py','workspace_data/pptx.py','workspace_sources.py','workspace_source_jobs.py','workspace_data/proposal.py','workspace_data/proposal_schema.py','workspace_provider.py','workspace_data/desktop_plan.py','workspace-tools/render_chart.mjs',
+            source_files = ['workspace_data/task_contract.py','workspace_data/source_review.py','workspace_data/intake.py','workspace_data/xlsx.py','workspace_data/pptx.py','workspace_sources.py','workspace_source_jobs.py','workspace_data/proposal.py','workspace_data/proposal_schema.py','workspace_provider.py','workspace_data/desktop_plan.py','workspace-tools/render_chart.mjs',
                             'workspace_provider.py','workspace_intake_chat.py','workspace-tools/package-lock.json']
             self.save(folder,'harness-hashes.json',{name:hashlib.sha256((ROOT/'scripts'/name).read_bytes()).hexdigest() for name in source_files})
             if not confirmed:
@@ -341,7 +359,12 @@ class SourceJobs:
                     self.save(folder,'source-packet.json',packet)
                     if status.get('task_record_ids') and set(status['task_record_ids'])-set(packet['record_id_map'].values()):
                         raise ValueError('Required source records do not fit the model context; narrow the source scope explicitly')
-                    messages = [{'role':'system','content':PROPOSAL_INSTRUCTIONS},
+                    if set(status.get('source_review_record_ids',[]))-set(packet['record_id_map'].values()):
+                        raise ValueError('Requested source review records do not fit the model context')
+                    instructions=PROPOSAL_INSTRUCTIONS
+                    if status.get('source_review_record_ids'):
+                        instructions+='\nThis revision also requires source_review as a fourth top-level key. Follow the explicit source review instructions in the correction.'
+                    messages = [{'role':'system','content':instructions},
                                 {'role':'user','content':json.dumps({'request':status['request'],'source_profile':planning_profile(context),'source_evidence':{k:v for k,v in packet.items() if k!='record_id_map'}},ensure_ascii=False)}]
                     if status.get('task_contract'):
                         messages[-1]['content'] += '\nExplicit task contract: '+json.dumps({'record_policy':'one_per_source_record','required_record_ids':list(packet['record_id_map']),'instruction':'Create exactly one output record for each required source record, using that record as its evidence. Preserve every requested observation. Summarizing multiple source records into one output record or omitting a source is not permitted for this task.'})
@@ -373,6 +396,10 @@ class SourceJobs:
                         validate_schema_repair_preservation(previous_invalid_proposal, proposal)
                         validate_task_records(proposal,packet,status.get('task_record_ids',[]))
                         compiled = span('plan.validate', {'proposal':proposal}, lambda:validate_proposal(manifest, proposal, packet['record_id_map']))
+                        from workspace_data.source_review import validate_source_review, expand_review_ids
+                        source_review_check=validate_source_review(manifest,proposal,packet['record_id_map'],status.get('source_review_record_ids',[]))
+                        self.save(folder,'source-review-check.json',source_review_check)
+                        expand_review_ids(proposal,packet['record_id_map'])
                         validate_compiled_retention(compiled,status.get('task_record_ids',[]))
                         for finding in proposal['interpretation']['findings']:
                             finding['record_ids']=[packet['record_id_map'][ref] for ref in finding['record_ids']]

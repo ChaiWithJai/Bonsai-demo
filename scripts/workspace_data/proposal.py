@@ -51,9 +51,14 @@ def revision_messages(revision, aliases):
     for record in (previous.get('structure') or {}).get('records', []):
         for item in record['evidence']:
             item['record_id'] = reverse.get(item['record_id'], item['record_id'])
+    for entry in previous.get('source_review',[]):
+        ref=entry['evidence']['record_id'];entry['evidence']['record_id']=reverse.get(ref,ref)
+    review_ids=[reverse[rid] for rid in revision.get('source_review_record_ids',[]) if rid in reverse]
+    review_instruction=({'source_review_record_ids':review_ids,'source_review_instruction':'Account for every listed source in the revised structured data, or explain its exclusion in source_review. source_review is an additional top-level array, empty when all requested sources are cited in structured data. Each excluded source needs {reason: a specific explanation, evidence: {record_id, field, quote}}. Quote that source verbatim. Exclusion explanations are unreviewed judgments; do not invent missing observations.'} if review_ids else {})
     return [
         {'role':'assistant', 'content':json.dumps(previous, ensure_ascii=False)},
         {'role':'user', 'content':json.dumps({
+            **review_instruction,
             'correction':revision['feedback'],
             'instruction':'Revise the previous proposal to apply this correction. Preserve supported content that does not need to change. Return the complete interpretation, structure, and plan. Use only record IDs in the current source evidence; prior citations absent from it cannot support this revision. Check the requested changes before returning.'
         }, ensure_ascii=False)}
@@ -246,7 +251,7 @@ def structured_manifest(manifest, structure, aliases):
 
 
 def validate_proposal(manifest, value, aliases):
-    if not isinstance(value,dict) or set(value) != {'interpretation','structure','plan'}:
+    if not isinstance(value,dict) or set(value) not in ({'interpretation','structure','plan'},{'interpretation','structure','plan','source_review'}):
         raise ValueError('Return exactly interpretation, structure, and plan')
     interpretation=value['interpretation']
     if not isinstance(interpretation,dict) or set(interpretation) != {'findings','rationale','uncertainties','questions'}:
@@ -268,6 +273,8 @@ def validate_proposal(manifest, value, aliases):
         if any(not isinstance(i,str) or i not in aliases for i in ids):
             raise ValueError('Findings must cite only record IDs shown in the source packet: '+', '.join(aliases))
     working=structured_manifest(manifest,value['structure'],aliases)
+    from workspace_data.source_review import validate_source_review
+    validate_source_review(manifest,value,aliases)
     compiled=compile_plan(working,value['plan'])
     compiled['record_origin']='model_structured_unreviewed' if value['structure'] is not None else 'original_source_records'
     compiled['original_record_count']=len(manifest['records'])

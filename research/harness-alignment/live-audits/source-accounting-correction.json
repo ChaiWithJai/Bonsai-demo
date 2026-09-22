@@ -1,0 +1,37 @@
+{
+  "scope": "One reused development correction, not a held-out reliability result",
+  "intervention": "Explicit source IDs in revision instructions, conditional source_review grammar, source-aware validation, and user-visible exclusions",
+  "job_id": "223169cf554e4ad89f66df243bfa1b67",
+  "planning_run_id": "57b15e95bfbb487e981096d0749dab7a",
+  "parent_job_id": "b68d916b137b4030ac30d3a573d3c413",
+  "model_calls": 1,
+  "elapsed_seconds": 63.549,
+  "source_review_check": {
+    "requested_records": 1,
+    "represented_records": 1,
+    "excluded_records": 0,
+    "scope": "Citation presence and quoted exclusions only; explanations remain unreviewed"
+  },
+  "original_failure_replay_error": "Source review is incomplete for: 60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:1. Add supported observations to structure.records, or add source_review entries with a specific exclusion reason and a verbatim quote from each excluded source. Merely mentioning a source in prose does not account for it.",
+  "original_record_values_and_citations_preserved": true,
+  "expected_email_values_match": true,
+  "exclusions": [],
+  "same_source_snapshot": true,
+  "same_model_runtime": true,
+  "checks": {
+    "python_tests": 326,
+    "svelte_errors": 0,
+    "svelte_warnings": 0,
+    "production_build": "passed",
+    "browser_review_request_and_draft_persistence": "passed",
+    "browser_desktop_and_mobile_record_review": "passed"
+  },
+  "human_acceptance": false,
+  "build_confirmed": false,
+  "limitations": [
+    "Exclusion reasons are model judgments requiring review; quote presence is not proof of relevance.",
+    "This study changed the revision context and output contract together.",
+    "Only up to 30 requested sources can be explicitly reviewed per correction.",
+    "No new verified MongoDB restore archive."
+  ]
+}

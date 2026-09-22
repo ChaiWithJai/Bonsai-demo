@@ -347,7 +347,7 @@ class Handler(BaseHTTPRequestHandler):
                     from workspace_view_revision import revise_view
                     result = revise_view(jobs,parts[3],payload,self.headers.get('X-Eval-Actor','interactive-unattributed'))
                 elif len(parts) == 5 and parts[4] == 'revise' and self.command == 'POST':
-                    result = jobs.revise(parts[3],payload.get('feedback'),self.headers.get('X-Eval-Actor','interactive-unattributed'))
+                    result = jobs.revise(parts[3],payload.get('feedback'),self.headers.get('X-Eval-Actor','interactive-unattributed'),payload.get('review_unused_sources',False))
                 else:
                     raise ValueError('Unknown source job route')
             elif parts[:3] == ['api', 'workspace', 'sources']:

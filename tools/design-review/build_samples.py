@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "81-source-accounting-revision": ("workspace", "Review observations recovered through explicit source accounting"),
     "80-unused-source-evidence": ("workspace", "Inspect unused source records before requesting a correction"),
     "79-saved-data-view-selection": ("workspace", "Select a chart from frozen data and preview it without inference"),
     "78-proposal-revision-comparison": ("workspace", "Compare proposal records, chart choices, interpretation, and recorded configuration"),
