@@ -239,6 +239,10 @@ def repair_diagnostics(manifest, value, aliases, first_error):
     errors = [str(first_error)]
     if not isinstance(value, dict):
         return errors
+    values=heterogeneous_record_values(value)
+    if values is not None:
+        fields=sorted({field for row in values for field in row})
+        errors.append('Make every structured record contain the union of existing fields: '+', '.join(fields)+'. Preserve record order and all existing values, labels and units. Add null only where a field was absent; do not remove fields or replace measurements with null. Declare the full union in plan.fields; overview columns may show a subset.')
     interpretation = value.get('interpretation')
     if isinstance(interpretation, dict) and isinstance(interpretation.get('findings'), list):
         for index, finding in enumerate(interpretation['findings']):
@@ -262,3 +266,30 @@ def repair_diagnostics(manifest, value, aliases, first_error):
             if not 1 <= len(view['columns']) <= 6:
                 errors.append(f'plan.view.columns has {len(view["columns"])} entries; choose one to six overview columns. All classified fields remain available in record details.')
     return list(dict.fromkeys(errors))[:10]
+
+
+def heterogeneous_record_values(proposal):
+    """Identify a schema-only repair that must retain each existing record value."""
+    structure=proposal.get('structure') if isinstance(proposal,dict) else None
+    records=structure.get('records') if isinstance(structure,dict) else None
+    if not isinstance(records,list) or len(records)<2:
+        return None
+    if not all(isinstance(row,dict) and isinstance(row.get('values'),dict) for row in records):
+        return None
+    values=[row['values'] for row in records]
+    return values if any(set(row)!=set(values[0]) for row in values[1:]) else None
+
+
+def validate_schema_repair_preservation(previous, repaired):
+    values=heterogeneous_record_values(previous)
+    if values is None:
+        return
+    structure=repaired.get('structure') if isinstance(repaired,dict) else None
+    records=structure.get('records') if isinstance(structure,dict) else None
+    if not isinstance(records,list) or len(records)!=len(values):
+        raise ValueError('Schema repair must preserve the number and order of structured records')
+    for index,(before,after) in enumerate(zip(values,records)):
+        current=after.get('values',{}) if isinstance(after,dict) else {}
+        for field,value in before.items():
+            if field not in current or type(current[field]) is not type(value) or current[field]!=value:
+                raise ValueError(f'Schema repair discarded or changed structure.records[{index}].values.{field}; preserve existing values and add null only for absent fields')

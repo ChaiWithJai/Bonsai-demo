@@ -1721,3 +1721,26 @@ test('PDF visual observations remain separate and marked unreviewed',async({page
  await image.scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/62-pdf-visual-observation.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Old vision completion does not keep resetting a refreshed source search',async({page})=>{
+ const sid='02f32dd8bdd1d72b2e5293c89d06b739e19f789ad35820614bdcaec3f6ac3777';
+ let polls=0;
+ let sourceRequests=0;
+ await page.route('**/api/workspace/sources/'+sid+'*',route=>{sourceRequests++;return route.fallback();});
+ await page.route('**/api/workspace/source-jobs',route=>{
+  polls++;
+  return route.fulfill({json:{jobs:[{id:'development-old-vision',source_id:sid,filename:'S82065.pdf',kind:'vision_extraction',status:'completed',stage:'Done',run_id:'older-than-current-ocr'}]}});
+ });
+ await page.goto('/#/workspace');
+ await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);
+ const search=page.getByRole('textbox',{name:'Search extracted content',exact:true});
+ await search.fill('520us');await page.getByRole('button',{name:'Search records',exact:true}).click();
+ const initialPolls=polls;
+ await expect.poll(()=>polls,{timeout:7000}).toBeGreaterThan(initialPolls+1);
+ await expect(search).toHaveValue('520us');
+ await expect(page.getByText(/Showing records .* matches/)).toBeVisible();
+ const settledRequests=sourceRequests;const settledPolls=polls;
+ await expect.poll(()=>polls,{timeout:7000}).toBeGreaterThan(settledPolls+1);
+ expect(sourceRequests).toBe(settledRequests);
+});

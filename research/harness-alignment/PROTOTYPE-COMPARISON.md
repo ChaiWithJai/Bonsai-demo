@@ -67,6 +67,16 @@ For our application of Horthy's approach, a reviewed source inventory must disti
 
 The next quality review should distinguish local operation timings from whole-training totals and cumulative improvements from incremental changes. Reviewers can now inspect all source records through pagination, and saving a review preserves the current page. Extraction refreshes retain earlier evidence, while reviews of an earlier extraction snapshot do not automatically become training candidates for the refreshed text. The current PDF proposal still needs a human decision about the intended comparison before its visualization is built.
 
+## Visual evidence needs a separate contract
+
+The [selected-page vision comparison](live-audits/pdf-selected-page-vision.json) used the same rendered PDF page and model configuration for three development runs. A table-oriented prompt copied one table but misrepresented a software screenshot as table columns. A region-oriented prompt separated the screenshot, table and annotation, but produced nested arrays that the source contract rejected. Adding a scalar-row response schema produced three unreviewed observations. The table values remained comma-separated strings, so extraction still required a separate numeric structuring stage.
+
+These observations retain the original PDF page and their model run IDs. The 79 OCR page records remain separate. Agreement between OCR and a visual observation of the same page is not independent corroboration. The proposal context now carries each model observation's unreviewed status, and source citations retain its extraction ID.
+
+The first subsequent numeric proposal exposed a different failure. Its initial response contained the baseline value 402.1, the vectorized value 389.1 and the displayed percentage annotation. A schema repair removed these fields and replaced the corresponding measurements with nulls. The result passed the existing schema checks but could not support the requested comparison. The [planning run](http://127.0.0.1:5210/#/experiments/32/runs/5c9eb721b9a445c5ab920393afd0ad9d) preserves both responses. A Codex rejection was published separately and is excluded from human training candidates.
+
+The revised repair contract requires the union of existing fields, adding null only where a field was absent. A preservation check rejects the loss or alteration of existing values during this schema repair. This applies the execution-feedback approach to a concrete data-loss failure. It does not verify whether the original values or classifications were correct. That remains a source-review question, consistent with reviewing the model's interpretation before building the interface.
+
 ## What must be measured next
 
 | Stage | Evidence currently available | Evidence still needed |

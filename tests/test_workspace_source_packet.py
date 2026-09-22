@@ -95,3 +95,19 @@ class RepairDiagnosticsTest(unittest.TestCase):
         self.assertTrue(any('7 entries' in error for error in result))
         self.assertEqual(json.dumps(value,sort_keys=True),before)
         self.assertEqual(repair_diagnostics(manifest,None,{},'Malformed JSON'),['Malformed JSON'])
+
+    def test_schema_repair_preserves_heterogeneous_measurements(self):
+        from workspace_data.proposal import repair_diagnostics,validate_schema_repair_preservation
+        previous={'structure':{'records':[{'values':{'before':14,'after':520}},{'values':{'variant':'Baseline','value':402.1}}]}}
+        repaired={'structure':{'records':[{'values':{'before':14,'after':520,'variant':None,'value':None}},{'values':{'before':None,'after':None,'variant':'Baseline','value':402.1}}]}}
+        frozen=json.dumps(previous,sort_keys=True)
+        hints=repair_diagnostics({},previous,{},'All structured records must use the same fields')
+        self.assertTrue(any('union of existing fields: after, before, value, variant' in hint for hint in hints))
+        validate_schema_repair_preservation(previous,repaired)
+        repaired['structure']['records'][1]['values']['value']=None
+        with self.assertRaisesRegex(ValueError,'discarded or changed.*value'):
+            validate_schema_repair_preservation(previous,repaired)
+        repaired['structure']['records'].pop()
+        with self.assertRaisesRegex(ValueError,'number and order'):
+            validate_schema_repair_preservation(previous,repaired)
+        self.assertEqual(json.dumps(previous,sort_keys=True),frozen)
