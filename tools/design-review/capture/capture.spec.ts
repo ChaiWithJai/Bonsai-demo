@@ -1535,3 +1535,28 @@ test('Proposal feedback survives reload and stays with its proposal',async({page
  await expect(feedback).toHaveValue('');
  await expect(page.getByRole('button',{name:'Yes, build this view',exact:true})).toBeEnabled();
 });
+
+test('Requested page gaps can be discussed without sending automatically',async({page},info)=>{
+ const job=JSON.parse(await fs.readFile(path.resolve('.cache/email-contract-replay/status.json'),'utf8'));
+ job.source_coverage={...job.source_coverage,requested_page_coverage:{requested:[3,4,99],shown:[3],omitted:[4],not_found:[99]}};
+ let sent=0;
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.route('**/api/workspace/source-jobs/'+job.id+'/revise',async route=>{sent++;await route.fulfill({json:{...job,status:'queued'}});});
+ await page.goto('/#/workspace');
+ const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);
+ await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const coverage=page.getByRole('region',{name:'Requested page coverage'});
+ await expect(coverage).toContainText('Included: 3');
+ await expect(coverage).toContainText('Not read because of the evidence limit: 4');
+ await expect(coverage).toContainText('Not found in the supplied records: 99');
+ await coverage.getByRole('button',{name:'Draft a follow-up for these pages'}).click();
+ const feedback=page.getByRole('textbox',{name:'Clarify or change this proposal',exact:true});
+ await expect(feedback).toHaveValue(/Please inspect page 4/);
+ expect(await feedback.inputValue()).not.toContain('page 99');
+ await expect(page.getByRole('button',{name:'Yes, build this view',exact:true})).toBeDisabled();
+ expect(sent).toBe(0);
+ await coverage.scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/57-requested-page-coverage.'+info.project.name+'.png'),fullPage:true});
+});

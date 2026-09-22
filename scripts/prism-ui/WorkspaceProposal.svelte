@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from 'svelte';
   type Proposal = {structure?: {rationale:string;records:{values:Record<string,unknown>;evidence:{record_id:string;field:string;quote:string}[]}[]} | null;interpretation:{findings:{text:string;record_ids:string[]}[];rationale:string;uncertainties:string[];questions:string[]};plan:{title:string;summary:string;fields:{name:string;type:string}[];view:{component:string;groupBy?:string[];x?:string;y?:string;color?:string}}};
-  let {proposal, draftKey = '', coverage, evidence = [], busy = false, readOnly = false, onConfirm, onRevise} = $props<{proposal:Proposal;draftKey?:string;coverage?:{records_shown:number;records_total:number;coverage:string;member_coverage?:{source_id:string;filename:string;records_shown:number;records_total?:number;represented:boolean}[]};evidence?:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>}[];busy?:boolean;readOnly?:boolean;onConfirm:()=>void;onRevise:(feedback:string)=>void}>();
+  let {proposal, draftKey = '', coverage, evidence = [], busy = false, readOnly = false, onConfirm, onRevise} = $props<{proposal:Proposal;draftKey?:string;coverage?:{records_shown:number;records_total:number;coverage:string;requested_page_coverage?:{requested:number[];shown:number[];omitted:number[];not_found:number[]};member_coverage?:{source_id:string;filename:string;records_shown:number;records_total?:number;represented:boolean}[]};evidence?:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>}[];busy?:boolean;readOnly?:boolean;onConfirm:()=>void;onRevise:(feedback:string)=>void}>();
   let feedback=$state('');
   let draftReady=$state(false);
   let draftNotice=$state('');
@@ -33,6 +33,13 @@
     feedback=(feedback ? feedback+'\n\n' : '')+question;
     feedbackInput?.focus();
   }
+  function draftMissingPages() {
+    const pages=coverage?.requested_page_coverage?.omitted ?? [];
+    if(!pages.length)return;
+    const request='Please inspect '+pages.map((page:number)=>'page '+page).join(', ')+'. Explain what these pages add to the proposal and disclose any pages that still do not fit.';
+    feedback=(feedback ? feedback+'\n\n' : '')+request;
+    feedbackInput?.focus();
+  }
   function sourceLink(id:string) {
     const row=evidence.find((item:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>})=>item.id===id);
     if (!row || !/^[a-f0-9]{64}:/.test(id)) return null;
@@ -53,6 +60,14 @@
 </script>
 <section class="proposal" aria-label="Bonsai proposal">
   <p class="eyebrow">BONSAI · FOR YOUR REVIEW</p><h3>Here’s what I’m seeing</h3>
+  {#if coverage?.requested_page_coverage?.requested.length}
+    <section class="file-coverage" aria-label="Requested page coverage">
+      <h4>Pages you asked Bonsai to inspect</h4>
+      <p class="coverage">Included: {coverage.requested_page_coverage.shown.join(', ') || 'None'}. Included text may be excerpted; diagrams are not verified.</p>
+      {#if coverage.requested_page_coverage.omitted.length}<p class="omitted">Not read because of the evidence limit: {coverage.requested_page_coverage.omitted.join(', ')}.</p>{#if !readOnly}<button onclick={draftMissingPages} disabled={busy}>Draft a follow-up for these pages</button>{/if}{/if}
+      {#if coverage.requested_page_coverage.not_found.length}<p class="omitted">Not found in the supplied records: {coverage.requested_page_coverage.not_found.join(', ')}. Check the page numbers or attach the missing source.</p>{/if}
+    </section>
+  {/if}
   {#each proposal.interpretation.findings as finding,i (i)}
     <div class="finding">
       <p>{finding.text}</p>
