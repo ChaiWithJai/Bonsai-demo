@@ -244,9 +244,16 @@ class WorkspaceStore:
             candidates.append({'workspace_id': key, 'revision': workspace['head'],
                                'review': latest, 'files': workspace['files'],
                                'source_fixture': workspace['fixture'], 'attempts': workspace['attempts']})
+        with self.connect() as db:
+            has_notes = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='notes'").fetchone()
+            notes = [json.loads(row['payload']) for row in db.execute('SELECT payload FROM notes WHERE workspace_id=? ORDER BY rowid', (key,))] if has_notes else []
+        annotation_evidence = {'schema_version': 1, 'records': notes,
+                               'sha256': hashlib.sha256(encoded(notes).encode()).hexdigest(),
+                               'policy': 'Record notes are supporting evidence, not acceptance labels. Preserve their original review_origin and record_snapshot; no note alone qualifies a training candidate.'}
         dataset = {'task': 'generated_interface', 'examples': candidates}
         return {'schema_version': 1, 'dataset_sha256': hashlib.sha256(encoded(dataset).encode()).hexdigest(),
                 'dataset_task': dataset['task'], 'review_events': reviews['events'],
                 'training_candidates': candidates, 'example_count': len(candidates),
+                'annotation_evidence': annotation_evidence,
                 'policy': 'Only the latest human-declared acceptance of the current revision is a candidate. '
                           'Automated checks and test reviews do not establish human acceptance.'}

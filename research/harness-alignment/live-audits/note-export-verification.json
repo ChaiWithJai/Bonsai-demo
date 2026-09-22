@@ -1,0 +1,10 @@
+{
+  "workspace_id": "76adc869e2bf473e83cda2d197fa9347",
+  "run_url": "http://127.0.0.1:5210/#/experiments/32/runs/983527879fc1489b827fd98f197c884b",
+  "note_count": 4,
+  "annotation_sha256": "ead7e5a9a6ce5fbd0b1a922648acdc447053fd7c4c8efb37c94da03776cb2ca5",
+  "training_candidates": 0,
+  "readback_equal": true,
+  "review_origin": "codex-development-note-draft-check",
+  "scope": "existing development notes exported as evidence, not labels"
+}

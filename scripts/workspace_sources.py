@@ -75,7 +75,7 @@ class WorkspaceSources:
             manifest={'schema_version':1,'source_id':sid,'sha256':digest,'filename':f'{len(manifests)} attached files','bytes':len(raw),
                       'origin':'derived source collection','extractor':'source-collection-v2','classification_status':'not_started','kind':'collection','status':'extracted',
                       'requires_structuring':any(m.get('requires_structuring') or m['kind'] in ('text','document','email') for m in manifests),
-                      'sources':[{'source_id':m['source_id'],'sha256':m['sha256'],'filename':m['filename'],'records':len(m['records']),'review_application':m.get('review_application'),
+                      'sources':[{'source_id':m['source_id'],'sha256':m['sha256'],'filename':m['filename'],'kind':m['kind'],'records':len(m['records']),'review_application':m.get('review_application'),
                                   'extractor':m.get('extractor'),'review_status':m.get('review_status','source_values_unreviewed'),
                                   'coverage':{key:m[key] for key in ('vision_coverage','audio_coverage','image_coverage','email_coverage','document_coverage','workbook_coverage','extraction_coverage') if key in m}} for m in manifests],
                       'records':records}

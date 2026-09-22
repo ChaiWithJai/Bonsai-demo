@@ -156,7 +156,7 @@ class WorkspaceTools:
                 self.send_header('Cache-Control', 'no-store')
                 self.send_header('X-Content-Type-Options', 'nosniff')
                 self.send_header('Referrer-Policy', 'no-referrer')
-                self.send_header('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors " + owner.parent_origin)
+                self.send_header('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:; media-src " + owner.parent_origin.rstrip('/') + "/api/workspace/sources/; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors " + owner.parent_origin)
                 self.end_headers()
                 self.wfile.write(body)
 

@@ -5,6 +5,13 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "46-video-timestamp": ("workstreams", "Speech from video retains video playback at a nonzero timestamp"),
+    "46-audio-timestamp": ("workstreams", "Standalone audio seeks to a cited transcript timestamp"),
+    "45-inline-source-media": ("workstreams", "Selected video evidence plays beside record notes"),
+    "44-finding-evidence": ("workstreams", "Readable per-source finding evidence and targeted correction draft"),
+    "43-dropped-files": ("workstreams", "Dropped development file with extraction count and retained first message"),
+    "42-first-message": ("workstreams", "Role-based first message with adjacent composer and persistent section navigation"),
+    "41-video-evidence-graph": ("workstreams", "Corrected narrated-video evidence groups with original values, citations and notes"),
     "40-video-speech": ("workstreams", "Separate visual observations and timestamped speech from one development video"),
     "39-selection-checks": ("workstreams", "Ordered click and selection expectations retained after an intercepted development request"),
     "38-recovered-workstream": ("workstreams", "Persisted conversation and attached proposal reopened without browser draft storage"),

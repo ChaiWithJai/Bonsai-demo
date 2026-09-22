@@ -6,7 +6,7 @@
   import { onMount } from 'svelte';
   import WorkspaceRecordReview from '$lib/WorkspaceRecordReview.svelte';
   let { onProject = (_id: string) => {}, initialSource = '', initialIntake = '', role = 'Research analyst', panel = $bindable('conversation') } = $props<{onProject?: (id: string) => void; initialSource?:string; initialIntake?:string; role?:string; panel?:string}>();
-  type Job = {kind?:string;run_id?:string;id:string; source_id:string; source_ids?:string[]; filename:string; request:string; status:string; stage:string; workspace_id?:string; error?:string; mlflow_url?:string; proposal?:any; proposal_sha256?:string; reply?:string; role?:string; parent_job_id?:string; source_coverage?:any; source_examples?:any[]};
+  type Job = {planning_run_id?:string;kind?:string;run_id?:string;id:string; source_id:string; source_ids?:string[]; filename:string; request:string; status:string; stage:string; workspace_id?:string; error?:string; mlflow_url?:string; proposal?:any; proposal_sha256?:string; reply?:string; role?:string; parent_job_id?:string; source_coverage?:any; source_examples?:any[]};
   function sourceLocation(locator: Record<string, unknown>, index: number) {
     if (locator.sheet != null && locator.cell != null) return String(locator.sheet) + ' · ' + locator.cell;
     if (locator.body_block != null) return 'Document block ' + locator.body_block + (locator.table_row != null ? ' · table row ' + locator.table_row : ' · paragraph');
@@ -18,6 +18,13 @@
   }
   let jobs = $state<Job[]>([]);
   let intent = $state('');
+  let messageInput: HTMLTextAreaElement | undefined = $state();
+  function startWith(message:string) { intent=message; messageInput?.focus(); }
+  function composeKey(event:KeyboardEvent) {
+    if(event.key==='Enter' && (event.metaKey || event.ctrlKey) && !event.isComposing) {
+      event.preventDefault(); messageInput?.form?.querySelector<HTMLButtonElement>('button[type=submit]')?.click();
+    }
+  }
   let intakeJobId = $state('');
   const intakeJob = $derived(jobs.find(job=>job.id===intakeJobId));
   const intakeHistory = $derived.by(()=>{
@@ -53,6 +60,9 @@
   const filteredSources = $derived(sources.filter(item => item.filename.toLowerCase().includes(fileSearch.toLowerCase())));
 
   let source = $state<SourceData | null>(null);
+  const attachedSources = $derived(attached.map(id=>sources.find(item=>item.source_id===id)).filter((item):item is SourceSummary=>Boolean(item)));
+  const pendingSources = $derived(attachedSources.filter(item=>item.status!=='extracted'));
+  const attachmentsReady = $derived(attached.length===attachedSources.length && pendingSources.length===0);
   const effectiveIntent = $derived(intent.trim() || (source ? intakeJob?.request ?? '' : ''));
 
   const conversationJobs = $derived(jobs.filter(job => source && job.source_id === source.source_id));
@@ -78,8 +88,33 @@
     if(!attached.length)source=null;
     else if(source?.source_id===id || source?.kind==='collection')await choose(attached[0]);
   }
+  let draggingFiles = $state(false);
+  let dragDepth = 0;
+  function fileDrag(event:DragEvent) {
+    if(!event.dataTransfer?.types.includes('Files'))return;
+    event.preventDefault();
+    if(event.type==='dragenter'){dragDepth++;draggingFiles=true;}
+    if(event.dataTransfer)event.dataTransfer.dropEffect=busy ? 'none' : 'copy';
+  }
+  function leaveDrag(event:DragEvent) {
+    if(!event.dataTransfer?.types.includes('Files'))return;
+    dragDepth=Math.max(0,dragDepth-1);if(!dragDepth)draggingFiles=false;
+  }
+  async function dropFiles(event:DragEvent) {
+    if(!event.dataTransfer?.types.includes('Files'))return;
+    event.preventDefault();dragDepth=0;draggingFiles=false;
+    if(busy)return;
+    panel='conversation';
+    await uploadFiles(Array.from(event.dataTransfer.files));
+    messageInput?.focus();
+  }
   async function upload(event: Event & {currentTarget: HTMLInputElement}) {
-    const files=Array.from(event.currentTarget.files ?? []);
+    const input=event.currentTarget;
+    await uploadFiles(Array.from(input.files ?? []));
+    input.value='';
+  }
+  async function uploadFiles(files:File[]) {
+    if(busy)return;
     if (!files.length) return;
     if (files.length + attached.length > 20) {error='Attach at most 20 files to one question';return;}
     busy = true; error = '';const failures:string[]=[];
@@ -113,7 +148,7 @@
     return result;
   }
   async function generate(event: SubmitEvent) {
-    event.preventDefault(); if (runningJob || busy) return;
+    event.preventDefault(); if (runningJob || busy || !intent.trim() && !source || source && (!attachmentsReady || source.status!=='extracted' || effectiveIntent.length<10)) return;
     busy=true;error='';
     try {
       if(!source){
@@ -129,6 +164,11 @@
   async function respondToProposal(job:Job, feedback?:string) {
     busy=true;error='';
     try { await jobRequest('/'+job.id+(feedback === undefined ? '/confirm' : '/revise'),feedback === undefined ? {proposal_sha256:job.proposal_sha256} : {feedback});jobs=(await jobRequest()).jobs; }
+    catch(e){error=String(e);}finally{busy=false;}
+  }
+  async function retryBuild(job:Job) {
+    busy=true;error='';
+    try {await jobRequest('/'+job.id+'/retry-build',{proposal_sha256:job.proposal_sha256});jobs=(await jobRequest()).jobs;}
     catch(e){error=String(e);}finally{busy=false;}
   }
   async function cancel(id:string) {
@@ -171,9 +211,12 @@
   });
 </script>
 
-<section class="data" class:empty={!source} aria-label="Desktop sources">
+<svelte:window ondragenter={fileDrag} ondragover={fileDrag} ondragleave={leaveDrag} ondrop={dropFiles} onblur={()=>{dragDepth=0;draggingFiles=false;}}/>
+
+<section class="data" class:empty={!source} class:starting={panel==='conversation' && !intakeHistory.length && !conversationJobs.length} aria-label="Desktop sources">
+  {#if draggingFiles}<div class="file-drop-overlay" role="status"><strong>{busy ? 'Finish the current upload first' : 'Drop files into this workstream'}</strong><span>Your message stays here. Review the evidence before building.</span></div>{/if}
   <nav class="intake-tabs" aria-label="Workstream sections">{#each [['conversation','Conversation'],['files','Files'],['activity','Activity']] as [key,label] (key)}<button class:active={panel===key} aria-pressed={panel===key} onclick={()=>panel=key}>{label}{key==='files' && attached.length ? ' · '+attached.length : ''}</button>{/each}</nav>
-  <div class="conversation-intro" hidden={panel!=='conversation' || intakeHistory.length>0 || conversationJobs.length>0}><p class="role-label">{role}</p><h2>What would you like to understand?</h2><p class="welcome-message">Tell me what you’re working on and attach the relevant files. I’ll help structure the evidence, then we’ll agree on a view before building it.</p><div class="conversation-starters" aria-label="Ways to start"><button onclick={()=>intent='Compare the evidence across these files and show where the sources agree or disagree.'}>Compare evidence</button><button onclick={()=>intent='Organize these files into a timeline, preserving the source for every event.'}>Explore a timeline</button><button onclick={()=>intent='Group related records and help me explore the patterns, with links back to the sources.'}>Find patterns</button></div></div>
+  <div class="conversation-intro" hidden={panel!=='conversation' || intakeHistory.length>0 || conversationJobs.length>0}><p class="role-label">{role}</p><h2>What would you like to understand?</h2><p class="welcome-message">Start with a question or attach your files. Together, we’ll make sense of the evidence and choose what to build.</p><div class="conversation-starters" aria-label="Ways to start"><button onclick={()=>startWith('Compare the evidence across these files and show where the sources agree or disagree.')}>Compare evidence</button><button onclick={()=>startWith('Organize these files into a timeline, preserving the source for every event.')}>Explore a timeline</button><button onclick={()=>startWith('Group related records and help me explore the patterns, with links back to the sources.')}>Find patterns</button></div></div>
   <div class="file-panel" hidden={panel!=='files'}><h2>Files for this workstream</h2><p class="fine">Inspect extracted records and original evidence here. The conversation stays in its own tab.</p>
   <details class="file-help"><summary>Supported files and extraction details</summary><p class="fine">Up to 20 files, 25 MiB each. Tables, text, email exports, and PDF pages are extracted locally. PDF pages without embedded text use OCR on this Mac. Images use local OCR. English audio uses local Whisper transcription. Bonsai can read image content and sampled video frames for review.</p></details>
   {#if attached.length}<div class="attachments" aria-label="Attached files">{#each attached as id (id)}{@const file=sources.find((item:SourceSummary)=>item.source_id===id)}<div><button class="attachment" onclick={()=>choose(id)} disabled={busy}>{file?.filename ?? 'Attached file'}</button><button class="remove" aria-label={'Remove '+(file?.filename ?? 'attached file')} onclick={()=>removeAttachment(id)} disabled={busy}>×</button></div>{/each}</div>{/if}
@@ -195,15 +238,23 @@
   </div>
   <div class="conversation-thread" hidden={panel!=='conversation'}>
   {#if intakeHistory.length}<section class="intake-history" aria-label="Conversation before attachment">{#each intakeHistory as turn (turn.id)}<p class="intake-user">{turn.request}</p>{#if turn.reply}<p class="intake-reply">{turn.reply}</p>{:else}<p role="status">{turn.stage}</p>{/if}{#if turn.error}<p class="error" role="alert">{turn.error}</p>{/if}{#if ['queued','running'].includes(turn.status)}<button onclick={()=>cancel(turn.id)}>Stop reply</button>{/if}<details><summary>Reply evidence</summary><p>No source files were read in this reply.</p>{#if turn.mlflow_url}<a href={turn.mlflow_url} target="_blank" rel="noreferrer">View MLflow trace</a>{/if}</details>{/each}</section>{/if}
-  {#if conversationJobs.length}<section class="jobs" aria-label="Visualization jobs"><h3>Your conversation with Bonsai</h3>{#each conversationJobs.slice(0,1) as job (job.id)}<article><strong>{job.filename}</strong><p>{job.request}</p><p role="status">{job.stage} · {job.status}</p>{#if job.proposal}<WorkspaceProposal readOnly={job.status !== 'awaiting_confirmation'} proposal={job.proposal} coverage={job.source_coverage} evidence={job.source_examples} busy={busy || Boolean(runningJob)} onConfirm={()=>respondToProposal(job)} onRevise={(feedback)=>respondToProposal(job,feedback)}/>{/if}{#if job.proposal}{#key job.id}<WorkspaceProposalReview jobId={job.id}/>{/key}{/if}{#if job.error}<p class="error">{job.error}</p>{/if}{#if ['queued','running'].includes(job.status)}<button onclick={()=>cancel(job.id)}>Cancel generation</button>{/if}{#if job.workspace_id}<button onclick={()=>onProject(job.workspace_id!)}>{job.status === 'completed' ? 'Open editable project' : 'Inspect saved project'}</button>{/if}{#if job.mlflow_url}<a href={job.mlflow_url} target="_blank" rel="noreferrer">MLflow evidence</a>{/if}</article>{/each}{#if conversationJobs.length > 1}<details><summary>Earlier proposals and attempts ({conversationJobs.length - 1})</summary>{#each conversationJobs.slice(1) as old (old.id)}<p>{old.filename} · {old.stage} · {old.status}{#if old.mlflow_url} <a href={old.mlflow_url} target="_blank" rel="noreferrer">Evidence</a>{/if}</p>{/each}</details>{/if}</section>{/if}
+  {#if conversationJobs.length}<section class="jobs" aria-label="Visualization jobs"><h3>Your conversation with Bonsai</h3>{#each conversationJobs.slice(0,1) as job (job.id)}<article><strong>{job.filename}</strong><p>{job.request}</p><p role="status">{job.stage} · {job.status}</p>{#if job.proposal}<WorkspaceProposal readOnly={job.status !== 'awaiting_confirmation'} proposal={job.proposal} coverage={job.source_coverage} evidence={job.source_examples} busy={busy || Boolean(runningJob)} onConfirm={()=>respondToProposal(job)} onRevise={(feedback)=>respondToProposal(job,feedback)}/>{/if}{#if job.proposal}{#key job.id}<WorkspaceProposalReview jobId={job.id}/>{/key}{/if}{#if job.error}<p class="error">{job.error}</p>{/if}{#if ['queued','running'].includes(job.status)}<button onclick={()=>cancel(job.id)}>Cancel generation</button>{/if}{#if job.status==='failed' && job.planning_run_id && !job.workspace_id}<button onclick={()=>retryBuild(job)} disabled={busy || Boolean(runningJob)}>Retry confirmed build</button>{/if}{#if job.workspace_id}<button onclick={()=>onProject(job.workspace_id!)}>{job.status === 'completed' ? 'Open editable project' : 'Inspect saved project'}</button>{/if}{#if job.mlflow_url}<a href={job.mlflow_url} target="_blank" rel="noreferrer">MLflow evidence</a>{/if}</article>{/each}{#if conversationJobs.length > 1}<details><summary>Earlier proposals and attempts ({conversationJobs.length - 1})</summary>{#each conversationJobs.slice(1) as old (old.id)}<p>{old.filename} · {old.stage} · {old.status}{#if old.mlflow_url} <a href={old.mlflow_url} target="_blank" rel="noreferrer">Evidence</a>{/if}</p>{/each}</details>{/if}</section>{/if}
   </div>
   {#if panel==='activity'}<section class="runtime-panel"><h2>Runtime activity</h2>{#if busy}<p role="status">Processing your files…</p>{:else if runningJob}<p role="status">{runningJob.stage}</p>{:else}<p>No task is running.</p>{/if}{#each conversationJobs as job (job.id)}<article><strong>{job.stage}</strong><p>{job.status.replaceAll('_',' ')}</p>{#if job.error}<p class="error">{job.error}</p>{/if}{#if job.mlflow_url}<a href={job.mlflow_url} target="_blank" rel="noreferrer">View run evidence</a>{/if}</article>{/each}</section>{/if}
   {#if error}<p class="error" role="alert">{error}</p>{/if}
+  {#if panel==='conversation' && attached.length && !conversationJobs.length}
+    <section class="intake-receipt" aria-label="File intake summary">
+      <strong>{busy ? 'Reading your files…' : attachmentsReady ? 'Your files are ready to discuss' : 'Some files need attention'}</strong>
+      <p>{attachedSources.reduce((total,item)=>total+item.record_count,0)} extracted records across {attached.length} {attached.length===1 ? 'file' : 'files'}. Bonsai will use your question to propose a structure and a view for you to review.</p>
+      {#if pendingSources.length}<ul>{#each pendingSources as item (item.source_id)}<li><button type="button" onclick={()=>{void choose(item.source_id);panel='files';}}>{item.filename}: {item.status.replaceAll('_',' ')} · Inspect</button></li>{/each}</ul>{/if}
+      <details><summary>What was read</summary>{#each attachedSources as item (item.source_id)}<p><strong>{item.filename}</strong> · {item.record_count} records{#if item.extraction_coverage} · Text from {item.extraction_coverage.pages_with_text} of {item.extraction_coverage.page_count} pages. {item.extraction_coverage.limitation}{:else if item.document_coverage} · {item.document_coverage.scope}. {item.document_coverage.limitations}{:else if item.vision_coverage} · {item.vision_coverage.limitation}{:else if item.audio_coverage} · {item.audio_coverage.limitation}{:else if item.image_coverage} · {item.image_coverage.limitation}{/if}</p>{/each}</details>
+    </section>
+  {/if}
   <form id="source-request" hidden={panel!=='conversation'} class="message-compose" onsubmit={generate}>
-    {#if attached.length}<div class="composer-files">{#each attached as id (id)}{@const file=sources.find(item=>item.source_id===id)}<span>{file?.filename ?? 'Attached file'}<button type="button" aria-label={'Remove '+(file?.filename ?? 'file')} onclick={()=>removeAttachment(id)} disabled={busy}>×</button></span>{/each}<button type="button" onclick={()=>panel='files'}>Inspect files</button></div>{/if}
-    <label class="message-label" for="visualization-intent">Message {role}</label><textarea id="visualization-intent" bind:value={intent} maxlength="4000" placeholder="Tell me what you want to understand…" disabled={busy}></textarea>
-    <div class="composer-actions"><label class="attach-button">＋ Attach files<input type="file" multiple accept=".xlsx,.docx,.eml,.mbox,.csv,.tsv,.json,.jsonl,.txt,.md,.png,.jpg,.jpeg,.webp,.pdf,.wav,.mp3,.m4a,.mp4,.mov,.webm" onchange={upload} disabled={busy}/></label><button type="submit" class="send-message" disabled={Boolean(runningJob) || busy || (!source ? !intent.trim() : source.status!=='extracted' || effectiveIntent.length<10)}>Send ↑</button></div>
-    <p class="composer-hint">{!draftReady ? 'Restoring draft…' : busy ? source ? 'Reading your files…' : 'Sending your message…' : !source ? 'Start with a question, or attach files to explore together.' : source.status!=='extracted' ? 'This file needs extraction. Open Files to inspect or retry.' : effectiveIntent.length<10 ? 'Describe what you want to understand (at least 10 characters).' : 'Bonsai will propose a view for your review.'}</p>
+    {#if attached.length}<div class="composer-files">{#each attached as id (id)}{@const file=sources.find(item=>item.source_id===id)}<span>{file?.filename ?? 'Attached file'}{#if file}<small>{file.status==='extracted' ? file.record_count+' records' : file.status.replaceAll('_',' ')}</small>{/if}<button type="button" aria-label={'Remove '+(file?.filename ?? 'file')} onclick={()=>removeAttachment(id)} disabled={busy}>×</button></span>{/each}<button type="button" onclick={()=>panel='files'}>Inspect files</button></div>{/if}
+    <label class="message-label" for="visualization-intent">Message {role}</label><textarea id="visualization-intent" bind:this={messageInput} onkeydown={composeKey} bind:value={intent} maxlength="4000" placeholder="Tell me what you want to understand…" disabled={busy}></textarea>
+    <div class="composer-actions"><label class="attach-button">＋ Attach files<input type="file" multiple accept=".xlsx,.docx,.eml,.mbox,.csv,.tsv,.json,.jsonl,.txt,.md,.png,.jpg,.jpeg,.webp,.pdf,.wav,.mp3,.m4a,.mp4,.mov,.webm" onchange={upload} disabled={busy}/></label><button type="submit" class="send-message" disabled={Boolean(runningJob) || busy || (!source ? !intent.trim() : !attachmentsReady || source.status!=='extracted' || effectiveIntent.length<10)}>Send ↑</button></div>
+    <p class="composer-hint">{!draftReady ? 'Restoring draft…' : busy ? source ? 'Reading your files…' : 'Sending your message…' : !source ? 'Ask a question, attach files, or drop them here.' : !attachmentsReady || source.status!=='extracted' ? 'Some files need extraction. Open Files to inspect or retry.' : effectiveIntent.length<10 ? 'Describe what you want to understand (at least 10 characters).' : 'Bonsai will propose a view for your review.'}</p>
     <div class="draft-status"><span role="status">{draftNotice}</span>{#if intent || attached.length}<button type="button" onclick={clearDraft} disabled={busy || Boolean(runningJob)}>Clear draft</button>{/if}</div>
   </form>
 
@@ -229,4 +280,10 @@
 
 .data,.data.empty{overflow:hidden}.conversation-intro{flex-shrink:0}.conversation-thread,.file-panel,.runtime-panel{flex:1;min-height:0;overflow:auto}.message-compose,.empty .message-compose{position:relative;bottom:auto;box-shadow:none;margin-top:16px}.conversation-thread{padding-right:8px}.intake-history{padding-bottom:0}
 @media(max-width:750px){.data,.data.empty{overflow:visible}.conversation-thread,.file-panel,.runtime-panel{overflow:visible;flex:auto}.conversation-thread{padding-right:0}}
+
+/* Keep the first action next to its explanation, then make room for the conversation. */
+.data.starting{max-width:820px}.starting .conversation-intro{padding-top:clamp(24px,8vh,88px);margin-bottom:8px}.starting .conversation-thread{flex:0;padding:0}.starting .message-compose{margin-top:20px}.starting .welcome-message{background:transparent;padding:0;max-width:560px;font-size:15px;line-height:1.7}.starting h2{font-size:28px;line-height:1.25;letter-spacing:-.6px}.starting .message-compose textarea{min-height:100px;font-size:15px;line-height:1.6}.role-label{font-weight:600}.message-compose:focus-within{border-color:var(--ring)}
+@media(max-width:750px){.starting .conversation-intro{padding-top:20px;margin-bottom:0}.starting h2{font-size:24px}.starting .welcome-message{font-size:14px}.starting .message-compose{margin-top:16px}.starting .message-compose textarea{min-height:80px}}
+.file-drop-overlay{position:fixed;inset:12px;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--card);border:2px dashed var(--ring);border-radius:20px;pointer-events:none;padding:24px;text-align:center}.file-drop-overlay strong{font-size:24px}.file-drop-overlay span{font-size:14px}.composer-files small{display:inline-block;margin-left:8px;color:var(--muted-foreground)}
+.intake-receipt{flex-shrink:0;border-left:3px solid var(--ring);padding:12px 16px;margin:12px 0;font-size:12px;max-height:210px;overflow:auto}.intake-receipt p{margin:7px 0;overflow-wrap:anywhere}.intake-receipt summary{cursor:pointer;color:var(--muted-foreground)}.intake-receipt button{background:transparent;color:inherit;text-align:left;padding:6px}.intake-receipt ul{padding-left:16px}
 </style>

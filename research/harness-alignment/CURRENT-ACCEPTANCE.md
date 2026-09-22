@@ -132,3 +132,76 @@ Video can now retain timestamped speech alongside sampled visual records. The sp
 A development video combined the existing cached observation table with synthetic team speech. It produced two speech segments and three visual records from one sampled frame. The UI passed desktop and mobile checks for channel labels, timestamp seeking and decoded-frame readiness. All 237 Python tests, Svelte checks and the production build passed. A test locator initially failed before selecting the source; using its accessible combobox role fixed the test. The full evidence is in VIDEO-SPEECH-VERIFICATION.json.
 
 Planning run 976516187b784225b19882ae12759060 needed one repair for inconsistent record fields before returning a valid unconfirmed proposal. It preserved the channels and acknowledged that co-occurrence does not establish a link between them. Semantic review remains necessary: the model called repository observations release rows, and its table overview omitted the speech text even though full records retain it. No build confirmation or human review label was submitted. This is not evidence of native Bonsai audio reasoning or general video understanding. The backup attempt still failed because MongoDB refused the connection.
+
+The narrated-video proposal was revised to distinguish repository observations from release events and observation dates from release dates. Revision planning run f0743e8821d8458b9377c6de6d8288a5 retained all five source records and proposed speech and visual evidence groups in one model call. An explicit Codex development confirmation triggered the build; it is not a human review label.
+
+The first build failed because a one-field categorical graph had nodes but no edges, which Semiotic rejects. The compiler now adds an explicit All records membership root for such graphs. It preserves the source rows and category memberships; graph links express membership, not causation. Already compiled proposals receive the same rendering adaptation without changing their approved proposal hash.
+
+Failed confirmed builds that have not yet created a project now have a Retry confirmed build action. It requires the same proposal hash, preserves the original confirmation, archives the failed attempt, and starts a build without another model generation. A live UI retry produced project d59c4df594b34ffc8fece1aea401df2c. Desktop and mobile checks passed for speech and visual node selection, exact source values, links and persistent notes. All 238 Python tests, Svelte checks and the production build passed. VIDEO-GRAPH-REVISION-VERIFICATION.json links the revision, failed render and successful retry. The generated details remain dense and need human design review.
+
+
+### Workstreams first-message layout repair
+
+The opening message and composer now sit together instead of occupying opposite ends of an empty screen. Conversation, Files, and Activity stay available. The selected role appears in the header and composer; shared file search is a separate collapsed tools disclosure. Starter prompts focus the composer. Control/Command+Enter invokes the same enabled Send action.
+
+Desktop and mobile browser checks passed for tab visibility, draft preservation, role switching, shared-tool navigation, composer proximity, and horizontal overflow. An intercepted development request verified the selected role and message payload and retained the draft after a simulated unavailable-model response; it did not call inference. Svelte check reported zero errors and warnings; production build passed. Screenshots: tools/design-review/shots/42-first-message.desktop.png and .mobile.png. This is a layout repair, not a claim of end-to-end model quality or completed v0 parity.
+
+
+### Drop files into a workstream
+
+The conversation accepts desktop file drops through the same upload/extraction path as the file picker. An overlay makes the destination visible, attachment chips report extraction status or record count, and the typed request remains in place. Busy uploads reject additional drops; existing count and size limits apply. Dropping files does not start inference or confirm a proposal.
+
+Four desktop/mobile browser checks passed for the first-message flow and a real two-record CSV upload, including zero-value preservation in the extracted record, retained prompt, enabled Send, and Files-tab inspection. The mobile check uses a synthetic drag event and does not claim a native mobile file-manager gesture. Svelte check: zero errors and warnings. Production build passed. Screenshot atlas includes 43-dropped-files. Automated development fixture only; no human review labels were created.
+
+### Intake summary and mixed-file readiness
+
+The conversation now shows extracted record counts, per-file extraction coverage under a disclosure, and links to attachments that need attention. Send checks every attachment rather than only the selected source. A failed attachment followed by a ready attachment cannot proceed until the incomplete source is removed or resolved.
+
+Svelte check and production build passed. Six desktop/mobile browser checks passed, including a real CSV drop and a mocked mixed extraction failure followed by removal. The first run encountered a concurrently active source job, so final UI checks filtered running jobs in browser-only GET responses; the live queue was not changed or cancelled. These checks establish UI readiness behavior, not a new inference or model-quality result.
+
+### Live two-video planning audit
+
+Job fc13c99468914a25b4ca8fc49c1f5757 reached awaiting_confirmation after one repair. MLflow run ba94fd5b3358436d973cb0ed37524de1 and its trace were inspected. The source profile omitted a required-structuring flag even though validation enforced it. Profile and validator now share one predicate; the prompt explicitly applies it to media collections and record tables. An additional prompt instruction distinguishes absent detail from contradictory observations.
+
+The audit identifies an unsupported arm-posture disagreement in the pending proposal. It is saved under live-audits/two-video-planning.json and attached to the original run as engineering evidence, not human review. The user proposal remains unchanged and unconfirmed. Python tests pass. Model efficacy remains unproven until matched replay; source changes have not been activated through a live proxy reload in this turn.
+
+### Required-structure replay outcome
+
+The harness was reloaded while idle, retaining the same model process. Both active project previews were restored. Replay 2c74cd345eaf42e2a5ce399b4e4f195a used byte-identical source packet and model metadata plus identical generation configuration. It reached awaiting_confirmation in one model call versus two for baseline fc13c99468914a25b4ca8fc49c1f5757. The arm-detail comparison no longer asserts contradiction. A new overclaim applies the second file's identity disclaimer to both files, so the Codex semantic audit fails overall. No development proposal was confirmed. Run 214d9e4a6eb344efab7912b8a10d6fc2 contains protocol and audit artifacts. Backup failed due to the existing MongoDB connection refusal; no restored archive is claimed.
+
+
+### Review findings against readable source evidence
+
+Finding citations now open separate readable source cards instead of raw JSON. Original-file links support timestamped media as well as PDF pages; provenance stays under a secondary disclosure. Question this finding copies the exact claim into the editable revision draft and focuses it, without sending or confirming. This supports the human review boundary exposed by the two-video semantic failure; it does not make claims automatically factual.
+
+Desktop/mobile checks used the frozen replay proposal in browser-only responses. Both passed for distinct source cards, exact cited text, timestamp links, focused correction draft, and no horizontal overflow. No proposal was changed on the server. Svelte check reported zero errors/warnings, production build passed, and screenshots are in atlas surface 44-finding-evidence.
+
+### Targeted evidence correction
+
+Development revision eb7ac778fe0d41cfb685ee4d00e5b39f responded to precise source-attribution feedback in one model call. Finding 3 now assigns the explicit identity disclaimer only to the second file. The supported first finding, plan, and record citations were preserved; the first record's identity_status changed from unverified to unreviewed. The added uncertainty distinguishes a source label from verified participant identity. This is a scoped Codex correction check on sampled evidence, not a human label or a whole-video semantic pass. Run 185136789bdb42d08a7f7830c8ed1de9 contains the correction protocol and audit. No confirmation occurred. Backup remains unverified because MongoDB refused the connection.
+
+
+### Inline source media in generated interfaces
+
+The desktop starter now displays timestamped source media beside notes for a selected structured record, deduplicating repeated citations to the same moment. Existing original-file links remain. A first browser check revealed that the preview content policy blocked media; the policy now permits only the harness source-file path for media loading. The same resident model process was retained during the idle proxy reload.
+
+Development project 76adc869e2bf473e83cda2d197fa9347 copies a confirmed fixture with an authored starter change. It is not a model-authored improvement and does not change the user's confirmed project. Desktop/mobile checks verified video decoding, advancing playback time, source switching, no automatic playback, visible note entry, and layout width. Both tests passed; all 239 Python tests passed. Review preview: http://127.0.0.1:63139/. Coverage is two video sources at zero seconds; nonzero timestamp and standalone audio cases remain to be verified.
+
+
+### Media type and nonzero timestamp verification
+
+Structured citations now retain canonical source kind and filename. Collection manifests retain member kinds as well. This prevents timestamped speech extracted from a video from being treated as a standalone audio file. The generated starter prefers the canonical media kind and keeps older-citation fallbacks.
+
+Two development copies verified video speech at 5.58 seconds and standalone audio at 5.6 seconds. Desktop/mobile checks passed for the correct element, seek position, advancing playback, video dimensions, and visible note entry. The audio fixture's older IDs and table columns were preserved; only source metadata was enriched for this UI check. The 239-test suite passed before adding one targeted source-kind test; the targeted module then passed with that test included. No model inference or human training labels were created. The idle proxy was reloaded and existing active previews restored.
+
+### Preserve record identity while drafting and saving notes
+
+The generated starter previously reused one note buffer across selected records. It now retains a draft per record within the page session. Saves capture record ID and text before the request, guard against duplicate clicks, and clear only the matching unchanged draft. A late response cannot clear another record's draft. Failed saves preserve text and allow retry.
+
+Desktop/mobile browser checks passed against development project 76adc869e2bf473e83cda2d197fa9347. They delayed a real save response while switching records, verified the persisted record ID and exact record snapshot, then simulated a failure and verified draft retention. Saved test notes carry codex-development-note-draft-check, not human review. The authored starter compiled successfully and Svelte autofixer found no issues. Drafts remain session-local; reload persistence is not claimed.
+
+### Annotation evidence in interface exports
+
+Interface review exports now include record notes in a separate annotation_evidence object with a content hash. Each note retains its record snapshot and original review_origin. Notes do not change the training dataset hash or qualify an example for training; only the existing latest-human-acceptance policy does that.
+
+The development project's four automated notes were exported to MLflow run 983527879fc1489b827fd98f197c884b and downloaded. The bundle matched exactly and contained zero training candidates. The full 241-test suite passed, including cross-project note isolation and independence from acceptance. The export implementation is live after an idle proxy reload. Existing previews were restored. This does not resolve the previously recorded MongoDB backup fault.

@@ -86,3 +86,22 @@ class InterfaceExportTest(unittest.TestCase):
             self.assertEqual(client.bundle['training_candidates'], [])
             self.assertEqual(client.tags['dataset_sha256'], result['dataset_sha256'])
             self.assertEqual(client.status, 'FINISHED')
+
+    def test_annotation_evidence_preserves_origin_without_creating_candidates(self):
+        temp=tempfile.TemporaryDirectory();self.addCleanup(temp.cleanup)
+        self.store=WorkspaceStore(temp.name)
+        self.key=self.store.create('Note evidence fixture',{'App.svelte':'<h1>Fixture</h1>'},{'kind':'test'})['id']
+        import json
+        empty=self.store.export_interface_reviews(self.key)
+        self.assertEqual(empty['annotation_evidence']['records'],[])
+        note={'id':'note1','record_id':'r1','note':'Development evidence','review_origin':'codex-development','record_snapshot':{'id':'r1','data':{'count':0}}}
+        with self.store.connect() as db:
+            db.execute('CREATE TABLE notes (workspace_id TEXT, id TEXT PRIMARY KEY, payload TEXT)')
+            db.execute('INSERT INTO notes VALUES (?,?,?)',(self.key,note['id'],json.dumps(note)))
+            db.execute('INSERT INTO notes VALUES (?,?,?)',('another-project','other',json.dumps({'note':'other project'})))
+        result=self.store.export_interface_reviews(self.key)
+        self.assertEqual(result['annotation_evidence']['records'],[note])
+        self.assertEqual(result['example_count'],0)
+        self.assertEqual(result['training_candidates'],[])
+        self.assertEqual(result['dataset_sha256'],empty['dataset_sha256'])
+        self.assertNotEqual(result['annotation_evidence']['sha256'],empty['annotation_evidence']['sha256'])

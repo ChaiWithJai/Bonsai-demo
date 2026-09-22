@@ -6,7 +6,7 @@ import re
 import threading
 import time
 import uuid
-from workspace_data.desktop_plan import profile, compile_plan, PLAN_INSTRUCTIONS
+from workspace_data.desktop_plan import profile, compile_plan, PLAN_INSTRUCTIONS, ensure_group_root
 from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal, revision_messages, planning_profile
 from workspace_data.record_review import apply_human_reviews
 from workspace_provider import GenerationCancelled, LocalProvider
@@ -201,6 +201,28 @@ class SourceJobs:
             self.active[jid]=(cancel,thread);self.worker.source_jobs.add(jid);thread.start()
             return status
 
+    def retry_build(self, jid, proposal_sha256, actor='interactive-unattributed'):
+        import shutil
+        with self.worker.guard:
+            status=self.get(jid);folder=self.root/jid
+            if status['status']!='failed' or status.get('workspace_id') or not status.get('planning_run_id'):
+                raise RevisionConflict('Only a failed confirmed build without a saved project can be retried')
+            confirmation=json.loads((folder/'confirmation.json').read_text())
+            if proposal_sha256!=status.get('proposal_sha256') or proposal_sha256!=confirmation.get('proposal_sha256'):
+                raise RevisionConflict('Retry must use the exact confirmed proposal')
+            if self.worker.running or self.worker.source_jobs:
+                raise RevisionConflict('Another Workspace job is running')
+            archive=folder/'build-retries'/uuid.uuid4().hex;archive.mkdir(parents=True)
+            for path in folder.iterdir():
+                if path.name=='build-retries':continue
+                if path.is_dir():shutil.copytree(path,archive/path.name)
+                else:shutil.copy2(path,archive/path.name)
+            status.update(status='queued',stage='Retrying confirmed build',retry_of_run_id=status.get('run_id'),retry_actor=actor)
+            status.pop('error',None);self.save(folder,'status.json',status)
+            manifest=json.loads((folder/'source-manifest.json').read_text());context=json.loads((folder/'profile.json').read_text())
+            cancel=threading.Event();thread=threading.Thread(target=self.run,args=(folder,manifest,context,status,cancel,True),daemon=True)
+            self.active[jid]=(cancel,thread);self.worker.source_jobs.add(jid);thread.start();return status
+
     def revise(self, jid, feedback, actor='interactive-unattributed'):
         status=self.get(jid)
         if status['status'] not in ('awaiting_confirmation','needs_revision'):
@@ -259,6 +281,7 @@ class SourceJobs:
                     'initial_ui_origin':'authored scaffold with model-authored typed visualization plan'}
             if status.get('intake_job_id'):
                 tags['intake_job_id']=status['intake_job_id']
+            if status.get('retry_of_run_id'):tags['retry_of_run_id']=status['retry_of_run_id']
             if status.get('planning_run_id'):
                 tags['planning_run_id']=status['planning_run_id']
             if status.get('parent_job_id'):
@@ -323,12 +346,13 @@ class SourceJobs:
                        proposal_sha256=digest,source_coverage={k:v for k,v in packet.items() if k not in ('records','record_id_map')},
                        source_examples=self.proposal_examples(proposal, packet))
                 return
-            compiled=json.loads((folder/'compiled.json').read_text())
+            compiled=ensure_group_root(json.loads((folder/'compiled.json').read_text()))
             compiled['planning_coverage'] = status.get('source_coverage')
             if compiled.get('record_origin')=='model_structured_unreviewed':
                 compiled['grouping_origin']='model-structured fields, unreviewed; not learned similarity clusters'
                 compiled['original_record_count']=len(manifest['records'])
             self.save(folder,'render-compiled.json',compiled)
+            self.save(folder,'render-chart.json',compiled['chart'])
             plan=compiled['plan']
             confirmation=json.loads((folder/'confirmation.json').read_text())
             span('human.confirmation',confirmation,lambda:confirmation)
@@ -340,7 +364,7 @@ class SourceJobs:
             else:
                 update(stage='Rendering Semiotic component')
                 rendered = span('semiotic.render', compiled['chart'], lambda:w.tools.command(
-                    [w.tools.node,str(ROOT/'scripts/workspace-tools/render_chart.mjs'),str(folder/'chart.json'),str(folder/'render')],folder/'render',cancel))
+                    [w.tools.node,str(ROOT/'scripts/workspace-tools/render_chart.mjs'),str(folder/'render-chart.json'),str(folder/'render')],folder/'render',cancel))
                 if not rendered['ok']:
                     raise ValueError('Semiotic rendering failed: '+rendered['stderr'][-2000:])
                 evidence = json.loads((folder/'render/render-evidence.json').read_text())

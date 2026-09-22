@@ -1,0 +1,46 @@
+{
+  "scope": "Single development video correction and confirmed build recovery; not human acceptance",
+  "source_id": "6ebce59d7f89551c81eda7664a41d1f9a13d0e57dd90af98a6e66279235bf714",
+  "project_id": "d59c4df594b34ffc8fece1aea401df2c",
+  "revision": "187b77a90404ffbec3c477ed370181f8a0e3bea9e2e4d82b3a070f792e125fdc",
+  "preview_url": "http://127.0.0.1:60046/",
+  "runs": [
+    {
+      "kind": "revision",
+      "run_id": "f0743e8821d8458b9377c6de6d8288a5",
+      "status": "FINISHED",
+      "trace_id": "tr-653a4050e6e0280ed2562bff0626ab6d"
+    },
+    {
+      "kind": "failed_render",
+      "run_id": "c02cd91d301d41058658a34bbf1c1930",
+      "status": "FAILED",
+      "trace_id": "tr-83f3ba1b20e575ee038fa8cc4d4b2897"
+    },
+    {
+      "kind": "build_retry",
+      "run_id": "f990b16f998e491fbbd5c8ca8fbaf5cf",
+      "status": "FINISHED",
+      "trace_id": "tr-4ec965214a7499abb73fd26c86d770ed"
+    }
+  ],
+  "original_confirmation_preserved": true,
+  "confirmation_actor": "codex-development-video-graph-check",
+  "inference_during_build_retry": false,
+  "checks": {
+    "python_tests": 238,
+    "svelte_errors": 0,
+    "svelte_warnings": 0,
+    "production_build": "passed",
+    "browser": "desktop/mobile node membership, five source values, source links and persistent notes",
+    "retry_ui": "passed"
+  },
+  "semantics": "Observation dates remain distinct from release dates. Links from All records represent categorical membership, not causal relationships.",
+  "limitations": [
+    "Synthetic narrated video and one sampled frame only",
+    "Evidence remains unreviewed by a human",
+    "Node grouping is categorical, not learned clustering",
+    "The generated details are dense and still need design review"
+  ],
+  "backup_status": "failed_unverified: MongoDB 127.0.0.1:27028 refused connection"
+}
