@@ -1,0 +1,59 @@
+{
+  "scope": "PowerPoint text and table intake; no model generation or human acceptance claimed",
+  "source": {
+    "schema_version": 1,
+    "source_id": "87608dd2cb9b277fe5426dd6da4a0e35bf0c8b83a7c84ee532186cb44999a6ba",
+    "sha256": "ada54169d7719818b54b3cfee6a6f60a3780390490cd11fef6440c0b3f5050c0",
+    "filename": "development-slide-coverage.pptx",
+    "bytes": 2053,
+    "origin": "user-provided",
+    "extractor": "pptx-slide-xml-v1",
+    "classification_status": "not_started",
+    "kind": "presentation",
+    "status": "extracted",
+    "extraction_attempt_id": "c977cd3864964f608917f1a225d73423",
+    "extraction_attempted_at": "2026-09-22T06:21:17.924970+00:00",
+    "requires_structuring": true,
+    "document_coverage": {
+      "scope": "Slide text and table cells in presentation order; hidden slides identified in source locations",
+      "slides": [
+        {
+          "slide": 1,
+          "part": "ppt/slides/slide2.xml",
+          "hidden": false,
+          "records": 2
+        },
+        {
+          "slide": 2,
+          "part": "ppt/slides/slide1.xml",
+          "hidden": true,
+          "records": 0
+        }
+      ],
+      "embedded_media_not_read": 1,
+      "other_parts_not_read": [
+        "ppt/notesSlides/notesSlide1.xml"
+      ],
+      "limitations": "Images, charts, diagrams, speaker notes, animations, and visual layout are not interpreted. Textless slides remain listed in coverage."
+    },
+    "extraction_run_id": "4856e6eff5de415f8c37bfedccd59404",
+    "extraction_run_url": "http://127.0.0.1:5210/#/experiments/32/runs/4856e6eff5de415f8c37bfedccd59404",
+    "record_count": 2
+  },
+  "verification": {
+    "python_tests": 311,
+    "svelte_errors": 0,
+    "svelte_warnings": 0,
+    "production_build": "passed",
+    "desktop_upload_and_inspection": "passed",
+    "mobile_upload_and_inspection": "passed",
+    "initial_browser_failure": "Test selected a hidden duplicate attachment element. Replaced with upload response check and inspected the visible Files panel."
+  },
+  "limitations": [
+    "Images, charts, diagrams, notes, animations, and layout are not interpreted.",
+    "Image-only presentations retain the original and report extraction failure.",
+    "Synthetic fixture verifies extraction and file inspection, not real deck generation quality."
+  ],
+  "model_calls": 0,
+  "human_acceptance": false
+}

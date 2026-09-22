@@ -327,7 +327,7 @@ class SourceJobs:
             update(status='running', stage='Planning visualization', run_id=run_id, trace_id=root.trace_id,
                    mlflow_url=f'{w.tracking_uri}/#/experiments/{eid}/runs/{run_id}')
             self.save(folder, 'model-info.json', w.model_info)
-            source_files = ['workspace_data/task_contract.py','workspace_data/intake.py','workspace_data/xlsx.py','workspace_sources.py','workspace_source_jobs.py','workspace_data/proposal.py','workspace_data/proposal_schema.py','workspace_provider.py','workspace_data/desktop_plan.py','workspace-tools/render_chart.mjs',
+            source_files = ['workspace_data/task_contract.py','workspace_data/intake.py','workspace_data/xlsx.py','workspace_data/pptx.py','workspace_sources.py','workspace_source_jobs.py','workspace_data/proposal.py','workspace_data/proposal_schema.py','workspace_provider.py','workspace_data/desktop_plan.py','workspace-tools/render_chart.mjs',
                             'workspace_provider.py','workspace_intake_chat.py','workspace-tools/package-lock.json']
             self.save(folder,'harness-hashes.json',{name:hashlib.sha256((ROOT/'scripts'/name).read_bytes()).hexdigest() for name in source_files})
             if not confirmed:
