@@ -7,7 +7,7 @@ import threading
 import time
 import uuid
 from workspace_data.desktop_plan import profile, compile_plan, PLAN_INSTRUCTIONS, ensure_group_root
-from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal, revision_messages, planning_profile, repair_diagnostics, validate_schema_repair_preservation
+from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal, revision_messages, planning_profile, repair_diagnostics, validate_schema_repair_preservation, validate_source_scope
 from workspace_data.record_review import apply_human_reviews
 from workspace_provider import GenerationCancelled, LocalProvider
 from workspace_store import RevisionConflict
@@ -120,7 +120,7 @@ class SourceJobs:
     def list(self):
         return {'jobs': [self.get(p.parent.name) for p in sorted(self.root.glob('*/status.json'), key=lambda p:p.stat().st_mtime, reverse=True)]}
 
-    def start(self, source_id, request, apply_reviews=False, revision=None, intake_job_id=None):
+    def start(self, source_id, request, apply_reviews=False, revision=None, intake_job_id=None, source_scope=None):
         if not isinstance(request, str) or not 10 <= len(request.strip()) <= 4000:
             raise ValueError('Describe the visualization in 10 to 4,000 characters')
         if type(apply_reviews) is not bool:
@@ -135,7 +135,9 @@ class SourceJobs:
                 raise ValueError('Source bytes no longer match their recorded hash')
             if apply_reviews:
                 manifest = apply_human_reviews(self.sources.root, manifest)
-            context = profile(manifest)
+            source_scope=validate_source_scope(manifest,source_scope)
+            scoped_manifest={**manifest,'records':[row for row in manifest['records'] if row.get('locator',{}).get('page') in source_scope['pages']]} if source_scope else manifest
+            context = profile(scoped_manifest)
         with self.worker.guard:
             if self.worker.running or self.worker.source_jobs:
                 raise RevisionConflict('Another Workspace job is using the local model')
@@ -164,7 +166,7 @@ class SourceJobs:
                 self.save(folder, 'revision-request.json', revision)
             status = {'id':jid, 'source_id':source_id, 'filename':manifest['filename'], 'request':request.strip(),
                       'source_ids':[s['source_id'] for s in manifest.get('sources',[])] or [source_id],
-                      'intake_job_id':intake_job_id, 'apply_reviews':apply_reviews, 'status':'queued', 'stage':'Preparing source', 'created_at':time.time()}
+                      'intake_job_id':intake_job_id, 'source_scope':source_scope, 'apply_reviews':apply_reviews, 'status':'queued', 'stage':'Preparing source', 'created_at':time.time()}
             if revision:
                 status['parent_job_id'] = revision['parent_job_id']
                 status['feedback'] = revision['feedback']
@@ -241,7 +243,7 @@ class SourceJobs:
                            'parent_proposal_sha256':status.get('proposal_sha256'),
                            'parent_planning_run_id':status.get('run_id'),
                            'parent_source_snapshot_sha256':hashlib.sha256((self.root/jid/'source-manifest.json').read_bytes()).hexdigest(),
-                           'identity_basis':'local unauthenticated interaction; not a training label'}, intake_job_id=status.get('intake_job_id'))
+                           'identity_basis':'local unauthenticated interaction; not a training label'}, intake_job_id=status.get('intake_job_id'),source_scope=status.get('source_scope'))
 
     def cancel(self, jid):
         with self.worker.guard:
@@ -314,7 +316,7 @@ class SourceJobs:
                     selection_request += '\n' + json.loads(revision_path.read_text())['feedback']
                 for packet_budget in (64000, 48000, 32000, 24000, 18000, 12000):
                     check()
-                    packet=source_packet(manifest,max_chars=packet_budget,request=selection_request)
+                    packet=source_packet(manifest,max_chars=packet_budget,request=selection_request,source_scope=status.get('source_scope'))
                     self.save(folder,'source-packet.json',packet)
                     messages = [{'role':'system','content':PROPOSAL_INSTRUCTIONS},
                                 {'role':'user','content':json.dumps({'request':status['request'],'source_profile':planning_profile(context),'source_evidence':{k:v for k,v in packet.items() if k!='record_id_map'}},ensure_ascii=False)}]

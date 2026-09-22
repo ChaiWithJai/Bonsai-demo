@@ -301,3 +301,32 @@ class SourceJobsTest(unittest.TestCase):
             self.assertIn(status,[json.loads(path.read_text()) for path in archives])
             self.assertEqual(jobs.get(jid)['retry_of_run_id'],'test')
             with self.assertRaises(RevisionConflict):jobs.retry_build(jid,'exact')
+
+class ScopedPlanningTest(unittest.TestCase):
+    def test_scoped_job_omits_other_page_examples_from_model_messages(self):
+        import hashlib
+        class Capture(BadPlanner):
+            def generate(self,messages,*args):
+                self.messages=messages
+                return {'message':{'role':'assistant','content':'{}'}}
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);client=Client();provider=Capture()
+            worker=SimpleNamespace(store=WorkspaceStore(root/'workspace'),provider=provider,client=client,guard=threading.Lock(),running={},source_jobs=set(),tracking_uri='http://localhost:5210',model_info={})
+            sources=WorkspaceSources(root/'sources',client,worker.tracking_uri);jobs=SourceJobs(worker,sources)
+            raw=b'%PDF-frozen';sid=hashlib.sha256(raw).hexdigest();folder=sources.root/sid;folder.mkdir();(folder/'source.bin').write_bytes(raw)
+            manifest={'source_id':sid,'sha256':sid,'filename':'source.pdf','kind':'document','status':'extracted','records':[{'id':sid+':1','source_id':sid,'locator':{'page':1},'data':{'text':'EXCLUDED_PAGE_CONTENT'}},{'id':sid+':2','source_id':sid,'locator':{'page':2},'data':{'text':'SELECTED_PAGE_CONTENT'}}]}
+            (folder/'manifest.json').write_text(json.dumps(manifest))
+            job=jobs.start(sid,'Inspect selected page',source_scope={'pages':[2]})
+            active=jobs.active.get(job['id'])
+            if active:active[1].join(10)
+            messages=json.dumps(provider.messages)
+            self.assertIn('SELECTED_PAGE_CONTENT',messages)
+            self.assertNotIn('EXCLUDED_PAGE_CONTENT',messages)
+            self.assertEqual(jobs.get(job['id'])['source_scope'],{'pages':[2]})
+            saved=json.loads((jobs.root/job['id']/'source-manifest.json').read_text())
+            self.assertEqual(saved,manifest)
+            from unittest.mock import patch
+            pending={**jobs.get(job['id']),'status':'awaiting_confirmation','proposal':{},'proposal_sha256':'test-version'}
+            with patch.object(jobs,'get',return_value=pending),patch.object(jobs,'start',return_value={'id':'new'}) as start:
+                jobs.revise(job['id'],'Inspect labels too')
+                self.assertEqual(start.call_args.kwargs['source_scope'],{'pages':[2]})

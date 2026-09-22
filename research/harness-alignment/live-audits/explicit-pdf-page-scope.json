@@ -1,0 +1,37 @@
+{
+  "case": "Explicit page scope for the original PDF",
+  "job_id": "e447aaf47075462cb9ba5e09760cf50c",
+  "run_id": "b5cffc1686764eb691dc9dcfee7407da",
+  "source_scope": {
+    "pages": [
+      25
+    ]
+  },
+  "coverage": {
+    "pages": [
+      25
+    ],
+    "records_in_scope": 4,
+    "records_outside_scope": 78
+  },
+  "prompt_tokens_scoped": 3306,
+  "prompt_tokens_full_source_current_harness": 16028,
+  "token_reduction_fraction": 0.7937359620663839,
+  "comparison": "Native token preflight with the same current prompt, schema, request, model, and reserved output allowance. Full-source comparison did not generate a response. Not a latency benchmark.",
+  "outcome": "failed",
+  "error": "Plan validation failed within the two-call budget: Evidence field evidence_status is not a data field in r80. Use one of: region, text. Locator metadata is not content evidence.",
+  "task_quality": "Initial response copied source/OCR records instead of producing requested numeric timing fields. Scope efficiency does not establish task success.",
+  "preserved_original_source": true,
+  "human_review": "No acceptance or build confirmation",
+  "checks": [
+    "284 Python tests passed; scoped model messages exclude out-of-scope source examples",
+    "Revision forwards explicit scope",
+    "Desktop/mobile draft scope persists and can be cleared",
+    "Desktop/mobile coverage fixture distinguishes outside-scope records"
+  ],
+  "limitations": [
+    "Repeated development PDF, not held-out evaluation",
+    "Earlier full-source numeric proposal remains separately available",
+    "Local MongoDB backup remains unavailable; no new verified archive"
+  ]
+}

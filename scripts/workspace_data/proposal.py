@@ -60,9 +60,25 @@ def revision_messages(revision, aliases):
     ]
 
 
-def source_packet(manifest, max_chars=32000, request=''):
+def validate_source_scope(manifest, scope):
+    if scope is None:
+        return None
+    if not isinstance(scope,dict) or set(scope)!={'pages'} or not str(manifest.get('filename','')).lower().endswith('.pdf'):
+        raise ValueError('Page scope requires one PDF source and a pages list')
+    pages=scope['pages']
+    if not isinstance(pages,list) or not 1<=len(pages)<=250 or any(type(page) is not int or not 1<=page<=250 for page in pages):
+        raise ValueError('Select PDF page numbers between 1 and 250')
+    available={row.get('locator',{}).get('page') for row in manifest['records']}
+    if set(pages)-available:
+        raise ValueError('Selected PDF pages are not present in the extracted records')
+    return {'pages':sorted(set(pages))}
+
+
+def source_packet(manifest, max_chars=32000, request='', source_scope=None):
+    scope=validate_source_scope(manifest,source_scope)
     rows=manifest['records'];selected=[];used=0;excerpted=[]
-    requested_pages = set()
+    indices={i for i,row in enumerate(rows) if scope is None or row.get('locator',{}).get('page') in scope['pages']}
+    requested_pages = set(scope['pages'] if scope else [])
     for match in re.finditer(r'\bpages?\s+(\d+)(?:\s*[-–]\s*(\d+))?', request, re.I):
         first = int(match[1]); last = int(match[2] or first)
         if 1 <= first <= last <= 250:
@@ -92,7 +108,7 @@ def source_packet(manifest, max_chars=32000, request=''):
         if ranges:packet['field_excerpts']=ranges
         return packet
     # Prefer question-relevant records, then spread the remaining sample over the file.
-    stride=[i for offset in range(10) for i in range(offset,len(rows),10)]
+    stride=[i for offset in range(10) for i in range(offset,len(rows),10) if i in indices]
     def score(index):
         text=str(rows[index]['data']).lower()
         return sum(term in text for term in terms)
@@ -115,7 +131,7 @@ def source_packet(manifest, max_chars=32000, request=''):
             selected.append(value);used+=size
             if 'field_excerpts' in value:excerpted.append(value['id'])
     selected.sort(key=lambda r:int(r['id'][1:]))
-    complete=len(selected)==len(rows) and not excerpted
+    complete=len(selected)==len(indices) and not excerpted
     shown_ids = {rows[int(row['id'][1:])-1].get('source_id') for row in selected}
     member_coverage = [{'source_id':member['source_id'], 'filename':member['filename'],
                         'records_shown':sum(rows[int(row['id'][1:])-1].get('source_id') == member['source_id'] for row in selected),
@@ -126,10 +142,10 @@ def source_packet(manifest, max_chars=32000, request=''):
                      'shown':sorted(requested_pages & shown_pages),
                      'omitted':sorted((requested_pages & available_pages) - shown_pages),
                      'not_found':sorted(requested_pages - available_pages)}
-    return {'requested_page_coverage':page_coverage, 'member_coverage':member_coverage, 'record_id_map':{r['id']:rows[int(r['id'][1:])-1]['id'] for r in selected},'records':selected,
+    return {**({'source_scope':{**scope,'records_in_scope':len(indices),'records_outside_scope':len(rows)-len(indices)}} if scope else {}),'requested_page_coverage':page_coverage, 'member_coverage':member_coverage, 'record_id_map':{r['id']:rows[int(r['id'][1:])-1]['id'] for r in selected},'records':selected,
             'records_shown':len(selected),'records_total':len(rows),'excerpted_record_ids':excerpted,
             'selection_method':('round-robin across attached sources; ' if members else '')+'explicit page numbers and ranges, then question keyword ranking with distributed fallback; long fields use verbatim start, end, and first matching windows',
-            'coverage':'all records and fields' if complete else 'partial source coverage; omitted records and text were not reviewed by the model'}
+            'coverage':(('all scoped records and fields; other pages were not supplied' if scope else 'all records and fields') if complete else 'partial source coverage; omitted records and text were not reviewed by the model')}
 
 
 def structured_manifest(manifest, structure, aliases):

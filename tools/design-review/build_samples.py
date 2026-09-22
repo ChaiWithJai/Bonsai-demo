@@ -5,6 +5,8 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    '66-proposal-page-scope': ('workspace', 'Scope coverage fixture distinguishes selected records from records outside the request'),
+    '65-page-scoped-draft': ('workspace', 'Explicit PDF page scope persists in the draft and can be cleared before sending'),
     '64-recovered-proposal': ('workspace', 'Saved response revalidation restores a proposal for review without model calls or build confirmation'),
     '63-wide-timing-table': ('workspace', 'Eight-field saved timing proposal tested in an intercepted development preview'),
     '62-pdf-visual-observation': ('workspace', 'Selected PDF page observations stay separate from OCR and marked unreviewed'),

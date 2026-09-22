@@ -1793,3 +1793,48 @@ test('Saved response recovery returns measurements for review without confirming
  await values.scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/64-recovered-proposal.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Discuss this PDF page persists explicit scope until the user clears it',async({page},info)=>{
+ const sid='02f32dd8bdd1d72b2e5293c89d06b739e19f789ad35820614bdcaec3f6ac3777';
+ const sent:any[]=[];
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[]}}));
+ await page.route('**/api/workspace/sources/'+sid+'/generate',route=>{sent.push(route.request().postDataJSON());return route.fulfill({json:{status:'queued'}});});
+ await page.goto('/#/workspace');
+ await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);
+ const row=page.locator('.records > details').filter({has:page.locator('summary',{hasText:/^Page 25$/})});
+ await row.locator(':scope > summary').click();
+ await row.getByRole('button',{name:'Discuss this page',exact:true}).click();
+ const scope=page.getByLabel('Selected source scope',{exact:true});
+ await expect(scope).toContainText('Only page 25 of S82065.pdf');
+ await expect(page.getByRole('textbox',{name:'Message Research analyst',exact:true})).toBeFocused();
+ expect(sent).toHaveLength(0);
+ await page.reload();
+ await expect(scope).toContainText('Only page 25');
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/65-page-scoped-draft.'+info.project.name+'.png'),fullPage:true});
+ await page.getByRole('button',{name:'Send ↑',exact:true}).click();
+ await expect.poll(()=>sent.length).toBe(1);
+ expect(sent[0].source_scope).toEqual({pages:[25]});
+ await page.getByRole('button',{name:'Use all attached files',exact:true}).click();
+ await expect(scope).toHaveCount(0);
+ await page.getByRole('button',{name:'Send ↑',exact:true}).click();
+ await expect.poll(()=>sent.length).toBe(2);
+ expect(sent[1].source_scope).toBeNull();
+});
+
+test('Proposal coverage distinguishes records outside explicit page scope',async({page},info)=>{
+ const job=JSON.parse(await fs.readFile(path.resolve('.cache/pdf-revalidation/job.json'),'utf8'));
+ const packet=JSON.parse(await fs.readFile(path.resolve('.cache/workspace-live-v3-20260921/workspace/source-jobs/e447aaf47075462cb9ba5e09760cf50c/source-packet.json'),'utf8'));
+ job.source_coverage={...job.source_coverage,source_scope:packet.source_scope,records_shown:4,records_total:82,coverage:packet.coverage};
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.goto('/#/workspace');
+ const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);
+ await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const scope=page.getByLabel('Proposal source scope',{exact:true});
+ await expect(scope).toContainText('Scoped to PDF pages 25');
+ await expect(scope).toContainText('4 records in scope; 78 records outside this scope were not supplied');
+ await scope.scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/66-proposal-page-scope.'+info.project.name+'.png'),fullPage:true});
+});

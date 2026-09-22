@@ -81,6 +81,8 @@ The matched replay retained the measurements after the clearer repair feedback, 
 
 The [saved-response recovery](live-audits/saved-proposal-revalidation.json) then created a separate reviewable attempt from the failed run's frozen source, packet and model response. It made zero model calls and did not create a build confirmation. This lets a harness correction reuse prior model work while retaining the failed run, the changed validation rules and the new review boundary. It does not apply newer source edits or carry forward human acceptance automatically.
 
+Explicit page scope exposes a tradeoff that token counts alone would miss. For the same page-25 task, the scoped packet supplied four records and excluded 78; the profile examples were scoped too. Native preflight counted 3,306 prompt tokens versus 16,028 for the full source under the current harness. The scoped generation nevertheless copied source records instead of producing numeric timing fields, then failed after citing provenance status as content evidence. The [page-scope audit](live-audits/explicit-pdf-page-scope.json) records the efficiency gain and task failure separately. Smaller, explicit context helps enforce the user's chosen scope; it does not by itself establish better reasoning or structuring.
+
 ## What must be measured next
 
 | Stage | Evidence currently available | Evidence still needed |
