@@ -111,3 +111,18 @@ class RepairDiagnosticsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'number and order'):
             validate_schema_repair_preservation(previous,repaired)
         self.assertEqual(json.dumps(previous,sort_keys=True),frozen)
+
+class ExplicitPageScopeTest(unittest.TestCase):
+    def test_scope_filters_records_but_preserves_ids_and_reports_omissions(self):
+        manifest={'filename':'source.pdf','records':[{'id':'ocr1','locator':{'page':1},'data':{'text':'outside'}},{'id':'ocr2','locator':{'page':2},'data':{'text':'inside'}},{'id':'vision2','locator':{'page':2,'evidence_channel':'visual'},'data':{'text':'observation'}}]}
+        frozen=json.dumps(manifest)
+        packet=source_packet(manifest,source_scope={'pages':[2,2]},request='Inspect page 1 and page 2')
+        self.assertEqual(packet['record_id_map'],{'r2':'ocr2','r3':'vision2'})
+        self.assertEqual(packet['source_scope'],{'pages':[2],'records_in_scope':2,'records_outside_scope':1})
+        self.assertEqual(packet['requested_page_coverage']['omitted'],[1])
+        self.assertEqual(packet['records_total'],3)
+        self.assertNotIn('outside',json.dumps(packet['records']))
+        self.assertEqual(json.dumps(manifest),frozen)
+        for scope in ({'pages':[]},{'pages':[True]},{'pages':[4]},{'pages':['2']},{'unknown':[2]}):
+            with self.assertRaises(ValueError):source_packet(manifest,source_scope=scope)
+        with self.assertRaises(ValueError):source_packet({**manifest,'filename':'image.png'},source_scope={'pages':[2]})

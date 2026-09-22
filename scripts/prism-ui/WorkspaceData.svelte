@@ -4,7 +4,7 @@
   import WorkspaceImageEvidence from '$lib/WorkspaceImageEvidence.svelte';
   import WorkspaceProposal from '$lib/WorkspaceProposal.svelte';
   import WorkspaceProposalReview from '$lib/WorkspaceProposalReview.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import WorkspaceRecordReview from '$lib/WorkspaceRecordReview.svelte';
   let { onProject = (_id: string) => {}, initialSource = '', initialIntake = '', role = 'Research analyst', panel = $bindable('conversation') } = $props<{onProject?: (id: string) => void; initialSource?:string; initialIntake?:string; role?:string; panel?:string}>();
   type Job = {can_revalidate?:boolean;planning_run_id?:string;kind?:string;run_id?:string;id:string; source_id:string; source_ids?:string[]; filename:string; request:string; status:string; stage:string; workspace_id?:string; error?:string; mlflow_url?:string; proposal?:any; proposal_sha256?:string; reply?:string; role?:string; parent_job_id?:string; source_coverage?:any; source_examples?:any[]};
@@ -34,12 +34,19 @@
     return result;
   });
   const completedIntakeId = $derived(intakeJob?.status==='completed' ? intakeJob.id : intakeJob?.parent_job_id ?? '');
+  let pageScope = $state<{sourceId:string;page:number;filename:string} | null>(null);
+  async function discussPage(page:number) {
+    if(!source)return;
+    pageScope={sourceId:source.source_id,page,filename:source.filename};
+    if(!intent.trim())intent='Help me understand page '+page+' and propose a useful way to explore its evidence.';
+    panel='conversation';await tick();messageInput?.focus();
+  }
   let draftReady = $state(false);
   let draftNotice = $state('Restoring draft…');
   let draftStorageKey = '';
   $effect(() => {
     if (!draftReady) return;
-    const draft = {version:1, intent, intakeJobId, attached, sourceId:source?.source_id ?? '', applyReviews};
+    const draft = {version:1, intent, intakeJobId, attached, sourceId:source?.source_id ?? '', applyReviews, pageScope};
     try {
       localStorage.setItem(draftStorageKey, JSON.stringify(draft));
       draftNotice = intent || attached.length ? 'Draft saved in this browser.' : '';
@@ -48,7 +55,7 @@
     }
   });
   function clearDraft() {
-    intent=''; intakeJobId=''; attached=[]; source=null; applyReviews=false; error='';
+    intent=''; intakeJobId=''; attached=[]; source=null; pageScope=null; applyReviews=false; error='';
   }
   let fileSearch = $state('');
   let recordSearch = $state('');
@@ -66,6 +73,7 @@
   const pendingSources = $derived(attachedSources.filter(item=>item.status!=='extracted'));
   const attachmentsReady = $derived(attached.length===attachedSources.length && pendingSources.length===0);
   const effectiveIntent = $derived(intent.trim() || (source ? intakeJob?.request ?? '' : ''));
+  const generationReady = $derived(pageScope ? sources.some(item=>item.source_id===pageScope?.sourceId && item.status==='extracted') : attachmentsReady && source?.status==='extracted');
 
   const conversationJobs = $derived(jobs.filter(job => source && job.source_id === source.source_id));
   let error = $state('');
@@ -89,6 +97,7 @@
     if(source) source=await request('/'+source.source_id+'?offset='+(source.record_offset ?? 0)+'&q='+encodeURIComponent(source.record_query ?? ''));
   }
   async function removeAttachment(id:string) {
+    if(pageScope?.sourceId===id)pageScope=null;
     attached=attached.filter(value=>value!==id);
     if(!attached.length)source=null;
     else if(source?.source_id===id || source?.kind==='collection')await choose(attached[0]);
@@ -153,16 +162,17 @@
     return result;
   }
   async function generate(event: SubmitEvent) {
-    event.preventDefault(); if (runningJob || busy || !intent.trim() && !source || source && (!attachmentsReady || source.status!=='extracted' || effectiveIntent.length<10)) return;
+    event.preventDefault(); if (runningJob || busy || (!source && !pageScope ? !intent.trim() : !generationReady || effectiveIntent.length<10)) return;
     busy=true;error='';
     try {
-      if(!source){
+      if(!source && !pageScope){
         const reply=await jobRequest('/intake',{role,message:intent,parent_job_id:completedIntakeId || null});
         intakeJobId=reply.id;intent='';panel='conversation';jobs=(await jobRequest()).jobs;return;
       }
-      if(attached.length>1) { source=await request('/collection',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_ids:attached,apply_reviews:applyReviews})});await refresh(); }
+      if(pageScope)source=await request('/'+pageScope.sourceId);
+      if(!pageScope && attached.length>1) { source=await request('/collection',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_ids:attached,apply_reviews:applyReviews})});await refresh(); }
       if(!source)return;
-      await request('/'+source.source_id+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:'Role: '+role+'\n\n'+effectiveIntent,apply_reviews:applyReviews,intake_job_id:completedIntakeId || null})});
+      await request('/'+source.source_id+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:'Role: '+role+'\n\n'+effectiveIntent,apply_reviews:applyReviews,intake_job_id:completedIntakeId || null,source_scope:pageScope ? {pages:[pageScope.page]} : null})});
       jobs=(await jobRequest()).jobs;
     } catch(e) { error=String(e); } finally { busy=false; }
   }
@@ -199,6 +209,7 @@
           if(typeof saved.intakeJobId==='string' && /^[a-f0-9]{32}$/.test(saved.intakeJobId))intakeJobId=saved.intakeJobId;
           attached=saved.attached.filter((id:unknown)=>typeof id==='string' && /^[a-f0-9]{64}$/.test(id)).slice(0,20);
           applyReviews=saved.applyReviews===true;
+          if(saved.pageScope && typeof saved.pageScope.sourceId==='string' && attached.includes(saved.pageScope.sourceId) && Number.isInteger(saved.pageScope.page) && saved.pageScope.page>0 && saved.pageScope.page<=250 && typeof saved.pageScope.filename==='string')pageScope=saved.pageScope;
           if(typeof saved.sourceId==='string' && /^[a-f0-9]{64}$/.test(saved.sourceId)) {
             try { source=await request('/'+saved.sourceId); }
             catch { error='Your message is restored, but an attached source is unavailable. Remove it or attach the file again.'; }
@@ -247,7 +258,7 @@
       <form onsubmit={(event)=>{event.preventDefault();if(source)void choose(source.source_id,0,recordSearch);}}><label>Search extracted content<input bind:value={recordSearch} maxlength="200" placeholder="A phrase, name, or measurement"/></label><button type="submit" disabled={busy}>Search records</button>{#if source.record_query}<button type="button" onclick={()=>source && choose(source.source_id)} disabled={busy}>Clear content search</button>{/if}</form>
       {#if (source.record_offset ?? 0)>0 || source.next_record_offset != null}<nav aria-label="Source record pages"><button onclick={()=>source && choose(source.source_id,Math.max(0,(source.record_offset ?? 0)-100),source.record_query ?? '')} disabled={busy || !(source.record_offset ?? 0)}>Previous records</button><button onclick={()=>source && source.next_record_offset != null && choose(source.source_id,source.next_record_offset,source.record_query ?? '')} disabled={busy || source.next_record_offset == null}>Next records</button></nav>{/if}
       <details><summary>Use reviewed corrections</summary><label class="review-option"><input type="checkbox" bind:checked={applyReviews} disabled={Boolean(runningJob) || busy}/> Apply saved human corrections to a new working copy</label></details>
-      {#if source.kind === 'audio'}<section aria-label="Audio evidence"><h3>Listen and check the transcript</h3><audio controls bind:this={audioPlayer} src={'/api/workspace/sources/'+source.source_id+'/file'}></audio><div class="transcript">{#each source.records as row (row.id)}<button aria-pressed={selectedRecord===row.id} onclick={()=>{selectedRecord=row.id;if(audioPlayer){audioPlayer.currentTime=Number(row.locator.start_seconds);void audioPlayer.play().catch(()=>{});}}}>{Number(row.locator.start_seconds).toFixed(1)}s · {String(row.data.text)}</button>{/each}</div></section>{:else if source.kind === 'video'}<section aria-label="Video evidence"><h3>Check the sampled frames</h3><p>Frame observations and speech segments are separate evidence. Select a record to inspect its timestamp in the original video.</p><!-- Source video is unmodified; this workflow extracts visual samples, not a caption track. --><!-- svelte-ignore a11y_media_has_caption --><video controls muted playsinline bind:this={videoPlayer} src={'/api/workspace/sources/'+source.source_id+'/file'}></video><div class="transcript">{#each source.records as row (row.id)}<button aria-pressed={selectedRecord===row.id} onclick={()=>{selectedRecord=row.id;if(videoPlayer)videoPlayer.currentTime=Number(row.locator.time_seconds ?? row.locator.start_seconds);}}>{row.locator.evidence_channel==='speech' ? 'Speech' : 'Frame'} · {Number(row.locator.time_seconds ?? row.locator.start_seconds).toFixed(1)}s · {Object.entries(row.data).map(([key,value])=>key+': '+String(value)).join(' · ')}</button>{/each}</div></section>{:else if source.kind === 'image' && source.image_coverage}<WorkspaceImageEvidence {source} bind:selected={selectedRecord}/>{:else}<div class="records">{#each source.records as row, index (row.id)}<details><summary>{sourceLocation(row.locator, source.record_indices?.[row.id] ?? index + (source.record_offset ?? 0))}</summary>{#if source.filename.toLowerCase().endsWith('.pdf') && Number.isInteger(Number(row.locator.page)) && Number(row.locator.page)>0}<WorkspacePdfPage sourceId={source.source_id} page={Number(row.locator.page)}/>{#if row.locator.evidence_channel!=='visual'}<button onclick={()=>readVision(Number(row.locator.page))} disabled={busy || Boolean(runningJob)}>Read page {Number(row.locator.page)} with Bonsai</button><p class="fine">Adds unreviewed visual observations alongside the extracted text. Create a new proposal to use them.</p>{:else}<p class="fine">Bonsai visual observation · unreviewed</p>{/if}{/if}<dl class="record-content">{#each Object.entries(row.data) as [field, value] (field)}<div><dt>{field.replaceAll('_', ' ')}</dt><dd>{typeof value === 'string' ? value : value === null ? 'Not provided' : typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}</dd></div>{/each}</dl><details class="record-details"><summary>Source details and raw record</summary><p class="fine">Source location: {JSON.stringify(row.locator)}</p><pre>{JSON.stringify(row.data, null, 2)}</pre></details></details>{/each}</div>{/if}
+      {#if source.kind === 'audio'}<section aria-label="Audio evidence"><h3>Listen and check the transcript</h3><audio controls bind:this={audioPlayer} src={'/api/workspace/sources/'+source.source_id+'/file'}></audio><div class="transcript">{#each source.records as row (row.id)}<button aria-pressed={selectedRecord===row.id} onclick={()=>{selectedRecord=row.id;if(audioPlayer){audioPlayer.currentTime=Number(row.locator.start_seconds);void audioPlayer.play().catch(()=>{});}}}>{Number(row.locator.start_seconds).toFixed(1)}s · {String(row.data.text)}</button>{/each}</div></section>{:else if source.kind === 'video'}<section aria-label="Video evidence"><h3>Check the sampled frames</h3><p>Frame observations and speech segments are separate evidence. Select a record to inspect its timestamp in the original video.</p><!-- Source video is unmodified; this workflow extracts visual samples, not a caption track. --><!-- svelte-ignore a11y_media_has_caption --><video controls muted playsinline bind:this={videoPlayer} src={'/api/workspace/sources/'+source.source_id+'/file'}></video><div class="transcript">{#each source.records as row (row.id)}<button aria-pressed={selectedRecord===row.id} onclick={()=>{selectedRecord=row.id;if(videoPlayer)videoPlayer.currentTime=Number(row.locator.time_seconds ?? row.locator.start_seconds);}}>{row.locator.evidence_channel==='speech' ? 'Speech' : 'Frame'} · {Number(row.locator.time_seconds ?? row.locator.start_seconds).toFixed(1)}s · {Object.entries(row.data).map(([key,value])=>key+': '+String(value)).join(' · ')}</button>{/each}</div></section>{:else if source.kind === 'image' && source.image_coverage}<WorkspaceImageEvidence {source} bind:selected={selectedRecord}/>{:else}<div class="records">{#each source.records as row, index (row.id)}<details><summary>{sourceLocation(row.locator, source.record_indices?.[row.id] ?? index + (source.record_offset ?? 0))}</summary>{#if source.filename.toLowerCase().endsWith('.pdf') && Number.isInteger(Number(row.locator.page)) && Number(row.locator.page)>0}<WorkspacePdfPage sourceId={source.source_id} page={Number(row.locator.page)}/><button onclick={()=>discussPage(Number(row.locator.page))} disabled={busy}>Discuss this page</button>{#if row.locator.evidence_channel!=='visual'}<button onclick={()=>readVision(Number(row.locator.page))} disabled={busy || Boolean(runningJob)}>Read page {Number(row.locator.page)} with Bonsai</button><p class="fine">Adds unreviewed visual observations alongside the extracted text. Create a new proposal to use them.</p>{:else}<p class="fine">Bonsai visual observation · unreviewed</p>{/if}{/if}<dl class="record-content">{#each Object.entries(row.data) as [field, value] (field)}<div><dt>{field.replaceAll('_', ' ')}</dt><dd>{typeof value === 'string' ? value : value === null ? 'Not provided' : typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}</dd></div>{/each}</dl><details class="record-details"><summary>Source details and raw record</summary><p class="fine">Source location: {JSON.stringify(row.locator)}</p><pre>{JSON.stringify(row.data, null, 2)}</pre></details></details>{/each}</div>{/if}
       {#key source.source_id+':'+(source.record_offset ?? 0)+':'+(source.record_query ?? '')+':'+selectedRecord}<WorkspaceRecordReview {source} initialRecordId={selectedRecord} onSaved={refreshCurrentSource}/>{/key}
     {:else if ['document','image','audio','workbook','table','text','email'].includes(source.kind)}<p class="error" role="alert">{source.extraction_error ?? 'This file has not been extracted yet.'}</p><p class="fine">The original file is saved. Retry after fixing the extraction issue, or attach a corrected file.</p><button onclick={extractMedia} disabled={busy}>{busy ? 'Extracting…' : source.status === 'extraction_failed' ? 'Retry extraction' : 'Extract text'}</button>
     {:else}<p>Original media is saved. Extracted records and review will appear once the media workflow is connected.</p>{/if}
@@ -268,10 +279,11 @@
     </section>
   {/if}
   <form id="source-request" hidden={panel!=='conversation'} class="message-compose" onsubmit={generate}>
+    {#if pageScope}<div class="page-scope" aria-label="Selected source scope"><p>Only page {pageScope.page} of {pageScope.filename} will be used. Other pages and attachments are outside this request.</p><button type="button" onclick={()=>pageScope=null} disabled={busy}>Use all attached files</button></div>{/if}
     {#if attached.length}<div class="composer-files">{#each attached as id (id)}{@const file=sources.find(item=>item.source_id===id)}<span>{file?.filename ?? 'Attached file'}{#if file}<small>{file.status==='extracted' ? file.record_count+' records' : file.status.replaceAll('_',' ')}</small>{/if}<button type="button" aria-label={'Remove '+(file?.filename ?? 'file')} onclick={()=>removeAttachment(id)} disabled={busy}>×</button></span>{/each}<button type="button" onclick={()=>panel='files'}>Inspect files</button></div>{/if}
     <label class="message-label" for="visualization-intent">Message {role}</label><textarea id="visualization-intent" bind:this={messageInput} onkeydown={composeKey} bind:value={intent} maxlength="4000" placeholder="Tell me what you want to understand…" disabled={busy}></textarea>
-    <div class="composer-actions"><label class="attach-button">＋ Attach files<input type="file" multiple accept=".xlsx,.docx,.eml,.mbox,.csv,.tsv,.json,.jsonl,.txt,.md,.png,.jpg,.jpeg,.webp,.pdf,.wav,.mp3,.m4a,.mp4,.mov,.webm" onchange={upload} disabled={busy}/></label><button type="submit" class="send-message" disabled={Boolean(runningJob) || busy || (!source ? !intent.trim() : !attachmentsReady || source.status!=='extracted' || effectiveIntent.length<10)}>Send ↑</button></div>
-    <p class="composer-hint">{!draftReady ? 'Restoring draft…' : busy ? source ? 'Reading your files…' : 'Sending your message…' : !source ? 'Ask a question, attach files, or drop them here.' : !attachmentsReady || source.status!=='extracted' ? 'Some files need extraction. Open Files to inspect or retry.' : effectiveIntent.length<10 ? 'Describe what you want to understand (at least 10 characters).' : 'Bonsai will propose a view for your review.'}</p>
+    <div class="composer-actions"><label class="attach-button">＋ Attach files<input type="file" multiple accept=".xlsx,.docx,.eml,.mbox,.csv,.tsv,.json,.jsonl,.txt,.md,.png,.jpg,.jpeg,.webp,.pdf,.wav,.mp3,.m4a,.mp4,.mov,.webm" onchange={upload} disabled={busy}/></label><button type="submit" class="send-message" disabled={Boolean(runningJob) || busy || (!source && !pageScope ? !intent.trim() : !generationReady || effectiveIntent.length<10)}>Send ↑</button></div>
+    <p class="composer-hint">{!draftReady ? 'Restoring draft…' : busy ? source ? 'Reading your files…' : 'Sending your message…' : !source ? 'Ask a question, attach files, or drop them here.' : !generationReady ? 'Some files need extraction. Open Files to inspect or retry.' : effectiveIntent.length<10 ? 'Describe what you want to understand (at least 10 characters).' : 'Bonsai will propose a view for your review.'}</p>
     <div class="draft-status"><span role="status">{draftNotice}</span>{#if intent || attached.length}<button type="button" onclick={clearDraft} disabled={busy || Boolean(runningJob)}>Clear draft</button>{/if}</div>
   </form>
 
@@ -304,4 +316,5 @@
 .file-drop-overlay{position:fixed;inset:12px;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--card);border:2px dashed var(--ring);border-radius:20px;pointer-events:none;padding:24px;text-align:center}.file-drop-overlay strong{font-size:24px}.file-drop-overlay span{font-size:14px}.composer-files small{display:inline-block;margin-left:8px;color:var(--muted-foreground)}
 .intake-receipt{flex-shrink:0;border-left:3px solid var(--ring);padding:12px 16px;margin:12px 0;font-size:12px;max-height:210px;overflow:auto}.intake-receipt p{margin:7px 0;overflow-wrap:anywhere}.intake-receipt summary{cursor:pointer;color:var(--muted-foreground)}.intake-receipt button{background:transparent;color:inherit;text-align:left;padding:6px}.intake-receipt ul{padding-left:16px}
 .record-content{margin:16px 0;display:grid;gap:18px}.record-content div{min-width:0}.record-content dt{font-size:11px;color:var(--muted-foreground);text-transform:capitalize;margin-bottom:6px}.record-content dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.7}.record-details{margin-top:16px;font-size:12px}.record-details pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.page-scope{padding:10px 12px;border-left:3px solid var(--ring);margin-bottom:12px;font-size:12px}.page-scope p{margin:0 0 6px}.page-scope button{font-size:12px;padding:5px 8px}
 </style>

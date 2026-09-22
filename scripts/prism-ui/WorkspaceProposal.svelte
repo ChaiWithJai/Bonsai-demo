@@ -2,7 +2,7 @@
   import WorkspacePdfPage from '$lib/WorkspacePdfPage.svelte';
   import {onMount} from 'svelte';
   type Proposal = {structure?: {rationale:string;records:{values:Record<string,unknown>;evidence:{record_id:string;field:string;quote:string}[]}[]} | null;interpretation:{findings:{text:string;record_ids:string[]}[];rationale:string;uncertainties:string[];questions:string[]};plan:{title:string;summary:string;fields:{name:string;type:string}[];view:{component:string;groupBy?:string[];x?:string;y?:string;color?:string}}};
-  let {proposal, sourceFilename = '', draftKey = '', coverage, evidence = [], busy = false, readOnly = false, onConfirm, onRevise} = $props<{proposal:Proposal;sourceFilename?:string;draftKey?:string;coverage?:{records_shown:number;records_total:number;coverage:string;requested_page_coverage?:{requested:number[];shown:number[];omitted:number[];not_found:number[]};member_coverage?:{source_id:string;filename:string;records_shown:number;records_total?:number;represented:boolean}[]};evidence?:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>}[];busy?:boolean;readOnly?:boolean;onConfirm:()=>void;onRevise:(feedback:string)=>void}>();
+  let {proposal, sourceFilename = '', draftKey = '', coverage, evidence = [], busy = false, readOnly = false, onConfirm, onRevise} = $props<{proposal:Proposal;sourceFilename?:string;draftKey?:string;coverage?:{source_scope?:{pages:number[];records_in_scope:number;records_outside_scope:number};records_shown:number;records_total:number;coverage:string;requested_page_coverage?:{requested:number[];shown:number[];omitted:number[];not_found:number[]};member_coverage?:{source_id:string;filename:string;records_shown:number;records_total?:number;represented:boolean}[]};evidence?:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>}[];busy?:boolean;readOnly?:boolean;onConfirm:()=>void;onRevise:(feedback:string)=>void}>();
   let feedback=$state('');
   let draftReady=$state(false);
   let draftNotice=$state('');
@@ -61,11 +61,12 @@
 </script>
 <section class="proposal" aria-label="Bonsai proposal">
   <p class="eyebrow">BONSAI · FOR YOUR REVIEW</p><h3>Here’s what I’m seeing</h3>
+  {#if coverage?.source_scope}<p class="coverage" aria-label="Proposal source scope">Scoped to PDF pages {coverage.source_scope.pages.join(', ')}. {coverage.source_scope.records_in_scope} records in scope; {coverage.source_scope.records_outside_scope} records outside this scope were not supplied. Clear the draft page scope to discuss the full source in a new request.</p>{/if}
   {#if coverage?.requested_page_coverage?.requested.length}
     <section class="file-coverage" aria-label="Requested page coverage">
       <h4>Pages you asked Bonsai to inspect</h4>
       <p class="coverage">Included: {coverage.requested_page_coverage.shown.join(', ') || 'None'}. Included text may be excerpted; diagrams are not verified.</p>
-      {#if coverage.requested_page_coverage.omitted.length}<p class="omitted">Not read because of the evidence limit: {coverage.requested_page_coverage.omitted.join(', ')}.</p>{#if !readOnly}<button onclick={draftMissingPages} disabled={busy}>Draft a follow-up for these pages</button>{/if}{/if}
+      {#if coverage.requested_page_coverage.omitted.length}<p class="omitted">{coverage.source_scope ? 'Not supplied under the selected scope or evidence limit' : 'Not read because of the evidence limit'}: {coverage.requested_page_coverage.omitted.join(', ')}.</p>{#if !readOnly}<button onclick={draftMissingPages} disabled={busy}>Draft a follow-up for these pages</button>{/if}{/if}
       {#if coverage.requested_page_coverage.not_found.length}<p class="omitted">Not found in the supplied records: {coverage.requested_page_coverage.not_found.join(', ')}. Check the page numbers or attach the missing source.</p>{/if}
     </section>
   {/if}
