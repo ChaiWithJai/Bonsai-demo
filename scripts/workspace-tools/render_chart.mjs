@@ -50,7 +50,22 @@ export function renderChart(spec) {
   if (result.evidence.empty) throw new Error('Semiotic rendered no data marks');
   const source_contract = spec.component === 'LineChart' ? checkLineSeries(props,result.evidence) : {status:'not_assessed',scope:'Line series only'};
   const plot=result.evidence.plot;
-  const interaction = {width:result.evidence.width,height:result.evidence.height,nodes:[...positions.values()].map(node=>({...node,x:node.x+(plot?.x??0),y:node.y+(plot?.y??0)}))};
+  const points=[];
+  if (['LineChart','Scatterplot'].includes(spec.component) && plot &&
+      ['linear','time'].includes(props.xScaleType ?? 'linear') &&
+      (props.yScaleType ?? 'linear') === 'linear' &&
+      typeof props.xAccessor === 'string' && typeof props.yAccessor === 'string') {
+    const [xmin,xmax]=result.evidence.xDomain;
+    const [ymin,ymax]=result.evidence.yDomain;
+    if (xmax>xmin && ymax>ymin) for (const row of props.data) {
+      if (row[props.xAccessor] == null || row[props.yAccessor] == null) continue;
+      const x=Number(row[props.xAccessor]),y=Number(row[props.yAccessor]);
+      if (typeof row.record_id !== 'string' || !Number.isFinite(x) || !Number.isFinite(y)) continue;
+      points.push({record_id:row.record_id,x:plot.x+(x-xmin)/(xmax-xmin)*plot.width,
+        y:plot.y+(ymax-y)/(ymax-ymin)*plot.height});
+    }
+  }
+  const interaction = {width:result.evidence.width,height:result.evidence.height,points,nodes:[...positions.values()].map(node=>({...node,x:node.x+(plot?.x??0),y:node.y+(plot?.y??0)}))};
   return {...result, interaction, diagnostics, source_contract, renderer: 'semiotic@3.10.3'};
 }
 

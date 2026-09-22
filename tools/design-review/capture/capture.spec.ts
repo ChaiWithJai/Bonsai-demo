@@ -1403,3 +1403,24 @@ test('Dated series preserves separate teams and zero values',async({page},info)=
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/53-dated-series.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Timeline observations select source records and retain note drafts',async({page},info)=>{
+ const preview=JSON.parse(await fs.readFile(path.resolve('.cache/dated-series-experiment/interactive-preview.json'),'utf8'));
+ await page.goto(preview.url);
+ const points=page.getByRole('button',{name:/^Inspect observation /});
+ await expect(points).toHaveCount(6);
+ const zero=page.getByRole('button',{name:'Inspect observation 2026-09-18, 0, Orchard',exact:true});
+ await zero.click();await expect(zero).toHaveAttribute('aria-pressed','true');
+ const context=page.locator('aside .selected-context');
+ await expect(context).toHaveText('Adding a note to Record 3');
+ const note=page.getByRole('textbox',{name:'Evidence note',exact:true});await note.fill('Investigate the zero observation');
+ const other=page.getByRole('button',{name:'Inspect observation 2026-09-20, 3, Orchard',exact:true});
+ await other.focus();await page.keyboard.press('Enter');
+ await expect(context).toHaveText('Adding a note to Record 1');await expect(note).toHaveValue('');
+ await zero.click();await expect(note).toHaveValue('Investigate the zero observation');
+ await page.getByRole('button',{name:'Zoom in',exact:true}).click();
+ await expect(zero).toHaveAttribute('aria-pressed','true');
+ await page.getByRole('button',{name:'Fit chart',exact:true}).click();
+ await page.locator('.chart').scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/54-timeline-inspection.'+info.project.name+'.png'),fullPage:true});
+});
