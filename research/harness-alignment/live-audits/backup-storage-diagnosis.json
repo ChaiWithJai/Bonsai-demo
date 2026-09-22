@@ -1,0 +1,36 @@
+{
+  "observed_at": "2026-09-22T00:58:18.577817+00:00",
+  "local_mongodb": {
+    "configured_endpoint": "127.0.0.1:27028",
+    "container": "bonsai-evidence-lab-mongo-1",
+    "bind_mount": "bonsai-lab/data/mongodb",
+    "observations": [
+      "docker ps reports healthy",
+      "docker exec reports container not running",
+      "actual published ports map is empty",
+      "image content read fails with Docker storage input/output error"
+    ],
+    "recovery_attempt": "compose up --no-recreate failed reading image content; no reset, deletion, or data rewrite performed"
+  },
+  "disk": {
+    "mac_free_gib_approx": 16,
+    "mongodb_directory_gib_approx": 97,
+    "retained_restore_tests_gib_approx": 45
+  },
+  "last_verified_backup": {
+    "id": "2026-09-21T181036287671+0000",
+    "archive_bytes": 4732949164,
+    "file_count": 120908,
+    "runtime_build_file_count": 98671,
+    "runtime_build_bytes": 1424595542
+  },
+  "gb10": {
+    "mongodb_container": "imagine-memory-local",
+    "endpoint": "127.0.0.1:27019",
+    "ping": 1,
+    "disk_free_tib_approx": 2.5,
+    "separate_evidence_database_not_created": true
+  },
+  "next_decision": "User choice pending: separate GB10 evidence database or keep Mac-local storage",
+  "scope": "Infrastructure diagnosis; no new restore verification and no model-quality claim"
+}

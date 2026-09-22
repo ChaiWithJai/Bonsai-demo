@@ -255,3 +255,9 @@ The proposal was confirmed with actor codex-development-constrained-graph and bu
 Generated record cards, the selected note context and saved-note labels now use available title, name, model, stage, subject or ID fields before falling back to a source location. Long headings are bounded while full values remain in record details. This avoids fourteen indistinguishable Source record cards in the model-family view.
 
 Development project 989fd3b9fa3e4ca5be317bb8a54a176a retains its original generated revision and adds an authored test revision. Four desktop/mobile checks passed for source model headings, node membership and links, matching note context, and draft isolation while switching records. The generated Svelte build passed and autofixer reported no issues. No inference or new saved review labels were created.
+
+### Backup storage diagnosis
+
+A targeted recovery attempt confirmed Docker state inconsistency: the Mongo container is listed as healthy but cannot be executed into, has no active published host ports, and the image store returns I/O errors. Its configured data mount is still bonsai-lab/data/mongodb. No reset or deletion was performed. The Mac has approximately 16 GiB free; retained restore-test directories occupy 45 GiB. The last verified 4.7 GB archive includes about 98,500 runtime build files, indicating that archive scope needs review.
+
+GB10's separate imagine-memory-local Mongo service responds to ping on its existing port 27019 and the host has approximately 2.5 TiB free. It is not the current backup target. A user choice is pending before creating a separate Bonsai evidence database there. These findings replace the assumption that a normal local container restart could resolve the backup failure; no new backup or restored archive is claimed.
