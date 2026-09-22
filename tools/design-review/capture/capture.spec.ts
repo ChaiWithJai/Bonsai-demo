@@ -1463,11 +1463,18 @@ test('Alternative view choice drafts feedback before any revision request',async
  await page.locator('.view-choice summary').click();
  await page.getByRole('combobox',{name:'View to discuss',exact:true}).selectOption('LineChart');
  const feedback=page.getByRole('textbox',{name:'Clarify or change this proposal',exact:true});
+ await expect(page.getByRole('button',{name:'Yes, build this view',exact:true})).toBeEnabled();
  await feedback.fill('Keep the original review status wording.');
+ await expect(page.getByRole('button',{name:'Yes, build this view',exact:true})).toBeDisabled();
  await page.getByRole('button',{name:'Draft this change',exact:true}).click();
  expect(await feedback.inputValue()).toContain('Keep the original review status wording.');
  expect(await feedback.inputValue()).toContain('Follow changes over time');
  expect(sent).toHaveLength(0);
+ const draft=await feedback.inputValue();
+ await feedback.fill('');
+ await expect(page.getByRole('button',{name:'Yes, build this view',exact:true})).toBeEnabled();
+ await feedback.fill(draft);
+ await expect(page.getByRole('button',{name:'Yes, build this view',exact:true})).toBeDisabled();
  await page.locator('.view-choice').scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/56-proposal-view-choice.'+info.project.name+'.png'),fullPage:true});
  await page.getByRole('button',{name:'Discuss this change',exact:true}).click();

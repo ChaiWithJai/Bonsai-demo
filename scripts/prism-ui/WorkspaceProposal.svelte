@@ -64,7 +64,8 @@
   {#if proposal.interpretation.uncertainties.length}<h4>What remains uncertain</h4><ul>{#each proposal.interpretation.uncertainties as item (item)}<li>{item}</li>{/each}</ul>{/if}
   <h4>Does this match what you need?</h4><ul>{#each proposal.interpretation.questions as question (question)}<li>{question}</li>{/each}</ul>
   {#if !readOnly}<label>Clarify or change this proposal<textarea bind:this={feedbackInput} bind:value={feedback} maxlength="4000" placeholder="For example: group by the bottleneck being addressed, then show the evidence for each fix." disabled={busy}></textarea></label>
-  <div class="actions"><button onclick={()=>onRevise(feedback)} disabled={busy || !feedback.trim()}>Discuss this change</button><button class="confirm" onclick={onConfirm} disabled={busy}>Yes, build this view</button></div>
+  <div class="actions"><button onclick={()=>onRevise(feedback)} disabled={busy || !feedback.trim()}>Discuss this change</button><button class="confirm" onclick={onConfirm} disabled={busy || Boolean(feedback.trim())}>Yes, build this view</button></div>
+  {#if feedback.trim()}<p class="coverage" role="status">Discuss your drafted change first, or clear it to build the current proposal.</p>{/if}
   <p class="coverage">Your response stays with this proposal and its evidence. Confirming a view does not label its findings as fact or train the model.</p>{/if}
 </section>
 <style>
