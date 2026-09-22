@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import WorkspaceModelEvidence from '$lib/WorkspaceModelEvidence.svelte';
   import WorkspaceData from '$lib/WorkspaceData.svelte';
   import WorkspaceAcceptance from '$lib/WorkspaceAcceptance.svelte';
   import WorkspaceProposal from '$lib/WorkspaceProposal.svelte';
@@ -242,6 +243,7 @@
             {/each}
           </section>{/if}
           {#each requests as request (request.id)}<article class="request"><p>{request.request}</p><small>{request.status}</small></article>{/each}
+          {#if trace}<WorkspaceModelEvidence config={trace.generation_config}/>{/if}
           {#if trace?.request_checks?.length}<section class="context-card" aria-label="Checks for this attempt"><p class="eyebrow">EXPECTED RESULTS</p><ul>{#each trace.request_checks as check,i (i)}<li>{check.action === 'count' ? 'Number of records: ' + check.value : check.action === 'click' ? 'Click “'+check.target.name+'”' : check.action === 'pressed' ? '“'+check.target.name+'” is '+(check.value ? 'selected' : 'not selected') : check.target.role + ' visible: “' + check.target.name + '”'}</li>{/each}</ul><small>Fixed when this request was sent.</small></section>{/if}
           {#if content}<article class="response"><p class="eyebrow">BONSAI</p><p>{content}</p></article>{/if}
           {#if activity.length}<div class="activity" aria-label="Attempt activity">{#each activity as event (event.sequence)}<div><span class="event-dot"></span><span>{event.kind.replaceAll('.', ' ')}{event.payload.name ? ' · ' + event.payload.name : ''}</span>{#if event.payload.ok === false}<strong>Needs repair</strong>{/if}</div>{/each}</div>{/if}

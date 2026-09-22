@@ -1978,3 +1978,18 @@ test('Source proposal profile persists with draft and resets on clear',async({pa
  await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);await nav.getByRole('button',{name:'Conversation',exact:true}).click();
  await settings.locator('summary').click();await expect(profile).toHaveValue('');
 });
+
+test('Recorded proposal configuration stays independent of composer selection',async({page,request},info)=>{
+ const job=await (await request.get('/api/workspace/source-jobs/2c829db9c92e4894a9a2307f85dc19d3')).json();
+ expect(job.generation_config).toEqual({profile:'bonsai2-bounded',seed:42});
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.goto('/#/workspace');const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const recorded=page.locator('details[aria-label="Recorded model configuration"]');await recorded.locator('summary').click();
+ await expect(recorded).toContainText('Reasoning · 512-token allowance · Seed 42');
+ await page.locator('details.model-settings summary').click();await page.getByRole('combobox',{name:'Proposal generation profile',exact:true}).selectOption('bonsai2-instruct');
+ await expect(recorded).toContainText('Reasoning · 512-token allowance · Seed 42');
+ await recorded.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/74-recorded-model-configuration.'+info.project.name+'.png'),fullPage:true});
+ job.generation_config=null;await page.reload();await recorded.locator('summary').click();await expect(recorded).toContainText('Configuration was not recorded for this result');
+});
