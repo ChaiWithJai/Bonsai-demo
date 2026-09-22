@@ -16,6 +16,11 @@
       return [{key,url:link.url,kind,seconds,label:filename || 'Original source'}];
     });
   });
+  function sourceHref(value) {
+    if(typeof value!=='string' || !/^https?:\/\//i.test(value))return null;
+    try {const url=new URL(value);return ['http:','https:'].includes(url.protocol) ? url.href : null;}
+    catch {return null;}
+  }
   let group = $state('');
   let chartScale = $state(0);
   let search = $state('');
@@ -110,7 +115,7 @@
     {#if selected && !visible.some(row=>row.id===selected.id)}<p class="provenance">The record selected for your note is outside the current filters.</p>{/if}
     <div class="panes"><section aria-label="Source records"><h2>Records <small>{visible.length}</small></h2>{#each visible as row (row.id)}<article data-testid="record-row" data-record-id={row.id} class:selected={selected?.id === row.id}>
       <div class="record-heading"><h3>{String(row.data.title ?? row.data.model ?? locationLabel(row.locator))}</h3><button onclick={()=>selectRecord(row)} aria-pressed={selected?.id === row.id} aria-label={'Inspect '+row.id}>{selected?.id === row.id ? 'Selected' : 'Add note'}</button></div>
-      <dl class="record-fields">{#each Object.entries(row.data) as [field,value] (field)}<div><dt>{fieldLabel(field)}</dt><dd class:missing={value == null}>{fieldValue(value)}</dd></div>{/each}</dl>
+      <dl class="record-fields">{#each Object.entries(row.data) as [field,value] (field)}<div><dt>{fieldLabel(field)}</dt><dd class:missing={value == null}>{#if sourceHref(value)}<a href={sourceHref(value)} target="_blank" rel="noreferrer">{fieldValue(value)}</a>{:else}{fieldValue(value)}{/if}</dd></div>{/each}</dl>
       <details class="raw-data"><summary>Raw data</summary><pre data-testid="record-data">{JSON.stringify(row.data,null,2)}</pre></details>{#if row.locator.source_evidence}<details><summary>Supporting source passages</summary>{#each row.locator.source_evidence as passage,i (i)}<blockquote>{passage.quote}</blockquote>{#if model.evidence_links?.[passage.record_id]}<a href={model.evidence_links[passage.record_id].url} target="_blank" rel="noreferrer">{model.evidence_links[passage.record_id].label}</a>{/if}{/each}</details>{/if}</article>{/each}</section>
     <aside>{#if selectedMedia.length}<section class="source-media" aria-label="Selected source media"><h2>Check the original</h2>{#each selectedMedia as media (media.key)}<article><h3>{media.label} · {media.seconds.toFixed(1)}s</h3>{#if media.kind==='video'}<!-- Original source; no caption track is created by extraction. --><!-- svelte-ignore a11y_media_has_caption --><video controls playsinline preload="metadata" src={media.url} onloadedmetadata={event=>{event.currentTarget.currentTime=media.seconds;}}></video>{:else}<audio controls preload="metadata" src={media.url} onloadedmetadata={event=>{event.currentTarget.currentTime=media.seconds;}}></audio>{/if}<a href={media.url} target="_blank" rel="noreferrer">Open original source</a></article>{/each}<p class="provenance">The player shows the original file at the cited time. Extracted observations and identities still need review.</p></section>{/if}<h2>Evidence notes</h2>{#if selected}<p class="selected-context">Adding a note to <strong>{String(selected.data.title ?? selected.data.model ?? locationLabel(selected.locator))}</strong></p><form onsubmit={event=>{event.preventDefault();save();}}><label>Evidence note<textarea bind:value={note} required maxlength="4000"></textarea></label><button disabled={!note.trim() || savingNote}>{savingNote ? 'Saving note…' : 'Save note'}</button></form>{:else}<p>Select a record to attach a note.</p>{/if}{#each notes as saved (saved.id)}<article><p>{saved.note}</p><small>{locationLabel(saved.record_snapshot.locator)} · {saved.review_origin}</small></article>{/each}</aside></div>
   {:else}<p role="status">Loading source records…</p>{/if}

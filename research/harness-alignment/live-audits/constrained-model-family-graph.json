@@ -1,0 +1,37 @@
+{
+  "job_id": "8334ba023a1d4fc4b4cdfef8c077de45",
+  "planning_run_id": "6ad12d87a5f6416d96f9bc4924996672",
+  "build_run_id": "185dec82159e4e48aad2d7fb716dc4d7",
+  "project_id": "989fd3b9fa3e4ca5be317bb8a54a176a",
+  "preview": {
+    "url": "http://127.0.0.1:52381/",
+    "revision": "428572a7e9e5272b665610682176aca925472337c9afdb517ef272543c70561e"
+  },
+  "model_calls": 1,
+  "note": "model-info.json excluded from call count",
+  "view": {
+    "component": "ForceDirectedGraph",
+    "groupBy": [
+      "parameter_size",
+      "runtime"
+    ]
+  },
+  "structure": null,
+  "checks": {
+    "records": 14,
+    "original_values_preserved": true,
+    "all_node_memberships_verified": true,
+    "source_links_clickable": true,
+    "desktop": "passed",
+    "mobile": "passed"
+  },
+  "confirmation_actor": "codex-development-constrained-graph",
+  "limitations": [
+    "Cached observations from 2026-09-18; no live fetch",
+    "Categorical groups, not learned clusters",
+    "Release dates remain unknown",
+    "Existing development source, not held-out validation",
+    "No human acceptance or training labels",
+    "MongoDB backup unverified"
+  ]
+}

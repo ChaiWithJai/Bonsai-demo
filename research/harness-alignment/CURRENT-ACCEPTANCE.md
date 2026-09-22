@@ -243,3 +243,9 @@ The proposal planner now uses a JSON Schema grammar for interpretation, structur
 The first live bounded schema failed before generation because native grammar repetition complexity exceeded the runtime limit. Its request and failure remain in job 624b2b8e27b546beb365bbbde7485957. The generation schema omits repetition upper bounds while the validator and output token cap retain limits.
 
 Replay 20ba0fbeed3b453b9a63a62751883606 produced a valid proposal in one call, preserving exact stage/count/timestamp values. Baseline 22d37ef82dc74b388fb67075546b8eb1 required two calls. Source packet, model metadata and request payload apart from response_format were identical. All 252 tests pass. This is a single synthetic development comparison, not general accuracy or latency evidence. The proposal remains unconfirmed. Broader view/media coverage and a restored MongoDB backup remain open.
+
+### Constrained model-family graph
+
+The constrained planner selected ForceDirectedGraph grouped by parameter_size then runtime in one call for the existing 14-record cached source. It retained structure=null, all source fields, unknown release labels and the distinction between observation date and release date. This verifies a second view branch; the data was already used in development and is not held-out evidence.
+
+The proposal was confirmed with actor codex-development-constrained-graph and built through Semiotic. Desktop/mobile checks compared every rendered row with its original data, checked every node membership, exercised a visible 8B node and clear filters, and verified source URLs as clickable links. The desktop starter now links valid HTTP/HTTPS fields in record details. Svelte autofixer reported no issues; the generated build and its baseline checks passed. The audit and screenshots are attached to the planning/build runs. No human labels were created; backup remains unverified.
