@@ -1,0 +1,73 @@
+{
+  "case": "Explicit correction retained through proposal revision",
+  "parent_job_id": "bf946ea3176446949a7963bcb38ed474",
+  "job_id": "7e3d28a1867e429bb3aaff79ce5d6eae",
+  "run_id": "a419aa0d10834febac88969450551fb7",
+  "status": "awaiting_confirmation",
+  "actor": "codex-development-correction",
+  "source_snapshot_unchanged": true,
+  "parent_artifact_hashes_unchanged": true,
+  "configuration_inherited": {
+    "profile": "bonsai2-bounded",
+    "seed": 42
+  },
+  "scope_inherited": {
+    "pages": [
+      25
+    ]
+  },
+  "verified_values": {
+    "local_operation": {
+      "after_unit": "us",
+      "after_value": 520.0,
+      "annotation_scope": null,
+      "annotation_unit": null,
+      "annotation_value": null,
+      "before_unit": "ms",
+      "before_value": 14.0,
+      "evidence_channel": "mixed",
+      "extraction_status": "mixed",
+      "measurement_scope": "local_operation",
+      "operation_name": null,
+      "page": 25
+    },
+    "whole_run": {
+      "after_unit": "ms",
+      "after_value": 389.1,
+      "annotation_scope": null,
+      "annotation_unit": null,
+      "annotation_value": null,
+      "before_unit": "ms",
+      "before_value": 402.1,
+      "evidence_channel": "mixed",
+      "extraction_status": "mixed",
+      "measurement_scope": "whole_run",
+      "operation_name": null,
+      "page": 25
+    },
+    "annotation": {
+      "after_unit": null,
+      "after_value": null,
+      "annotation_scope": "uncertain",
+      "annotation_unit": "%",
+      "annotation_value": -3.0,
+      "before_unit": null,
+      "before_value": null,
+      "evidence_channel": "model_visual",
+      "extraction_status": "model_extracted_unreviewed",
+      "measurement_scope": "annotation",
+      "operation_name": null,
+      "page": 25
+    }
+  },
+  "model_calls": 2,
+  "result": "Explicit development correction produced source-cited numeric comparisons with correct temporal direction and preserved uncertain annotation scope.",
+  "human_acceptance": false,
+  "build_confirmed": false,
+  "limitations": [
+    "The correction supplied expected values, so this is correction adherence, not independent extraction accuracy",
+    "Repeated development PDF, not held-out evaluation",
+    "RecordTable proposal, not a rendered or accepted UI",
+    "No new verified MongoDB archive"
+  ]
+}
