@@ -2029,3 +2029,19 @@ test('Presentation intake reports slide coverage and keeps citations',async({pag
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/76-presentation-coverage.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Presentation generated view retains unplotted observation and original deck',async({page,request},info)=>{
+ const project=await (await request.get('/api/workspace/e07a9297a91d40689a0779550797a3fc')).json();
+ await page.goto(project.preview.url);
+ await expect(page.getByTestId('record-row')).toHaveCount(4);
+ await expect(page.getByRole('button',{name:/^Inspect observation /})).toHaveCount(3);
+ await page.getByRole('searchbox',{name:'Search records',exact:true}).fill('Awaiting update');
+ const row=page.getByTestId('record-row');await expect(row).toHaveCount(1);await expect(row).toContainText('Willow');await expect(row).toContainText('Not provided');
+ await row.getByText('Supporting source passages',{exact:true}).click();await expect(row).toContainText('Theo did not report an issue count');
+ const link=row.getByRole('link',{name:'Open original source',exact:true});const response=await request.get(await link.getAttribute('href'));
+ expect(response.ok()).toBe(true);
+ const expected=await fs.readFile(path.resolve('research/harness-alignment/fixtures/desktop-regressions/development-team-review.pptx'));
+ expect(await response.body()).toEqual(expected);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/77-presentation-generated-view.'+info.project.name+'.png'),fullPage:true});
+});

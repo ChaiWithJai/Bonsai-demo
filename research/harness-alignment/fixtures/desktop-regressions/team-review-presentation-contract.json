@@ -1,0 +1,41 @@
+{
+  "source_file": "development-team-review.pptx",
+  "source_sha256": "58a2a57847a319bb6f814e2671357a3b9d216ad1fc87d806f4a969810052a660",
+  "request": "Help our team explore how the open issues changed across these project reviews. Keep every dated observation and let us inspect the source evidence when discussing a point. Show missing counts honestly. Propose a useful interactive view and check your interpretation with me before building it. This deck contains synthetic development data.",
+  "generation_config": {
+    "profile": "bonsai2-bounded",
+    "seed": 42
+  },
+  "expected_observations": [
+    {
+      "date": "2026-09-16",
+      "project": "Juniper",
+      "owner": "Mira",
+      "count": 8,
+      "status": "Needs revision"
+    },
+    {
+      "date": "2026-09-16",
+      "project": "Willow",
+      "owner": "Theo",
+      "count": 3,
+      "status": "Needs revision"
+    },
+    {
+      "date": "2026-09-19",
+      "project": "Juniper",
+      "owner": "Mira",
+      "count": 0,
+      "status": "Ready for review"
+    },
+    {
+      "date": "2026-09-19",
+      "project": "Willow",
+      "owner": "Theo",
+      "count": null,
+      "status": "Awaiting update"
+    }
+  ],
+  "evaluation": "Inspect semantic field mapping, retain all four observations, do not imply approval, distinguish missing from zero, verify source citations and chart interactions. Chart and field names are not prescribed in the request.",
+  "scope": "Fresh synthetic development input, not held-out user data or a human training label"
+}

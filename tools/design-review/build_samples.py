@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "77-presentation-generated-view": ("workspace", "Generated deck view retains an unplotted unknown count and original slide evidence"),
     "76-presentation-coverage": ("workspace", "PowerPoint upload with slide citations and explicit unread coverage"),
     "75-embedded-workstream-exploration": ("workspace", "Embedded preview search, source passages, and return through workspace tabs"),
     "74-recorded-model-configuration": ("workspace", "Saved result configuration remains independent of composer choices"),

@@ -1,0 +1,200 @@
+{
+  "scope": "Fresh synthetic PowerPoint to proposal, conversational correction, and generated interface",
+  "contract": "fixtures/desktop-regressions/team-review-presentation-contract.json",
+  "source_sha256": "58a2a57847a319bb6f814e2671357a3b9d216ad1fc87d806f4a969810052a660",
+  "harness_commit": "5df4a0f7191651c635583177e4dba8b4b22fc713",
+  "generation_config": {
+    "profile": "bonsai2-bounded",
+    "seed": 42
+  },
+  "initial": {
+    "job_id": "a551ac4c165747d1b624ce610cfa5003",
+    "planning_run_id": "4f8bd53514f647819c39e9c276abc6d8",
+    "elapsed_seconds": 62.618,
+    "model_calls": 1,
+    "assessment": {
+      "checks": {
+        "source_hash": true,
+        "record_values": true,
+        "citations": true,
+        "slide_locations": true
+      },
+      "field_mapping": {
+        "date": "review_date",
+        "project": "project",
+        "owner": "reporter",
+        "count": "open_issue_count",
+        "status": "review_status"
+      },
+      "mapping_origin": "Codex semantic review after generation; expected values frozen before inference",
+      "view": {
+        "component": "RecordTable",
+        "columns": [
+          "review_date",
+          "open_issue_count",
+          "project",
+          "review_status",
+          "reporter"
+        ]
+      },
+      "rows": 4,
+      "chart_points": 0,
+      "excluded_record_ids": [],
+      "interpretation": {
+        "findings": [
+          {
+            "text": "The dated observations show Juniper open issues changed from 8 to 0 between 2026-09-16 and 2026-09-19.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:2",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:5"
+            ]
+          },
+          {
+            "text": "Willow has one dated observation with a count of 3 and one dated observation explicitly marked as unreported.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:3",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:6"
+            ]
+          },
+          {
+            "text": "The deck distinguishes missing counts from zero and asks that each observation remain tied to source evidence.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:9",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:10"
+            ]
+          }
+        ],
+        "rationale": "A record table lets the team inspect each dated review observation side by side, preserve missing counts as null, and trace every point to the exact source record. It matches the question by focusing on issue counts and status across project reviews.",
+        "uncertainties": [
+          "Only slide text and table cells are available; charts, images, speaker notes, and visual layout were not interpreted.",
+          "The deck does not contain additional dated observations beyond the six provided observations."
+        ],
+        "questions": [
+          "Should missing Willow counts remain null in the table, or would you prefer a separate 'reported' flag with null count?",
+          "Do you want the initial view to include only date, project, reporter, open issue count, and review status?",
+          "Should 'Ready for review' be treated as a status only, without implying approval, as the deck states?"
+        ]
+      },
+      "passed_values_and_citations": true,
+      "human_acceptance": false
+    },
+    "interpretation_error": "Uncertainty text says six observations although source and structured data contain four.",
+    "view_assessment": "A table preserves the data but does not directly visualize change over time."
+  },
+  "correction": {
+    "job_id": "2dbbd4b2699342a39f7c1d02c56ef2e7",
+    "planning_run_id": "b84b3d132dba4b3eb7721605c9cb9358",
+    "build_run_id": "c6221277d5f04077b95b8ddcc66a1017",
+    "elapsed_planning_seconds": 77.094,
+    "model_calls": 1,
+    "feedback": "Your explanation says six observations, but your structured data has four. Please reconcile the explanation with the source. I want to see change over time, so propose a scatterplot with date on the horizontal axis, issue count on the vertical axis, and project as the color. Keep all existing observations and citations; the missing count must remain available to inspect without inventing a plotted value. Keep the source distinction between ready for review and approval.",
+    "assessment": {
+      "checks": {
+        "source_hash": true,
+        "record_values": true,
+        "citations": true,
+        "slide_locations": true
+      },
+      "field_mapping": {
+        "date": "review_date",
+        "project": "project",
+        "owner": "reporter",
+        "count": "open_issue_count",
+        "status": "review_status"
+      },
+      "mapping_origin": "Codex semantic review after generation; expected values frozen before inference",
+      "view": {
+        "component": "Scatterplot",
+        "x": "review_date",
+        "y": "open_issue_count",
+        "color": "project"
+      },
+      "rows": 4,
+      "chart_points": 3,
+      "excluded_record_ids": [
+        "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:3:e8c45cd41a6bb549128c"
+      ],
+      "interpretation": {
+        "findings": [
+          {
+            "text": "The dated observations show Juniper open issues changed from 8 to 0 between 2026-09-16 and 2026-09-19.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:2",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:5"
+            ]
+          },
+          {
+            "text": "Willow has one dated observation with a count of 3 and one dated observation explicitly marked as unreported.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:3",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:6"
+            ]
+          },
+          {
+            "text": "The deck distinguishes missing counts from zero and asks that each observation remain tied to source evidence.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:9",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:10"
+            ]
+          },
+          {
+            "text": "The deck states 'Ready for review' is not the same as approval.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:8"
+            ]
+          }
+        ],
+        "rationale": "A scatterplot with date on the x-axis, open issue count on the y-axis, and project as color directly shows change over time while keeping each dated observation inspectable and preserving the null for the missing Willow count. It keeps the source distinction between review readiness and approval intact.",
+        "uncertainties": [
+          "Only slide text and table cells are available; charts, images, speaker notes, and visual layout were not interpreted.",
+          "The deck contains four dated observations, not six as previously stated in error.",
+          "A scatterplot cannot plot the null count for obs-4; it remains available for inspection in the underlying data without inventing a plotted value."
+        ],
+        "questions": [
+          "Is it acceptable that obs-4 (Willow, 2026-09-19) appears in the data but has no plotted point because the count is null?",
+          "Should the scatterplot include a marker or tooltip that flags 'no count reported' for the missing observation?",
+          "Would you like review status included as an additional tooltip or annotation on each point, given that 'Ready for review' does not mean approval?"
+        ]
+      },
+      "passed_values_and_citations": true,
+      "human_acceptance": false
+    },
+    "records_and_citations_unchanged": true,
+    "explanation_corrected": true,
+    "status": "completed",
+    "workspace_id": "e07a9297a91d40689a0779550797a3fc",
+    "confirmation_actor": "codex-development-presentation-build"
+  },
+  "browser_check": {
+    "passed": true,
+    "scope": "Source fidelity, chart loading, filtering and note persistence; not human design quality",
+    "chart_record_selection": [
+      "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:0:24571dbf0f01d2e91be2",
+      "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:1:c97cab79db6c6a39937f",
+      "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:2:466d7a953e51e247100d"
+    ],
+    "record_ids": [
+      "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:0:24571dbf0f01d2e91be2",
+      "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:1:c97cab79db6c6a39937f",
+      "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:2:466d7a953e51e247100d",
+      "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:3:e8c45cd41a6bb549128c"
+    ],
+    "note_persistence": true,
+    "runtime_errors": []
+  },
+  "additional_browser_checks": {
+    "desktop": "passed",
+    "mobile": "passed",
+    "unplotted_record_inspectable": true,
+    "source_download_equals_original_bytes": true
+  },
+  "visual_inspection": "Codex inspected mobile view: three chart targets, four records, zero distinct from Not provided, source quotes available. No human design acceptance.",
+  "limitations": [
+    "Synthetic data, not held-out user data.",
+    "Initial request did not prescribe chart or fields; follow-up explicitly prescribed the scatterplot mapping.",
+    "Passing data checks did not catch the initial prose count error.",
+    "No slide images, charts, speaker notes, or visual layout were interpreted.",
+    "No new verified MongoDB backup."
+  ],
+  "human_acceptance": false
+}
