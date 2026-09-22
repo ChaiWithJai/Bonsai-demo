@@ -65,3 +65,31 @@ class CompiledRetentionTest(unittest.TestCase):
             validate_retained_interactions(self.compiled,{'interaction':{'nodes':[{'id':'group1'}]}},['a','b'])
         result=validate_retained_interactions(self.compiled,{'interaction':{'nodes':[{'id':'group1'},{'id':'group2'}]}},['a','b'])
         self.assertEqual(result['checked_targets'],'group_targets')
+
+    def test_missing_scatter_coordinate_retains_record_without_invented_point(self):
+        from workspace_data.task_contract import validate_retained_interactions
+        self.compiled['rows']=[{'id':'a','data':{'date':'2026-09-14','count':0}}, {'id':'b','data':{'date':'2026-09-15','count':None}}]
+        self.compiled['plan']={'view':{'x':'date','y':'count'}}
+        self.compiled['excluded_record_ids']=['b']
+        self.compiled['chart']['props']['data']=[{'record_id':'a'}]
+        evidence={'interaction':{'points':[{'record_id':'a'}]}}
+        result=validate_retained_interactions(self.compiled,evidence,['a','b'])
+        self.assertEqual(result['retained_rows'],2)
+        self.assertEqual(result['unplotted_retained_rows'],1)
+        self.compiled['rows'][1]['data']['count']=0
+        with self.assertRaisesRegex(ValueError,'explicitly missing'):
+            validate_retained_interactions(self.compiled,evidence,['a','b'])
+        self.compiled['rows'][1]['data']['count']=None
+        self.compiled['chart']['props']['data'].append({'record_id':'b'})
+        with self.assertRaisesRegex(ValueError,'Chart data'):
+            validate_retained_interactions(self.compiled,evidence,['a','b'])
+
+    def test_missing_record_exception_does_not_allow_line_gaps_or_unknown_ids(self):
+        from workspace_data.task_contract import validate_compiled_retention
+        self.compiled['excluded_record_ids']=['missing']
+        with self.assertRaisesRegex(ValueError,'explicitly missing'):
+            validate_compiled_retention(self.compiled,['a','b'])
+        self.compiled['excluded_record_ids']=['b']
+        self.compiled['chart']['component']='LineChart'
+        with self.assertRaisesRegex(ValueError,'explicitly missing'):
+            validate_compiled_retention(self.compiled,['a','b'])

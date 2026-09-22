@@ -1,0 +1,24 @@
+{
+  "scope": "Offline retention validation against frozen meeting-note compilation and actual render evidence",
+  "source_job_id": "2c829db9c92e4894a9a2307f85dc19d3",
+  "required_observation_ids": [
+    "a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4:1",
+    "a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4:2",
+    "a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4:3",
+    "a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4:4"
+  ],
+  "result": {
+    "required_source_records": 4,
+    "retained_rows": 4,
+    "checked_targets": "point_targets",
+    "unplotted_retained_rows": 1,
+    "status": "passed",
+    "scope": "Source identities and interaction targets; not geometry, factual accuracy or human acceptance"
+  },
+  "model_calls": 0,
+  "behavior": "All four observation rows retained; three chart interaction targets; one explicitly null count remains unplotted",
+  "limits": [
+    "The four observation records are selected for this offline validator check; this does not apply a new contract to the original five-record upload or rewrite the job",
+    "No new inference, human acceptance, or verified MongoDB backup"
+  ]
+}
