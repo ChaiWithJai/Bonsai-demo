@@ -7,7 +7,7 @@
   import { onMount, tick } from 'svelte';
   import WorkspaceRecordReview from '$lib/WorkspaceRecordReview.svelte';
   let { onProject = (_id: string) => {}, initialSource = '', initialIntake = '', role = 'Research analyst', panel = $bindable('conversation') } = $props<{onProject?: (id: string) => void; initialSource?:string; initialIntake?:string; role?:string; panel?:string}>();
-  type Job = {can_revalidate?:boolean;planning_run_id?:string;kind?:string;run_id?:string;id:string; source_id:string; source_ids?:string[]; filename:string; request:string; status:string; stage:string; workspace_id?:string; error?:string; mlflow_url?:string; proposal?:any; proposal_sha256?:string; reply?:string; role?:string; parent_job_id?:string; source_coverage?:any; source_examples?:any[]};
+  type Job = {task_record_ids?:string[];can_revalidate?:boolean;planning_run_id?:string;kind?:string;run_id?:string;id:string; source_id:string; source_ids?:string[]; filename:string; request:string; status:string; stage:string; workspace_id?:string; error?:string; mlflow_url?:string; proposal?:any; proposal_sha256?:string; reply?:string; role?:string; parent_job_id?:string; source_coverage?:any; source_examples?:any[]};
   function sourceLocation(locator: Record<string, unknown>, index: number) {
     if (locator.sheet != null && locator.cell != null) return String(locator.sheet) + ' · ' + locator.cell;
     if (locator.body_block != null) return 'Document block ' + locator.body_block + (locator.table_row != null ? ' · table row ' + locator.table_row : ' · paragraph');
@@ -34,6 +34,7 @@
     return result;
   });
   const completedIntakeId = $derived(intakeJob?.status==='completed' ? intakeJob.id : intakeJob?.parent_job_id ?? '');
+  let preserveRecords = $state(false);
   let pageScope = $state<{sourceId:string;page:number;filename:string} | null>(null);
   async function discussPage(page:number) {
     if(!source)return;
@@ -46,7 +47,7 @@
   let draftStorageKey = '';
   $effect(() => {
     if (!draftReady) return;
-    const draft = {version:1, intent, intakeJobId, attached, sourceId:source?.source_id ?? '', applyReviews, pageScope};
+    const draft = {version:1, intent, intakeJobId, attached, sourceId:source?.source_id ?? '', applyReviews, pageScope, preserveRecords};
     try {
       localStorage.setItem(draftStorageKey, JSON.stringify(draft));
       draftNotice = intent || attached.length ? 'Draft saved in this browser.' : '';
@@ -55,7 +56,7 @@
     }
   });
   function clearDraft() {
-    intent=''; intakeJobId=''; attached=[]; source=null; pageScope=null; applyReviews=false; error='';
+    intent=''; intakeJobId=''; attached=[]; source=null; pageScope=null; preserveRecords=false; applyReviews=false; error='';
   }
   let fileSearch = $state('');
   let recordSearch = $state('');
@@ -172,7 +173,7 @@
       if(pageScope)source=await request('/'+pageScope.sourceId);
       if(!pageScope && attached.length>1) { source=await request('/collection',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_ids:attached,apply_reviews:applyReviews})});await refresh(); }
       if(!source)return;
-      await request('/'+source.source_id+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:'Role: '+role+'\n\n'+effectiveIntent,apply_reviews:applyReviews,intake_job_id:completedIntakeId || null,source_scope:pageScope ? {pages:[pageScope.page]} : null})});
+      await request('/'+source.source_id+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:'Role: '+role+'\n\n'+effectiveIntent,apply_reviews:applyReviews,intake_job_id:completedIntakeId || null,source_scope:pageScope ? {pages:[pageScope.page]} : null,task_contract:preserveRecords ? {record_policy:'one_per_source_record'} : null})});
       jobs=(await jobRequest()).jobs;
     } catch(e) { error=String(e); } finally { busy=false; }
   }
@@ -209,6 +210,7 @@
           if(typeof saved.intakeJobId==='string' && /^[a-f0-9]{32}$/.test(saved.intakeJobId))intakeJobId=saved.intakeJobId;
           attached=saved.attached.filter((id:unknown)=>typeof id==='string' && /^[a-f0-9]{64}$/.test(id)).slice(0,20);
           applyReviews=saved.applyReviews===true;
+          preserveRecords=saved.preserveRecords===true;
           if(saved.pageScope && typeof saved.pageScope.sourceId==='string' && attached.includes(saved.pageScope.sourceId) && Number.isInteger(saved.pageScope.page) && saved.pageScope.page>0 && saved.pageScope.page<=250 && typeof saved.pageScope.filename==='string')pageScope=saved.pageScope;
           if(typeof saved.sourceId==='string' && /^[a-f0-9]{64}$/.test(saved.sourceId)) {
             try { source=await request('/'+saved.sourceId); }
@@ -266,7 +268,7 @@
   </div>
   <div class="conversation-thread" hidden={panel!=='conversation'}>
   {#if intakeHistory.length}<section class="intake-history" aria-label="Conversation before attachment">{#each intakeHistory as turn (turn.id)}<p class="intake-user">{turn.request}</p>{#if turn.reply}<p class="intake-reply">{turn.reply}</p>{:else}<p role="status">{turn.stage}</p>{/if}{#if turn.error}<p class="error" role="alert">{turn.error}</p>{/if}{#if ['queued','running'].includes(turn.status)}<button onclick={()=>cancel(turn.id)}>Stop reply</button>{/if}<details><summary>Reply evidence</summary><p>No source files were read in this reply.</p>{#if turn.mlflow_url}<a href={turn.mlflow_url} target="_blank" rel="noreferrer">View MLflow trace</a>{/if}</details>{/each}</section>{/if}
-  {#if conversationJobs.length}<section class="jobs" aria-label="Visualization jobs"><h3>Your conversation with Bonsai</h3>{#each conversationJobs.slice(0,1) as job (job.id)}<article><strong>{job.filename}</strong><p>{job.request}</p><p role="status">{job.stage} · {job.status}</p>{#if job.proposal}<WorkspaceProposal sourceFilename={job.filename} draftKey={job.id+':'+(job.proposal_sha256 ?? '')} readOnly={job.status !== 'awaiting_confirmation'} proposal={job.proposal} coverage={job.source_coverage} evidence={job.source_examples} busy={busy || Boolean(runningJob)} onConfirm={()=>respondToProposal(job)} onRevise={(feedback)=>respondToProposal(job,feedback)}/>{/if}{#if job.proposal}{#key job.id}<WorkspaceProposalReview jobId={job.id}/>{/key}{/if}{#if job.error}<p class="error">{job.error}</p>{/if}{#if ['queued','running'].includes(job.status)}<button onclick={()=>cancel(job.id)}>Cancel generation</button>{/if}{#if job.can_revalidate}<button onclick={()=>revalidateSaved(job)} disabled={busy}>Check saved response again</button><p class="fine">Use the current validation rules with the saved source and response. No new inference.</p>{/if}{#if job.status==='failed' && job.planning_run_id}<button onclick={()=>retryBuild(job)} disabled={busy || Boolean(runningJob)}>Retry confirmed build</button>{/if}{#if job.workspace_id}<button onclick={()=>onProject(job.workspace_id!)}>{job.status === 'completed' ? 'Open editable project' : 'Inspect saved project'}</button>{/if}{#if job.mlflow_url}<a href={job.mlflow_url} target="_blank" rel="noreferrer">MLflow evidence</a>{/if}</article>{/each}{#if conversationJobs.length > 1}<details><summary>Earlier proposals and attempts ({conversationJobs.length - 1})</summary>{#each conversationJobs.slice(1) as old (old.id)}<p>{old.filename} · {old.stage} · {old.status}{#if old.can_revalidate} <button onclick={()=>revalidateSaved(old)} disabled={busy}>Check saved response again</button>{/if}{#if old.mlflow_url} <a href={old.mlflow_url} target="_blank" rel="noreferrer">Evidence</a>{/if}</p>{/each}</details>{/if}</section>{/if}
+  {#if conversationJobs.length}<section class="jobs" aria-label="Visualization jobs"><h3>Your conversation with Bonsai</h3>{#each conversationJobs.slice(0,1) as job (job.id)}<article><strong>{job.filename}</strong><p>{job.request}</p><p role="status">{job.stage} · {job.status}</p>{#if job.proposal}<WorkspaceProposal retentionCount={job.task_record_ids?.length ?? 0} sourceFilename={job.filename} draftKey={job.id+':'+(job.proposal_sha256 ?? '')} readOnly={job.status !== 'awaiting_confirmation'} proposal={job.proposal} coverage={job.source_coverage} evidence={job.source_examples} busy={busy || Boolean(runningJob)} onConfirm={()=>respondToProposal(job)} onRevise={(feedback)=>respondToProposal(job,feedback)}/>{/if}{#if job.proposal}{#key job.id}<WorkspaceProposalReview jobId={job.id}/>{/key}{/if}{#if job.error}<p class="error">{job.error}</p>{/if}{#if ['queued','running'].includes(job.status)}<button onclick={()=>cancel(job.id)}>Cancel generation</button>{/if}{#if job.can_revalidate}<button onclick={()=>revalidateSaved(job)} disabled={busy}>Check saved response again</button><p class="fine">Use the current validation rules with the saved source and response. No new inference.</p>{/if}{#if job.status==='failed' && job.planning_run_id}<button onclick={()=>retryBuild(job)} disabled={busy || Boolean(runningJob)}>Retry confirmed build</button>{/if}{#if job.workspace_id}<button onclick={()=>onProject(job.workspace_id!)}>{job.status === 'completed' ? 'Open editable project' : 'Inspect saved project'}</button>{/if}{#if job.mlflow_url}<a href={job.mlflow_url} target="_blank" rel="noreferrer">MLflow evidence</a>{/if}</article>{/each}{#if conversationJobs.length > 1}<details><summary>Earlier proposals and attempts ({conversationJobs.length - 1})</summary>{#each conversationJobs.slice(1) as old (old.id)}<p>{old.filename} · {old.stage} · {old.status}{#if old.can_revalidate} <button onclick={()=>revalidateSaved(old)} disabled={busy}>Check saved response again</button>{/if}{#if old.mlflow_url} <a href={old.mlflow_url} target="_blank" rel="noreferrer">Evidence</a>{/if}</p>{/each}</details>{/if}</section>{/if}
   </div>
   {#if panel==='activity'}<section class="runtime-panel"><h2>Runtime activity</h2>{#if busy}<p role="status">Processing your files…</p>{:else if runningJob}<p role="status">{runningJob.stage}</p>{:else}<p>No task is running.</p>{/if}{#each conversationJobs as job (job.id)}<article><strong>{job.stage}</strong><p>{job.status.replaceAll('_',' ')}</p>{#if job.error}<p class="error">{job.error}</p>{/if}{#if job.mlflow_url}<a href={job.mlflow_url} target="_blank" rel="noreferrer">View run evidence</a>{/if}</article>{/each}</section>{/if}
   {#if error}<p class="error" role="alert">{error}</p>{/if}
@@ -281,6 +283,7 @@
   <form id="source-request" hidden={panel!=='conversation'} class="message-compose" onsubmit={generate}>
     {#if pageScope}<div class="page-scope" aria-label="Selected source scope"><p>Only page {pageScope.page} of {pageScope.filename} will be used. Other pages and attachments are outside this request.</p><button type="button" onclick={()=>pageScope=null} disabled={busy}>Use all attached files</button></div>{/if}
     {#if attached.length}<div class="composer-files">{#each attached as id (id)}{@const file=sources.find(item=>item.source_id===id)}<span>{file?.filename ?? 'Attached file'}{#if file}<small>{file.status==='extracted' ? file.record_count+' records' : file.status.replaceAll('_',' ')}</small>{/if}<button type="button" aria-label={'Remove '+(file?.filename ?? 'file')} onclick={()=>removeAttachment(id)} disabled={busy}>×</button></span>{/each}<button type="button" onclick={()=>panel='files'}>Inspect files</button></div>{/if}
+    {#if attached.length}<details class="data-requirements"><summary>Data requirements{preserveRecords ? ' · Preserve every record' : ''}</summary><label class="review-option"><input type="checkbox" bind:checked={preserveRecords} disabled={busy || Boolean(runningJob)}/> Keep one output row per source record</label><p class="fine">Preserve each extracted message or data row separately. Check the records in Files before choosing this requirement. Supports up to 30 records within the selected source scope.</p></details>{/if}
     <label class="message-label" for="visualization-intent">Message {role}</label><textarea id="visualization-intent" bind:this={messageInput} onkeydown={composeKey} bind:value={intent} maxlength="4000" placeholder="Tell me what you want to understand…" disabled={busy}></textarea>
     <div class="composer-actions"><label class="attach-button">＋ Attach files<input type="file" multiple accept=".xlsx,.docx,.eml,.mbox,.csv,.tsv,.json,.jsonl,.txt,.md,.png,.jpg,.jpeg,.webp,.pdf,.wav,.mp3,.m4a,.mp4,.mov,.webm" onchange={upload} disabled={busy}/></label><button type="submit" class="send-message" disabled={Boolean(runningJob) || busy || (!source && !pageScope ? !intent.trim() : !generationReady || effectiveIntent.length<10)}>Send ↑</button></div>
     <p class="composer-hint">{!draftReady ? 'Restoring draft…' : busy ? source ? 'Reading your files…' : 'Sending your message…' : !source ? 'Ask a question, attach files, or drop them here.' : !generationReady ? 'Some files need extraction. Open Files to inspect or retry.' : effectiveIntent.length<10 ? 'Describe what you want to understand (at least 10 characters).' : 'Bonsai will propose a view for your review.'}</p>

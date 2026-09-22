@@ -2,7 +2,7 @@
   import WorkspacePdfPage from '$lib/WorkspacePdfPage.svelte';
   import {onMount} from 'svelte';
   type Proposal = {structure?: {rationale:string;records:{values:Record<string,unknown>;evidence:{record_id:string;field:string;quote:string}[]}[]} | null;interpretation:{findings:{text:string;record_ids:string[]}[];rationale:string;uncertainties:string[];questions:string[]};plan:{title:string;summary:string;fields:{name:string;type:string}[];view:{component:string;groupBy?:string[];x?:string;y?:string;color?:string}}};
-  let {proposal, sourceFilename = '', draftKey = '', coverage, evidence = [], busy = false, readOnly = false, onConfirm, onRevise} = $props<{proposal:Proposal;sourceFilename?:string;draftKey?:string;coverage?:{structured_usage?:{supplied_records:number;cited_records:number;uncited_record_ids:string[];scope:string} | null;source_scope?:{pages:number[];records_in_scope:number;records_outside_scope:number};records_shown:number;records_total:number;coverage:string;requested_page_coverage?:{requested:number[];shown:number[];omitted:number[];not_found:number[]};member_coverage?:{source_id:string;filename:string;records_shown:number;records_total?:number;represented:boolean}[]};evidence?:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>}[];busy?:boolean;readOnly?:boolean;onConfirm:()=>void;onRevise:(feedback:string)=>void}>();
+  let {proposal, retentionCount = 0, sourceFilename = '', draftKey = '', coverage, evidence = [], busy = false, readOnly = false, onConfirm, onRevise} = $props<{proposal:Proposal;retentionCount?:number;sourceFilename?:string;draftKey?:string;coverage?:{structured_usage?:{supplied_records:number;cited_records:number;uncited_record_ids:string[];scope:string} | null;source_scope?:{pages:number[];records_in_scope:number;records_outside_scope:number};records_shown:number;records_total:number;coverage:string;requested_page_coverage?:{requested:number[];shown:number[];omitted:number[];not_found:number[]};member_coverage?:{source_id:string;filename:string;records_shown:number;records_total?:number;represented:boolean}[]};evidence?:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>}[];busy?:boolean;readOnly?:boolean;onConfirm:()=>void;onRevise:(feedback:string)=>void}>();
   let feedback=$state('');
   let draftReady=$state(false);
   let draftNotice=$state('');
@@ -68,6 +68,7 @@
 </script>
 <section class="proposal" aria-label="Bonsai proposal">
   <p class="eyebrow">BONSAI · FOR YOUR REVIEW</p><h3>Here’s what I’m seeing</h3>
+  {#if retentionCount}<p class="coverage" aria-label="Record retention requirement">Required: one output row for each of the {retentionCount} source records. Revisions retain this requirement.</p>{/if}
   {#if coverage?.source_scope}<p class="coverage" aria-label="Proposal source scope">Scoped to PDF pages {coverage.source_scope.pages.join(', ')}. {coverage.source_scope.records_in_scope} records in scope; {coverage.source_scope.records_outside_scope} records outside this scope were not supplied. Clear the draft page scope to discuss the full source in a new request.</p>{/if}
   {#if coverage?.requested_page_coverage?.requested.length}
     <section class="file-coverage" aria-label="Requested page coverage">

@@ -1,0 +1,25 @@
+{
+  "scope": "Explicit record-retention choice in source-to-UI conversation",
+  "behavior": [
+    "Off by default in Data requirements",
+    "Saved with the local draft and cleared by Clear draft",
+    "Generation includes one_per_source_record only when selected",
+    "Saved proposal displays its frozen required record count"
+  ],
+  "checks": [
+    "Four desktop/mobile browser checks passed with generation requests intercepted",
+    "Svelte check: zero errors and warnings",
+    "Production build passed",
+    "Autofixer: no issues; existing persistence and focus suggestions reviewed"
+  ],
+  "screens": [
+    "68-record-retention-draft.desktop.png",
+    "68-record-retention-draft.mobile.png",
+    "69-record-retention-proposal.desktop.png",
+    "69-record-retention-proposal.mobile.png"
+  ],
+  "limits": [
+    "Browser generation calls were intercepted; no new model success claimed",
+    "No human acceptance or new verified MongoDB archive"
+  ]
+}

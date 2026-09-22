@@ -5,6 +5,8 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    '68-record-retention-draft': ('workspace', 'Explicit retention requirement persists in draft and can be cleared'),
+    '69-record-retention-proposal': ('workspace', 'Saved proposal displays frozen retention requirement'),
     '67-structured-source-coverage': ('workspace', 'Data citation coverage reveals omitted email and drafts a correction without sending'),
     '66-proposal-page-scope': ('workspace', 'Scope coverage fixture distinguishes selected records from records outside the request'),
     '65-page-scoped-draft': ('workspace', 'Explicit PDF page scope persists in the draft and can be cleared before sending'),
