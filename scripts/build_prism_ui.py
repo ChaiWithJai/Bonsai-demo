@@ -8,6 +8,20 @@ import shutil
 import subprocess
 
 
+
+def stage_workspace_components(root, stage):
+    source = root / 'scripts/prism-ui'
+    route = stage / 'src/routes/workspace'
+    library = stage / 'src/lib'
+    route.mkdir(parents=True, exist_ok=True)
+    library.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source / 'Workspace.svelte', route / '+page.svelte')
+    for component in source.glob('Workspace*.svelte'):
+        if component.name != 'Workspace.svelte':
+            shutil.copyfile(component, library / component.name)
+    shutil.copyfile(source / 'workspace-data-types.ts', library / 'workspace-data-types.ts')
+
+
 def main():
     root = Path(__file__).resolve().parents[1]
     candidates = [
@@ -49,12 +63,7 @@ def main():
     comparison = stage / "src/routes/comparison"
     comparison.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(root / "scripts/prism-ui/Comparison.svelte", comparison / "+page.svelte")
-    workspace = stage / 'src/routes/workspace'
-    workspace.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(root / 'scripts/prism-ui/Workspace.svelte', workspace / '+page.svelte')
-    for component in ('WorkspaceData', 'WorkspaceRecordReview', 'WorkspaceProposal', 'WorkspaceProposalReview', 'WorkspaceAcceptance', 'WorkspaceImageEvidence'):
-        shutil.copyfile(root / f'scripts/prism-ui/{component}.svelte', stage / f'src/lib/{component}.svelte')
-    shutil.copyfile(root / 'scripts/prism-ui/workspace-data-types.ts', stage / 'src/lib/workspace-data-types.ts')
+    stage_workspace_components(root, stage)
     shutil.copyfile(root / "scripts/prism-ui/SvgPreview.svelte", stage / "src/lib/SvgPreview.svelte")
     shutil.copyfile(root / "scripts/prism-ui/BrowserLiveView.svelte", stage / "src/lib/BrowserLiveView.svelte")
     layout = stage / "src/routes/+layout.svelte"

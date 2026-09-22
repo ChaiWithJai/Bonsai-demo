@@ -1,4 +1,5 @@
 <script lang="ts">
+  import WorkspaceProposalComparison from '$lib/WorkspaceProposalComparison.svelte';
   import { onMount } from 'svelte';
   import WorkspaceModelEvidence from '$lib/WorkspaceModelEvidence.svelte';
   import WorkspaceData from '$lib/WorkspaceData.svelte';
@@ -271,7 +272,7 @@
             <details class="saved-interpretation"><summary>Review source interpretation</summary>
               <p>Check the source-backed structure used to build this workstream. This judgment is separate from reviewing the interface below.</p>
               <WorkspaceProposal sourceFilename={interpretation.filename} proposal={interpretation.proposal} coverage={interpretation.source_coverage} evidence={interpretation.source_examples ?? []} readOnly={true} onConfirm={()=>{}} onRevise={()=>{}}/>
-              {#key interpretation.id}<WorkspaceProposalReview jobId={interpretation.id}/>{/key}
+              {#key interpretation.id}{#if interpretation.parent_job_id}<WorkspaceProposalComparison jobId={interpretation.id}/>{/if}<WorkspaceProposalReview jobId={interpretation.id}/>{/key}
             </details>
           {/if}
           <h2>Review this interface</h2>

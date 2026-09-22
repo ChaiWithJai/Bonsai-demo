@@ -1,0 +1,44 @@
+{
+  "scope": "Read-only proposal revision comparison",
+  "jobs": [
+    "a551ac4c165747d1b624ce610cfa5003",
+    "2dbbd4b2699342a39f7c1d02c56ef2e7"
+  ],
+  "matches": {
+    "source_snapshot": true,
+    "source_context": true,
+    "generation_settings": true,
+    "model_runtime": true,
+    "harness": true,
+    "recorded_parent_snapshot": true
+  },
+  "records": {
+    "previous": 4,
+    "current": 4,
+    "unchanged": 4,
+    "previous_only": 0,
+    "current_only": 0
+  },
+  "view_changed": true,
+  "source_job_artifacts_unchanged": true,
+  "verification": {
+    "python_suite_tests": 315,
+    "additional_fresh_staging_packaging_test": "passed",
+    "svelte_check": "0 errors, 0 warnings",
+    "cached_production_build": "passed",
+    "fresh_build_from_upstream_ui": "passed",
+    "desktop_browser": "passed",
+    "mobile_browser": "passed",
+    "browser_retry_after_503": "passed",
+    "browser_mutating_api_requests": 0
+  },
+  "packaging_fix": "Stage all Workspace components except the route component into src/lib; stage Workspace.svelte as the route. Existing explicit list omitted newer imports.",
+  "limits": [
+    "Unchanged records means matching values and cited passages, regardless of order.",
+    "Previous-only and current-only records can represent edits, additions, or removals; identities are not inferred.",
+    "Matching metadata does not prove identical inference context or cache state, factual accuracy, or human acceptance."
+  ],
+  "model_calls": 0,
+  "human_acceptance": false,
+  "training_examples_created": 0
+}

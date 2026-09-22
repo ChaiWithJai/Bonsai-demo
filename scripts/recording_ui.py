@@ -323,6 +323,9 @@ class Handler(BaseHTTPRequestHandler):
                     result = start(jobs,payload.get('role'),payload.get('message'),payload.get('parent_job_id'))
                 elif len(parts) == 4 and self.command == 'GET':
                     result = jobs.get(parts[3])
+                elif len(parts) == 5 and parts[4] == 'comparison' and self.command == 'GET':
+                    from workspace_proposal_comparison import compare
+                    result = compare(jobs,parts[3])
                 elif len(parts) == 5 and parts[4] == 'proposal-preview' and self.command == 'GET':
                     from workspace_proposal_preview import preview
                     return self.respond(200,preview(jobs,parts[3]),'image/svg+xml')
