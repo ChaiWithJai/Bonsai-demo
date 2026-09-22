@@ -11,6 +11,7 @@
   let events = $state<Data[]>([]);
   let attempt = $state('');
   let prompt = $state('');
+  let generationProfile = $state('');
   let requestChecks = $state<{target: {role?: string; name?: string; test_id?: string}; action: string; value: number | boolean | null}[]>([]);
   const checksValid = $derived((!requestChecks.length || requestChecks.some(check=>check.action!=='click')) && requestChecks.every(check => check.action === 'count' ? Number.isInteger(check.value) && Number(check.value) >= 0 && Number(check.value) <= 100000 : Boolean(check.target.name?.trim())));
   let error = $state('');
@@ -31,8 +32,8 @@
   let draftKey = $state(0);
   let selectedRole = $state('Research analyst');
   let initialPanel = $state('conversation');
-  const editDrafts = new Map<string, {prompt:string;checks:typeof requestChecks}>();
-  function retainEditDraft() { if(project && !home) editDrafts.set(project.id,{prompt,checks:structuredClone($state.snapshot(requestChecks))}); }
+  const editDrafts = new Map<string, {prompt:string;checks:typeof requestChecks;profile:string}>();
+  function retainEditDraft() { if(project && !home) editDrafts.set(project.id,{prompt,checks:structuredClone($state.snapshot(requestChecks)),profile:generationProfile}); }
   function roleStream(role:string) { streamsExpanded=false; selectedRole=role; initialPanel='conversation'; newStream(); }
   function newStream() { retainEditDraft(); home = true; selectedSource = ''; selectedIntake='';selectedStreamId=''; initialPanel='conversation'; draftKey += 1; }
   const visibleProjects = $derived((status?.workspaces ?? []).filter((item:Data) => item.title.toLowerCase().includes(streamSearch.toLowerCase())));
@@ -89,6 +90,7 @@
     project = await api('/' + id);
     home = false;
     prompt = editDrafts.get(id)?.prompt ?? '';
+    generationProfile = editDrafts.get(id)?.profile ?? '';
     requestChecks = editDrafts.get(id)?.checks ?? [];
     reviews = await api('/' + id + '/reviews');
     reviewNote = ''; reviewError = ''; reviewExport = null;
@@ -169,7 +171,7 @@
     if (!project || !prompt.trim() || !checksValid || busy || running || sourceBusy) return;
     busy = true; error = '';
     try {
-      const result = await api('/' + project.id + '/attempts', {request: prompt.trim(), base_revision: project.head, case: selectedCase, request_checks: requestChecks});
+      const result = await api('/' + project.id + '/attempts', {request: prompt.trim(), base_revision: project.head, case: selectedCase, request_checks: requestChecks, ...(generationProfile ? {generation_config:{profile:generationProfile,seed:42}} : {})});
       attempt = result.attempt_id; events = []; editDrafts.delete(project.id); prompt = ''; requestChecks = []; selectedCase = 'baseline';
       project = await api('/' + project.id); await refresh();
     } catch (e) { error = String(e); }
@@ -248,6 +250,7 @@
         </div>
         <div class="composer">
           <WorkspaceAcceptance bind:checks={requestChecks} disabled={running || busy || sourceBusy}/>
+          <details class="model-settings"><summary>Model settings{generationProfile ? ' · Custom profile' : ''}</summary><label>Generation profile<select bind:value={generationProfile} disabled={running || busy || sourceBusy}><option value="">Server default</option><option value="legacy-greedy">Greedy · thinking off</option><option value="bonsai2-instruct">Instruct sampling · thinking off</option><option value="bonsai2-bounded">Reasoning · 512-token allowance</option><option value="bonsai2-medium">Reasoning · medium effort</option></select></label><p>Applies to the next edit of this saved view. Custom profiles use seed 42. Settings and results are recorded in MLflow for comparison. Reasoning uses part of the response budget.</p></details>
           {#if project.fixture?.kind !== 'desktop'}<div class="suggestions">{#each suggestions as suggestion (suggestion.case)}<button disabled={running || busy} onclick={() => useSuggestion(suggestion)}>{suggestion.label}</button>{/each}</div>{/if}
           <form onsubmit={submit}><label class="sr-only" for="workspace-prompt">Describe the next change</label><textarea id="workspace-prompt" bind:value={prompt} placeholder="Message Bonsai…" disabled={running || busy || sourceBusy}></textarea><div><span>{sourceBusy ? 'Source generation is using Bonsai…' : running ? 'Editing saved project…' : 'Edits · builds · browser checks'}</span>{#if running}<button type="button" onclick={cancel} aria-label="Stop attempt"><Square size={16}/></button>{:else}<button class="send" type="submit" disabled={!prompt.trim() || !checksValid || busy || sourceBusy} aria-label="Send request"><ArrowUp size={18}/></button>{/if}</div></form>
           <small>Every attempt keeps its source, diagnostics, and MLflow evidence.</small>
@@ -309,6 +312,7 @@
 </main>
 
 <style>
+  .model-settings{margin:8px 0;font-size:12px}.model-settings summary{cursor:pointer;padding:8px 0}.model-settings label{display:grid;gap:6px;margin:8px 0}.model-settings select{width:100%;max-width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;background:var(--background);color:inherit}.model-settings p{font-size:11px;line-height:1.5;color:var(--muted-foreground)}
   .interface-review{display:grid;gap:12px;margin:18px 0}.interface-review label{display:grid;gap:6px}.interface-review input,.interface-review select,.interface-review textarea{width:100%;min-width:0;padding:10px;border:1px solid #d9ddd6;border-radius:8px;background:transparent;color:inherit}.interface-review textarea{min-height:90px}
 
   .comparison-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:16px 0}.comparison-controls label{display:grid;gap:6px;min-width:0}.comparison-controls select{max-width:100%;padding:8px}.comparison-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:16px}.comparison-results article{min-width:0;border:1px solid #d9ddd6;border-radius:10px;padding:16px}.comparison-results dd{margin:4px 0 12px;overflow-wrap:anywhere;font-size:11px}.comparison-results dt{font-size:12px;font-weight:600}

@@ -1926,3 +1926,35 @@ test('Generated view separates automated notes from discussion',async({page,requ
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/71-discussion-and-verification-notes.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Saved-view editor sends explicit model profile without changing defaults',async({page,request},info)=>{
+ const id='171bc98e7caf4aa48ef1a600cea1f028';const project=await (await request.get('/api/workspace/'+id)).json();
+ const submitted:any[]=[];
+ await page.route('**/api/workspace/'+id+'/attempts',route=>{submitted.push(route.request().postDataJSON());return route.fulfill({status:409,json:{error:'Development interception: no inference'}});});
+ await page.goto('/#/workspace');
+ if(info.project.name==='mobile')await page.locator('.mobile-stream-toggle').click();
+ const sidebar=page.getByRole('complementary',{name:'Workstreams'});
+ await sidebar.getByRole('textbox',{name:'Search workstreams'}).fill(project.title);
+ await sidebar.getByRole('button').filter({hasText:project.title}).click();
+ const settings=page.locator('details.model-settings');
+ await settings.locator('summary').click();
+ const profile=page.getByRole('combobox',{name:'Generation profile',exact:true});
+ await expect(profile).toHaveValue('');
+ await page.getByRole('textbox',{name:'Describe the next change',exact:true}).fill('Development check: preserve my selected model configuration.');
+ await profile.selectOption('bonsai2-bounded');
+ await page.getByRole('button',{name:'Send request',exact:true}).click();
+ await expect.poll(()=>submitted.length).toBe(1);
+ expect(submitted[0].generation_config).toEqual({profile:'bonsai2-bounded',seed:42});
+ await expect(profile).toHaveValue('bonsai2-bounded');
+ if(info.project.name==='mobile')await page.locator('.mobile-stream-toggle').click();
+ await sidebar.getByRole('button',{name:'Research analyst',exact:true}).click();
+ if(info.project.name==='mobile')await page.locator('.mobile-stream-toggle').click();
+ await sidebar.getByRole('button').filter({hasText:project.title}).click();
+ await settings.locator('summary').click();
+ await expect(profile).toHaveValue('bonsai2-bounded');
+ await settings.scrollIntoViewIfNeeded();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/72-editor-model-settings.'+info.project.name+'.png'),fullPage:true});
+ await profile.selectOption('');await page.getByRole('button',{name:'Send request',exact:true}).click();
+ await expect.poll(()=>submitted.length).toBe(2);expect(submitted[1].generation_config).toBeUndefined();
+});
