@@ -28,3 +28,40 @@ class TaskContractTest(unittest.TestCase):
     def test_malformed_structure_is_a_validation_error(self):
         for proposal in [None,{'structure':[]},{'structure':{'records':[None]}}]:
             with self.assertRaises(ValueError):validate_task_records(proposal,self.packet,['a','b'])
+
+class CompiledRetentionTest(unittest.TestCase):
+    def setUp(self):
+        self.compiled={'rows':[{'id':'a'},{'id':'b'}],'excluded_record_ids':[],
+            'chart':{'component':'Scatterplot','props':{'data':[{'record_id':'a'},{'record_id':'b'}]}},'node_membership':{}}
+    def test_chart_data_cannot_drop_or_duplicate_records(self):
+        from workspace_data.task_contract import validate_compiled_retention
+        validate_compiled_retention(self.compiled,['a','b'])
+        for data in [[{'record_id':'a'}],[{'record_id':'a'},{'record_id':'a'}]]:
+            self.compiled['chart']['props']['data']=data
+            with self.assertRaisesRegex(ValueError,'Chart data'):
+                validate_compiled_retention(self.compiled,['a','b'])
+    def test_render_targets_are_checked_separately_from_source_rows(self):
+        from workspace_data.task_contract import validate_retained_interactions
+        evidence={'interaction':{'points':[{'record_id':'a'},{'record_id':'b'}]}}
+        self.assertEqual(validate_retained_interactions(self.compiled,evidence,['a','b'])['checked_targets'],'point_targets')
+        evidence['interaction']['points'].pop()
+        with self.assertRaisesRegex(ValueError,'interaction targets'):
+            validate_retained_interactions(self.compiled,evidence,['a','b'])
+    def test_structured_identity_and_table_count_remain_required(self):
+        from workspace_data.task_contract import validate_retained_interactions
+        self.compiled['record_origin']='model_structured_unreviewed'
+        self.compiled['rows']=[{'id':'out1','locator':{'source_evidence':[{'record_id':'a'}]}},{'id':'out2','locator':{'source_evidence':[{'record_id':'b'}]}}]
+        self.compiled['chart']={'component':'RecordTable'}
+        self.assertEqual(validate_retained_interactions(self.compiled,{'record_count':2},['a','b'])['retained_rows'],2)
+        with self.assertRaisesRegex(ValueError,'Table evidence'):
+            validate_retained_interactions(self.compiled,{'record_count':1},['a','b'])
+        self.compiled['rows'][1]['locator']['source_evidence'][0]['record_id']='a'
+        with self.assertRaisesRegex(ValueError,'omit or duplicate'):
+            validate_retained_interactions(self.compiled,{'record_count':2},['a','b'])
+    def test_graph_membership_and_targets_must_agree(self):
+        from workspace_data.task_contract import validate_retained_interactions
+        self.compiled['chart']={'component':'ForceDirectedGraph'};self.compiled['node_membership']={'group1':['a'],'group2':['b']}
+        with self.assertRaisesRegex(ValueError,'group interaction'):
+            validate_retained_interactions(self.compiled,{'interaction':{'nodes':[{'id':'group1'}]}},['a','b'])
+        result=validate_retained_interactions(self.compiled,{'interaction':{'nodes':[{'id':'group1'},{'id':'group2'}]}},['a','b'])
+        self.assertEqual(result['checked_targets'],'group_targets')

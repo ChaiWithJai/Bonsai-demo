@@ -9,7 +9,7 @@ import uuid
 from workspace_data.desktop_plan import profile, compile_plan, PLAN_INSTRUCTIONS, ensure_group_root
 from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal, revision_messages, planning_profile, repair_diagnostics, validate_schema_repair_preservation, validate_source_scope, structured_source_usage
 from workspace_data.record_review import apply_human_reviews
-from workspace_data.task_contract import task_record_ids, validate_task_records
+from workspace_data.task_contract import task_record_ids, validate_task_records, validate_compiled_retention, validate_retained_interactions
 from workspace_provider import GenerationCancelled, LocalProvider
 from workspace_store import RevisionConflict
 from workspace_tools import ROOT
@@ -372,8 +372,7 @@ class SourceJobs:
                         validate_schema_repair_preservation(previous_invalid_proposal, proposal)
                         validate_task_records(proposal,packet,status.get('task_record_ids',[]))
                         compiled = span('plan.validate', {'proposal':proposal}, lambda:validate_proposal(manifest, proposal, packet['record_id_map']))
-                        if status.get('task_record_ids') and compiled['excluded_record_ids']:
-                            raise ValueError('The task requires every source record, but the selected chart excludes records; preserve them in the proposed view')
+                        validate_compiled_retention(compiled,status.get('task_record_ids',[]))
                         for finding in proposal['interpretation']['findings']:
                             finding['record_ids']=[packet['record_id_map'][ref] for ref in finding['record_ids']]
                         if proposal.get('structure'):
@@ -401,6 +400,7 @@ class SourceJobs:
                        source_examples=self.proposal_examples(proposal, packet))
                 return
             compiled=ensure_group_root(json.loads((folder/'compiled.json').read_text()))
+            validate_compiled_retention(compiled,status.get('task_record_ids',[]))
             compiled['planning_coverage'] = status.get('source_coverage')
             if compiled.get('record_origin')=='model_structured_unreviewed':
                 compiled['grouping_origin']='model-structured fields, unreviewed; not learned similarity clusters'
@@ -423,6 +423,9 @@ class SourceJobs:
                     raise ValueError('Semiotic rendering failed: '+rendered['stderr'][-2000:])
                 evidence = json.loads((folder/'render/render-evidence.json').read_text())
                 chart_svg = (folder/'render/chart.svg').read_text()
+            retention=validate_retained_interactions(compiled,evidence,status.get('task_record_ids',[]))
+            if retention:
+                self.save(folder,'retention-check.json',retention)
             fixture = {'kind':'desktop','compiled':compiled,'render_evidence':evidence,
                        'chart_svg':chart_svg,'source_job':status.copy()}
             check()

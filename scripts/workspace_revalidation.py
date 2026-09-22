@@ -45,11 +45,10 @@ def revalidate(jobs, jid):
                 except json.JSONDecodeError:pass
             validate_schema_repair_preservation(previous,proposal)
             packet=read('source-packet.json')
-            from workspace_data.task_contract import validate_task_records
+            from workspace_data.task_contract import validate_task_records, validate_compiled_retention
             validate_task_records(proposal,packet,status.get('task_record_ids',[]))
             compiled=validate_proposal(read('source-manifest.json'),proposal,packet['record_id_map'])
-            if status.get('task_record_ids') and compiled['excluded_record_ids']:
-                raise ValueError('The selected chart excludes required source records')
+            validate_compiled_retention(compiled,status.get('task_record_ids',[]))
             for finding in proposal['interpretation']['findings']:
                 finding['record_ids']=[packet['record_id_map'][ref] for ref in finding['record_ids']]
             for row in (proposal.get('structure') or {}).get('records',[]):
