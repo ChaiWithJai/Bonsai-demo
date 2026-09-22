@@ -1,0 +1,68 @@
+{
+  "case": "Matched live replay of citation repair feedback",
+  "baseline_job_id": "e447aaf47075462cb9ba5e09760cf50c",
+  "replay_job_id": "7fb560854ced4e78b82631849882bbe6",
+  "baseline_run_id": "b5cffc1686764eb691dc9dcfee7407da",
+  "replay_run_id": "ec68a7c304d64b638c5d937358297359",
+  "matched_inputs": {
+    "source-manifest.json": true,
+    "source-packet.json": true,
+    "model-info.json": true,
+    "first_response": true
+  },
+  "schema_outcome": "awaiting_confirmation",
+  "task_outcome": "Failed numeric structuring: timings remain text in copied extraction records, not numeric measurement fields. Passing validation is not task completion.",
+  "plan_fields": [
+    {
+      "name": "record_id",
+      "type": "text"
+    },
+    {
+      "name": "page",
+      "type": "number"
+    },
+    {
+      "name": "region",
+      "type": "text"
+    },
+    {
+      "name": "title",
+      "type": "text"
+    },
+    {
+      "name": "text",
+      "type": "text"
+    },
+    {
+      "name": "columns",
+      "type": "text"
+    },
+    {
+      "name": "rows",
+      "type": "text"
+    },
+    {
+      "name": "extraction_method",
+      "type": "text"
+    },
+    {
+      "name": "extraction_status",
+      "type": "text"
+    },
+    {
+      "name": "evidence_status",
+      "type": "text"
+    },
+    {
+      "name": "extraction_id",
+      "type": "text"
+    }
+  ],
+  "human_review": "No acceptance or build confirmation",
+  "model_calls": 2,
+  "limitations": [
+    "One repeated development PDF; not held-out evaluation",
+    "No new verified MongoDB archive"
+  ],
+  "training_example_count": 0
+}
