@@ -16,10 +16,13 @@ MEDIA = {'.png': 'image', '.jpg': 'image', '.jpeg': 'image', '.webp': 'image',
          '.pdf': 'document', '.wav': 'audio', '.mp3': 'audio', '.m4a': 'audio',
          '.mp4': 'video', '.mov': 'video', '.webm': 'video'}
 
-FILE_KINDS = {'.docx': 'document', '.xlsx': 'workbook', '.eml': 'email', '.mbox': 'email', '.csv': 'table', '.tsv': 'table', '.json': 'table', '.jsonl': 'table', '.txt': 'text', '.md': 'text'}
+FILE_KINDS = {'.pptx': 'presentation', '.docx': 'document', '.xlsx': 'workbook', '.eml': 'email', '.mbox': 'email', '.csv': 'table', '.tsv': 'table', '.json': 'table', '.jsonl': 'table', '.txt': 'text', '.md': 'text'}
 
 def extract(name, content):
     suffix = Path(name).suffix.lower()
+    if suffix == '.pptx':
+        from workspace_data.pptx import extract_pptx
+        return extract_pptx(content, MAX_ROWS)
     if suffix == '.xlsx':
         from workspace_data.xlsx import extract_xlsx
         return extract_xlsx(content, MAX_ROWS)

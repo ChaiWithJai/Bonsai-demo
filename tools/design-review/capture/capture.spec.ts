@@ -2011,3 +2011,21 @@ test('Embedded saved view preserves exploration across workspace tabs',async({pa
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/75-embedded-workstream-exploration.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Presentation intake reports slide coverage and keeps citations',async({page},info)=>{
+ await page.goto('/#/workspace');
+ const uploaded=page.waitForResponse(r=>r.url().endsWith('/api/workspace/sources') && r.request().method()==='POST');
+ await page.locator('input[type="file"]').setInputFiles(path.resolve('research/harness-alignment/fixtures/desktop-regressions/development-slide-coverage.pptx'));
+ expect((await uploaded).ok()).toBe(true);
+ const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ const source=page.locator('.source-summary');await expect(source).toContainText('2 records · presentation · extracted');
+ await source.getByText('Slide coverage',{exact:true}).click();
+ await expect(source).toContainText('Slide 1 · 2 extracted records');
+ await expect(source).toContainText('Slide 2 (hidden) · No readable text; visual review needed');
+ await expect(source).toContainText('1 embedded media files not read');
+ await expect(page.locator('.records summary').first()).toContainText('Slide 1');
+ await page.locator('.records summary').first().click();await expect(page.locator('.record-content').first()).toContainText('A & B');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/76-presentation-coverage.'+info.project.name+'.png'),fullPage:true});
+});
