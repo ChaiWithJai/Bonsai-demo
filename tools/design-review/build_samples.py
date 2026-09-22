@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "70-proposed-chart-preview": ("workspace", "Inspect a proposed chart before confirming a build"),
     '68-record-retention-draft': ('workspace', 'Explicit retention requirement persists in draft and can be cleared'),
     '69-record-retention-proposal': ('workspace', 'Saved proposal displays frozen retention requirement'),
     '67-structured-source-coverage': ('workspace', 'Data citation coverage reveals omitted email and drafts a correction without sending'),

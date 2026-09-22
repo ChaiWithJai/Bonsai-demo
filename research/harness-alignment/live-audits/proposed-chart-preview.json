@@ -1,0 +1,28 @@
+{
+  "scope": "Inspect the frozen Semiotic chart before confirming a build",
+  "source_job_id": "7faa024b1bc043b0b01ebe3dd78a417d",
+  "model_calls": 0,
+  "behavior": [
+    "Preview requested on demand from the review conversation",
+    "Cache keyed by compiled proposal, renderer and dependency lockfile",
+    "Record retention and rendered interaction targets checked before caching",
+    "Failed or empty rendering can be retried",
+    "Preview does not confirm a build or change the proposal"
+  ],
+  "checks": [
+    "304 Python tests passed before cache retry correction; all 3 preview tests passed after correction",
+    "Svelte check: zero errors and warnings; production build passed",
+    "Svelte autofixer reported no issues in changed components",
+    "Desktop and mobile browser checks passed: lazy fetch, simulated failure, retry, image loaded, no confirmation request, unchanged job status",
+    "Mobile screenshot inspected; chart fits without page overflow"
+  ],
+  "screens": [
+    "70-proposed-chart-preview.desktop.png",
+    "70-proposed-chart-preview.mobile.png"
+  ],
+  "limits": [
+    "Static preview; selection and annotation require the built view",
+    "Synthetic previously corrected email example, not held-out model evaluation",
+    "No human acceptance, new model success, or verified MongoDB backup claimed"
+  ]
+}

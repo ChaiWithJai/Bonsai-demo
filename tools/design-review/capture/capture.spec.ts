@@ -1887,3 +1887,23 @@ test('Saved proposal displays its frozen record retention requirement',async({pa
  const requirement=page.getByLabel('Record retention requirement',{exact:true});await expect(requirement).toContainText('one output row for each of the 2 source records');await expect(requirement).toContainText('Revisions retain this requirement');
  await requirement.scrollIntoViewIfNeeded();await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/69-record-retention-proposal.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Chart preview is lazy, retryable, and does not confirm a build',async({page,request},info)=>{
+ const jid='7faa024b1bc043b0b01ebe3dd78a417d';const response=await request.get('/api/workspace/source-jobs/'+jid);expect(response.ok()).toBe(true);const job=await response.json();
+ let images=0,confirmations=0;
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.route('**/api/workspace/source-jobs/'+jid+'/proposal-preview?*',route=>{images++;return images===1 ? route.fulfill({status:503,body:'Temporary render failure'}) : route.continue();});
+ await page.route('**/api/workspace/source-jobs/*/confirm',route=>{confirmations++;return route.fulfill({json:{}});});
+ await page.goto('/#/workspace');const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);
+ await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const preview=page.getByRole('region',{name:'Proposed chart preview'});
+ await expect(preview.getByRole('img')).toHaveCount(0);expect(images).toBe(0);
+ await preview.getByRole('button',{name:'Preview proposed chart',exact:true}).click();await expect(preview.getByRole('alert')).toContainText('could not load');
+ await preview.getByRole('button',{name:'Retry chart preview',exact:true}).click();const img=preview.getByRole('img');
+ await expect.poll(()=>img.evaluate(element=>(element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+ expect(images).toBe(2);expect(confirmations).toBe(0);
+ const unchanged=await (await request.get('/api/workspace/source-jobs/'+jid)).json();expect(unchanged.status).toBe(job.status);expect(unchanged.workspace_id).toBeUndefined();
+ await preview.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/70-proposed-chart-preview.'+info.project.name+'.png'),fullPage:true});
+});
