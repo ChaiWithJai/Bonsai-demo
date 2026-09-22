@@ -1,0 +1,23 @@
+{
+  "scope": "Display frozen model configuration beside saved proposal and edit-attempt evidence",
+  "behavior": [
+    "Shows recorded profile and seed from proposal generation_config or attempt trace",
+    "Composer changes do not alter the recorded result display",
+    "Missing configuration explicitly reported without guessing current defaults"
+  ],
+  "checks": [
+    "Svelte check zero errors and warnings",
+    "Production build passed",
+    "New shared component autofixer clean; existing parent suggestions reviewed",
+    "Desktop/mobile checks passed for independent draft settings and missing configuration",
+    "Mobile screenshot visually inspected"
+  ],
+  "screens": [
+    "74-recorded-model-configuration.desktop.png",
+    "74-recorded-model-configuration.mobile.png"
+  ],
+  "limits": [
+    "Missing-setting case uses an intercepted response",
+    "No new inference, human acceptance, or verified MongoDB backup"
+  ]
+}
