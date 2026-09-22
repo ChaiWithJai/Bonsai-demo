@@ -23,6 +23,23 @@ try {
   await expect(page.locator('.chart img')).toBeVisible();
   expect(await page.locator('.chart img').evaluate(el=>el.complete&&el.naturalWidth>0)).toBe(true);
  }
+ if(['LineChart','Scatterplot'].includes(compiled.chart.component)) {
+  const targets=page.getByRole('button',{name:/^Inspect observation /});
+  const count=await targets.count();
+  expect(count).toBe(compiled.chart.props.data.length);
+  const selected=[];
+  for(let i=0;i<count;i++) {
+   await targets.nth(i).click();
+   await expect(targets.nth(i)).toHaveAttribute('aria-pressed','true');
+   const row=page.locator('[data-testid="record-row"].selected');
+   await expect(row).toHaveCount(1);
+   const data=JSON.parse(await row.getByTestId('record-data').textContent());
+   await expect(targets.nth(i)).toHaveAccessibleName('Inspect observation '+Object.values(data).join(', '));
+   selected.push(await row.getAttribute('data-record-id'));
+  }
+  expect(selected.sort()).toEqual(compiled.chart.props.data.map(point=>point.record_id).sort());
+  report.chart_record_selection=selected;
+ }
  if(compiled.chart.component==='ForceDirectedGraph') {
   const first=compiled.chart.props.nodes[0];
   await page.getByRole('button',{name:'Explore '+first.label,exact:true}).click();

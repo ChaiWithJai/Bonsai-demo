@@ -1,0 +1,37 @@
+{
+  "scope": "Development build of corrected synthetic email timeline",
+  "job_id": "7faa024b1bc043b0b01ebe3dd78a417d",
+  "build_run_id": "6bada0e444714f3b87cd1c40ea56d322",
+  "workspace_id": "9a7aa8e346a544ee9132500f06f43fb6",
+  "revision": "e01d4597fb36fa005695095c66cfc55ae0d997a059d3b08948a9f801198f6657",
+  "confirmation_actor": "codex-development-build-verification",
+  "status": "completed",
+  "retention": {
+    "required_source_records": 2,
+    "retained_rows": 2,
+    "checked_targets": "point_targets",
+    "status": "passed",
+    "scope": "Source identities and interaction targets; not geometry, factual accuracy or human acceptance"
+  },
+  "browser_check": {
+    "passed": true,
+    "scope": "Source fidelity, chart loading, filtering and note persistence; not human design quality",
+    "chart_record_selection": [
+      "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:structured:0:f38c3e72287b9250cadc",
+      "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:structured:1:4761059a6ed9ece95e25"
+    ],
+    "record_ids": [
+      "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:structured:0:f38c3e72287b9250cadc",
+      "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:structured:1:4761059a6ed9ece95e25"
+    ],
+    "note_persistence": true,
+    "runtime_errors": []
+  },
+  "model_calls_during_build": 0,
+  "limits": [
+    "Previously corrected synthetic example; not first-attempt or held-out reliability",
+    "No human acceptance or training label",
+    "No new verified MongoDB backup",
+    "Static chart with interactive record targets, authored scaffold and model-authored plan"
+  ]
+}

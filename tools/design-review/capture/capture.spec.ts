@@ -1891,7 +1891,7 @@ test('Saved proposal displays its frozen record retention requirement',async({pa
 test('Chart preview is lazy, retryable, and does not confirm a build',async({page,request},info)=>{
  const jid='7faa024b1bc043b0b01ebe3dd78a417d';const response=await request.get('/api/workspace/source-jobs/'+jid);expect(response.ok()).toBe(true);const job=await response.json();
  let images=0,confirmations=0;
- await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[{...job,status:'awaiting_confirmation',workspace_id:undefined}]}}));
  await page.route('**/api/workspace/source-jobs/'+jid+'/proposal-preview?*',route=>{images++;return images===1 ? route.fulfill({status:503,body:'Temporary render failure'}) : route.continue();});
  await page.route('**/api/workspace/source-jobs/*/confirm',route=>{confirmations++;return route.fulfill({json:{}});});
  await page.goto('/#/workspace');const nav=page.getByRole('navigation',{name:'Workstream sections'});
@@ -1903,7 +1903,7 @@ test('Chart preview is lazy, retryable, and does not confirm a build',async({pag
  await preview.getByRole('button',{name:'Retry chart preview',exact:true}).click();const img=preview.getByRole('img');
  await expect.poll(()=>img.evaluate(element=>(element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
  expect(images).toBe(2);expect(confirmations).toBe(0);
- const unchanged=await (await request.get('/api/workspace/source-jobs/'+jid)).json();expect(unchanged.status).toBe(job.status);expect(unchanged.workspace_id).toBeUndefined();
+ const unchanged=await (await request.get('/api/workspace/source-jobs/'+jid)).json();expect(unchanged.status).toBe(job.status);expect(unchanged.workspace_id).toBe(job.workspace_id);
  await preview.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/70-proposed-chart-preview.'+info.project.name+'.png'),fullPage:true});
 });
