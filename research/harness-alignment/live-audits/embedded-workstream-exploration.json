@@ -1,0 +1,22 @@
+{
+  "scope": "Desktop/mobile journey through the combined workspace and generated preview",
+  "workspace_id": "171bc98e7caf4aa48ef1a600cea1f028",
+  "checks": [
+    "Open saved view and wait for embedded heading and all four records",
+    "Search for missing observation and inspect its Not provided value",
+    "Open supporting passage and verify original-source link",
+    "Clear search to restore all records",
+    "Open Source and Evidence tabs, then return to functioning Preview",
+    "No page overflow at desktop or mobile width"
+  ],
+  "result": "passed",
+  "test_repair": "Initial locator expected textbox; corrected to the actual searchbox accessibility role. No product change was needed.",
+  "screens": [
+    "75-embedded-workstream-exploration.desktop.png",
+    "75-embedded-workstream-exploration.mobile.png"
+  ],
+  "limits": [
+    "Existing synthetic meeting-note project",
+    "No inference, human review label, or verified MongoDB backup"
+  ]
+}
