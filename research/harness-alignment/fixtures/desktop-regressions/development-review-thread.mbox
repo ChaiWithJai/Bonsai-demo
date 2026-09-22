@@ -1,0 +1,36 @@
+From maya@example.test Fri Sep 18 09:30:00 2026
+From: Maya <maya@example.test>
+To: Review team <review@example.test>
+Subject: Orchard review update
+Date: Fri, 18 Sep 2026 09:30:00 +0000
+Message-ID: <orchard-1@example.test>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Project: Orchard
+Owner: Maya
+Open issues: 5
+Review status: Needs revision
+This is a synthetic development message. Ready for review does not mean appro=
+ved.
+
+From maya@example.test Fri Sep 18 09:30:00 2026
+From: Maya <maya@example.test>
+To: Review team <review@example.test>
+Subject: Orchard review update
+Date: Sun, 20 Sep 2026 09:30:00 +0000
+Message-ID: <orchard-2@example.test>
+In-Reply-To: <orchard-1@example.test>
+References: <orchard-1@example.test>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Project: Orchard
+Owner: Maya
+Open issues: 2
+Review status: Ready for review
+This is a synthetic development message. Ready for review does not mean appro=
+ved.
+
