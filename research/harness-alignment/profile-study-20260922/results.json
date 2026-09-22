@@ -1,0 +1,638 @@
+{
+  "scope": "Frozen reused development tasks, not held-out evaluation or a model leaderboard",
+  "attempts": [
+    {
+      "ordinal": 0,
+      "case": "dated-series",
+      "profile": "bonsai2-instruct",
+      "seed": 42,
+      "job_id": "709a6f938f854b8ab80b9db0a8472309",
+      "run_id": "1efe4a8d87d149ad96ce924196856341",
+      "status": "awaiting_confirmation",
+      "elapsed_seconds": 18.711,
+      "error": null,
+      "model_calls": 1,
+      "compiled": true,
+      "data_checks": {
+        "source_hash": true,
+        "record_count": 6,
+        "expected_count": 6,
+        "frozen_field_values_match": true,
+        "unresolved_field_names": [],
+        "field_mapping": {
+          "date": "date",
+          "team": "team",
+          "open_issues": "open_issues"
+        },
+        "actual_records": [
+          {
+            "date": "2026-09-20",
+            "team": "Orchard",
+            "open_issues": 3.0
+          },
+          {
+            "date": "2026-09-18",
+            "team": "Meadow",
+            "open_issues": 7.0
+          },
+          {
+            "date": "2026-09-18",
+            "team": "Orchard",
+            "open_issues": 0.0
+          },
+          {
+            "date": "2026-09-20",
+            "team": "Meadow",
+            "open_issues": 4.0
+          },
+          {
+            "date": "2026-09-19",
+            "team": "Orchard",
+            "open_issues": 2.0
+          },
+          {
+            "date": "2026-09-19",
+            "team": "Meadow",
+            "open_issues": 6.0
+          }
+        ],
+        "view": {
+          "component": "LineChart",
+          "x": "date",
+          "y": "open_issues",
+          "color": "team"
+        },
+        "excluded_record_ids": [],
+        "frozen_view_mapping_match": true
+      },
+      "assessment_limits": "No automatic judgment of interpretation, chart usefulness, or human acceptance.",
+      "interpretation": {
+        "findings": [
+          {
+            "text": "Orchard had 3 open issues on 2026-09-20, the latest date shown.",
+            "record_ids": [
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:0"
+            ]
+          },
+          {
+            "text": "Meadow had 7 open issues on 2026-09-18, the highest value in the supplied records.",
+            "record_ids": [
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:1"
+            ]
+          },
+          {
+            "text": "Orchard had 0 open issues on 2026-09-18, a zero observation that must remain visible.",
+            "record_ids": [
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:2"
+            ]
+          }
+        ],
+        "rationale": "The requested view is a time-based comparison of two named teams, so separate lines by team and chronological date ordering directly preserve the distinction between Orchard and Meadow while making daily counts easy to inspect. The data contains only three dated observations per team across three dates, so a line chart with one line per team is appropriate rather than combining teams.",
+        "uncertainties": [
+          "The source values are synthetic daily observations and not verified as release dates or causal evidence.",
+          "Only six records are supplied; missing dates for either team would need to be treated as gaps, not zeros, unless the person confirms they should be filled in."
+        ],
+        "questions": [
+          "Should missing dates for a team be shown as gaps or omitted?",
+          "Do you want the chart sorted by date with each team on its own line, or a table first and then a chart?"
+        ]
+      }
+    },
+    {
+      "ordinal": 1,
+      "case": "dated-series",
+      "profile": "bonsai2-bounded",
+      "seed": 42,
+      "job_id": "21b6d2a7613e4557ab08d5ab7ef7eb98",
+      "run_id": "4f924deb1fdc4ba4989ae1b38223f79b",
+      "status": "awaiting_confirmation",
+      "elapsed_seconds": 37.813,
+      "error": null,
+      "model_calls": 1,
+      "compiled": true,
+      "data_checks": {
+        "source_hash": true,
+        "record_count": 6,
+        "expected_count": 6,
+        "frozen_field_values_match": true,
+        "unresolved_field_names": [],
+        "field_mapping": {
+          "date": "date",
+          "team": "team",
+          "open_issues": "open_issues"
+        },
+        "actual_records": [
+          {
+            "date": "2026-09-20",
+            "open_issues": 3.0,
+            "team": "Orchard"
+          },
+          {
+            "date": "2026-09-18",
+            "open_issues": 7.0,
+            "team": "Meadow"
+          },
+          {
+            "date": "2026-09-18",
+            "open_issues": 0.0,
+            "team": "Orchard"
+          },
+          {
+            "date": "2026-09-20",
+            "open_issues": 4.0,
+            "team": "Meadow"
+          },
+          {
+            "date": "2026-09-19",
+            "open_issues": 2.0,
+            "team": "Orchard"
+          },
+          {
+            "date": "2026-09-19",
+            "open_issues": 6.0,
+            "team": "Meadow"
+          }
+        ],
+        "view": {
+          "component": "LineChart",
+          "x": "date",
+          "y": "open_issues",
+          "color": "team"
+        },
+        "excluded_record_ids": [],
+        "frozen_view_mapping_match": true
+      },
+      "assessment_limits": "No automatic judgment of interpretation, chart usefulness, or human acceptance.",
+      "interpretation": {
+        "findings": [
+          {
+            "text": "Orchard has a zero open-issues observation on 2026-09-18.",
+            "record_ids": [
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:2"
+            ]
+          },
+          {
+            "text": "Both teams have three dated observations spanning 2026-09-18 to 2026-09-20.",
+            "record_ids": [
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:0",
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:1",
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:2",
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:3",
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:4"
+            ]
+          },
+          {
+            "text": "Meadow has higher open-issue counts than Orchard on 2026-09-18 and 2026-09-19.",
+            "record_ids": [
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:1",
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:2",
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:4",
+              "3c3aa0c1adb26124ba361a733c7af3bca34f2f1d81ea17057d268f846b52a74e:5"
+            ]
+          }
+        ],
+        "rationale": "A line chart keeps each team on a separate line, preserves all dated observations, and sorts the observations chronologically by date. It supports inspection of the synthetic daily counts without implying release dates or causation.",
+        "uncertainties": [
+          "The source values are unreviewed synthetic observations and should be treated as supplied values, not verified facts."
+        ],
+        "questions": [
+          "Do you want the line endpoints connected between 2026-09-18, 2026-09-19, and 2026-09-20, or only points at those dates?",
+          "Should the record view show the raw CSV line IDs r1-r6 next to the source rows?"
+        ]
+      }
+    },
+    {
+      "ordinal": 2,
+      "case": "email-thread",
+      "profile": "bonsai2-bounded",
+      "seed": 42,
+      "job_id": "9e7e5ff6004043479e2581a61a71e2e9",
+      "run_id": "ce6ed5546672410b9ccc9008e40bcf76",
+      "status": "awaiting_confirmation",
+      "elapsed_seconds": 48.297,
+      "error": null,
+      "model_calls": 1,
+      "compiled": true,
+      "data_checks": {
+        "source_hash": true,
+        "record_count": 1,
+        "expected_count": 2,
+        "frozen_field_values_match": false,
+        "unresolved_field_names": [],
+        "field_mapping": {
+          "sent_date": "sent_date",
+          "project": "project",
+          "owner": "owner",
+          "open_issue_count": "open_issue_count",
+          "review_status": "review_status"
+        },
+        "actual_records": [
+          {
+            "sent_date": "2026-09-18",
+            "project": "Orchard",
+            "owner": "Maya",
+            "open_issue_count": 5.0,
+            "review_status": "Needs revision",
+            "ready_is_not_approval": true
+          }
+        ],
+        "view": {
+          "component": "RecordTable",
+          "columns": [
+            "sent_date",
+            "open_issue_count",
+            "review_status"
+          ]
+        },
+        "excluded_record_ids": [],
+        "frozen_view_mapping_match": false
+      },
+      "assessment_limits": "No automatic judgment of interpretation, chart usefulness, or human acceptance.",
+      "interpretation": {
+        "findings": [
+          {
+            "text": "The first Orchard review message reports 5 open issues on 2026-09-18.",
+            "record_ids": [
+              "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:0"
+            ]
+          },
+          {
+            "text": "The second Orchard review message reports 2 open issues on 2026-09-20.",
+            "record_ids": [
+              "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:1"
+            ]
+          },
+          {
+            "text": "Both messages explicitly state that ready-for-review is not approval.",
+            "record_ids": [
+              "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:0",
+              "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:1"
+            ]
+          }
+        ],
+        "rationale": "The view fits the request by preserving one unreviewed record per email, showing the reported open-issue count across the two dates, and keeping the review-status distinction explicit.",
+        "uncertainties": [
+          "The records are synthetic source values and have not been independently verified.",
+          "The source does not specify whether the issue count is a project total or a reviewer-specific slice.",
+          "The email body uses line-oriented labels; exact parsing was done by line extraction, not by a structured email schema."
+        ],
+        "questions": [
+          "Should the open issue count be treated as a numeric count even though it is written in plain body text?",
+          "Should the record preserve the raw message headers as additional inspectable fields?",
+          "Should 'Ready for review' be stored exactly as reported, or normalized with a separate approved flag?"
+        ]
+      }
+    },
+    {
+      "ordinal": 3,
+      "case": "email-thread",
+      "profile": "bonsai2-instruct",
+      "seed": 42,
+      "job_id": "1e614cbcf8fc4aa38f443548df527a6c",
+      "run_id": "a074ef51e2654daa8ca15ada170556fa",
+      "status": "awaiting_confirmation",
+      "elapsed_seconds": 22.164,
+      "error": null,
+      "model_calls": 1,
+      "compiled": true,
+      "data_checks": {
+        "source_hash": true,
+        "record_count": 2,
+        "expected_count": 2,
+        "frozen_field_values_match": true,
+        "unresolved_field_names": [],
+        "field_mapping": {
+          "sent_date": "sent_date",
+          "project": "project",
+          "owner": "owner",
+          "open_issue_count": "open_issue_count",
+          "review_status": "review_status"
+        },
+        "actual_records": [
+          {
+            "sent_date": "2026-09-18",
+            "project": "Orchard",
+            "owner": "Maya",
+            "open_issue_count": 5.0,
+            "review_status": "Needs revision"
+          },
+          {
+            "sent_date": "2026-09-20",
+            "project": "Orchard",
+            "owner": "Maya",
+            "open_issue_count": 2.0,
+            "review_status": "Ready for review"
+          }
+        ],
+        "view": {
+          "component": "RecordTable",
+          "columns": [
+            "sent_date",
+            "open_issue_count",
+            "review_status"
+          ]
+        },
+        "excluded_record_ids": [],
+        "frozen_view_mapping_match": false
+      },
+      "assessment_limits": "No automatic judgment of interpretation, chart usefulness, or human acceptance.",
+      "interpretation": {
+        "findings": [
+          {
+            "text": "The two Orchard messages report a drop in open issues from 5 to 2 between the dated updates.",
+            "record_ids": [
+              "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:0",
+              "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:1"
+            ]
+          },
+          {
+            "text": "Review status changed from Needs revision to Ready for review, and both bodies explicitly say that does not mean approved.",
+            "record_ids": [
+              "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:0",
+              "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:1"
+            ]
+          }
+        ],
+        "rationale": "The view supports the request by preserving one structured record per email with dates, project, owner, issue count, and status while showing the change over time. A compact table can display both messages for inspection without implying approval.",
+        "uncertainties": [],
+        "questions": [
+          "Should Ready for review be displayed as a distinct non-approval status rather than grouped with approved items?",
+          "Do you want the two emails shown in chronological order or by issue count?"
+        ]
+      }
+    },
+    {
+      "ordinal": 4,
+      "case": "presentation",
+      "profile": "bonsai2-instruct",
+      "seed": 42,
+      "job_id": "c4eac071533c46138cff2ef2050fcbad",
+      "run_id": "6c34f11f292543bba385988b018597fc",
+      "status": "awaiting_confirmation",
+      "elapsed_seconds": 37.955,
+      "error": null,
+      "model_calls": 1,
+      "compiled": true,
+      "data_checks": {
+        "source_hash": true,
+        "record_count": 4,
+        "expected_count": 4,
+        "frozen_field_values_match": null,
+        "unresolved_field_names": [
+          "review_date"
+        ],
+        "field_mapping": {
+          "date": "review_date",
+          "project": "project",
+          "owner": "reporter",
+          "count": "open_issue_count",
+          "status": "review_status"
+        },
+        "actual_records": [
+          {
+            "date": "2026-09-16",
+            "reporter": "Mira",
+            "project": "Juniper",
+            "open_issue_count": 8.0,
+            "review_status": "Needs revision"
+          },
+          {
+            "date": "2026-09-16",
+            "reporter": "Theo",
+            "project": "Willow",
+            "open_issue_count": 3.0,
+            "review_status": "Needs revision"
+          },
+          {
+            "date": "2026-09-19",
+            "reporter": "Mira",
+            "project": "Juniper",
+            "open_issue_count": 0.0,
+            "review_status": "Ready for review"
+          },
+          {
+            "date": "2026-09-19",
+            "reporter": "Theo",
+            "project": "Willow",
+            "open_issue_count": null,
+            "review_status": "Awaiting update"
+          }
+        ],
+        "view": {
+          "component": "RecordTable",
+          "columns": [
+            "date",
+            "project",
+            "open_issue_count",
+            "review_status"
+          ]
+        },
+        "excluded_record_ids": [],
+        "frozen_view_mapping_match": null
+      },
+      "assessment_limits": "No automatic judgment of interpretation, chart usefulness, or human acceptance.",
+      "interpretation": {
+        "findings": [
+          {
+            "text": "Open issue counts changed for Juniper from 8 on 2026-09-16 to 0 on 2026-09-19.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:2",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:5"
+            ]
+          },
+          {
+            "text": "Willow had a reported count of 3 on 2026-09-16 but no count was reported on 2026-09-19, so the later value is unknown rather than zero.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:3",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:6"
+            ]
+          },
+          {
+            "text": "The deck distinguishes review status from approval and explicitly says unreported counts must not be treated as zero.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:8",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:9"
+            ]
+          }
+        ],
+        "rationale": "A record table lets the team compare each dated project observation while preserving missing values, source slide evidence, and status context. It fits the request to inspect evidence point-by-point rather than infer a trend from sparse data.",
+        "uncertainties": [
+          "Only three slides were extracted and interpreted; images, charts, speaker notes, and visual layout are not read.",
+          "The source text gives only two dated observation rows with project/reporter/status fields, so no chart-ready continuous series is available."
+        ],
+        "questions": [
+          "Should the view treat missing issue counts as blank/unknown rather than zero?",
+          "Do you want one table row per dated report, or separate rows for each project within a review date?"
+        ]
+      }
+    },
+    {
+      "ordinal": 5,
+      "case": "presentation",
+      "profile": "bonsai2-bounded",
+      "seed": 42,
+      "job_id": "333b4b24769e4b61be226d770eeba6d7",
+      "run_id": "588d32f0fd6a4b52b6d0cc187cf036d5",
+      "status": "awaiting_confirmation",
+      "elapsed_seconds": 60.537,
+      "error": null,
+      "model_calls": 1,
+      "compiled": true,
+      "data_checks": {
+        "source_hash": true,
+        "record_count": 4,
+        "expected_count": 4,
+        "frozen_field_values_match": true,
+        "unresolved_field_names": [],
+        "field_mapping": {
+          "date": "review_date",
+          "project": "project",
+          "owner": "reporter",
+          "count": "open_issue_count",
+          "status": "review_status"
+        },
+        "actual_records": [
+          {
+            "observation_id": "obs-1",
+            "review_date": "2026-09-16",
+            "reporter": "Mira",
+            "project": "Juniper",
+            "open_issue_count": 8.0,
+            "review_status": "Needs revision",
+            "review_slide": 1.0
+          },
+          {
+            "observation_id": "obs-2",
+            "review_date": "2026-09-16",
+            "reporter": "Theo",
+            "project": "Willow",
+            "open_issue_count": 3.0,
+            "review_status": "Needs revision",
+            "review_slide": 1.0
+          },
+          {
+            "observation_id": "obs-3",
+            "review_date": "2026-09-19",
+            "reporter": "Mira",
+            "project": "Juniper",
+            "open_issue_count": 0.0,
+            "review_status": "Ready for review",
+            "review_slide": 2.0
+          },
+          {
+            "observation_id": "obs-4",
+            "review_date": "2026-09-19",
+            "reporter": "Theo",
+            "project": "Willow",
+            "open_issue_count": null,
+            "review_status": "Awaiting update",
+            "review_slide": 2.0
+          }
+        ],
+        "view": {
+          "component": "RecordTable",
+          "columns": [
+            "review_date",
+            "open_issue_count",
+            "project",
+            "review_status",
+            "reporter"
+          ]
+        },
+        "excluded_record_ids": [],
+        "frozen_view_mapping_match": null
+      },
+      "assessment_limits": "No automatic judgment of interpretation, chart usefulness, or human acceptance.",
+      "interpretation": {
+        "findings": [
+          {
+            "text": "The dated observations show Juniper open issues changed from 8 to 0 between 2026-09-16 and 2026-09-19.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:2",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:5"
+            ]
+          },
+          {
+            "text": "Willow has one dated observation with a count of 3 and one dated observation explicitly marked as unreported.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:3",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:6"
+            ]
+          },
+          {
+            "text": "The deck distinguishes missing counts from zero and asks that each observation remain tied to source evidence.",
+            "record_ids": [
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:9",
+              "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:10"
+            ]
+          }
+        ],
+        "rationale": "A record table lets the team inspect each dated review observation side by side, preserve missing counts as null, and trace every point to the exact source record. It matches the question by focusing on issue counts and status across project reviews.",
+        "uncertainties": [
+          "Only slide text and table cells are available; charts, images, speaker notes, and visual layout were not interpreted.",
+          "The deck does not contain additional dated observations beyond the six provided observations."
+        ],
+        "questions": [
+          "Should missing Willow counts remain null in the table, or would you prefer a separate 'reported' flag with null count?",
+          "Do you want the initial view to include only date, project, reporter, open issue count, and review status?",
+          "Should 'Ready for review' be treated as a status only, without implying approval, as the deck states?"
+        ]
+      }
+    }
+  ],
+  "paired_inputs": [
+    {
+      "case": "dated-series",
+      "input_matches": {
+        "source-manifest.json": true,
+        "source-packet.json": true,
+        "harness-hashes.json": true,
+        "model-info.json": true,
+        "first_request_messages": true
+      },
+      "changed_first_request_fields": [
+        "chat_template_kwargs",
+        "presence_penalty",
+        "temperature",
+        "thinking_budget_tokens",
+        "top_p"
+      ]
+    },
+    {
+      "case": "email-thread",
+      "input_matches": {
+        "source-manifest.json": true,
+        "source-packet.json": true,
+        "harness-hashes.json": true,
+        "model-info.json": true,
+        "first_request_messages": true
+      },
+      "changed_first_request_fields": [
+        "chat_template_kwargs",
+        "presence_penalty",
+        "temperature",
+        "thinking_budget_tokens",
+        "top_p"
+      ]
+    },
+    {
+      "case": "presentation",
+      "input_matches": {
+        "source-manifest.json": true,
+        "source-packet.json": true,
+        "harness-hashes.json": true,
+        "model-info.json": true,
+        "first_request_messages": true
+      },
+      "changed_first_request_fields": [
+        "chat_template_kwargs",
+        "presence_penalty",
+        "temperature",
+        "thinking_budget_tokens",
+        "top_p"
+      ]
+    }
+  ],
+  "human_acceptance": false,
+  "builds_confirmed": 0
+}
