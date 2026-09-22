@@ -1,0 +1,59 @@
+{
+  "case": "Bounded reasoning for a source-to-UI proposal",
+  "medium_job_id": "0ef39ab933434044a852b96874c35fd7",
+  "medium_run_id": "30d33b66b755446ba8d34a7ea10d776f",
+  "bounded_job_id": "bf946ea3176446949a7963bcb38ed474",
+  "bounded_run_id": "97d7518e693745b0afa3435667f0632f",
+  "only_first_request_payload_difference": [
+    "thinking_budget_tokens"
+  ],
+  "medium": {
+    "status": "failed",
+    "error": "Completion ended without a complete stop or tool call",
+    "stream_character_counts": {
+      "role": 9,
+      "reasoning_content": 13204
+    },
+    "finish_reasons": [
+      "length"
+    ],
+    "answer_produced": false
+  },
+  "bounded": {
+    "status": "awaiting_confirmation",
+    "thinking_budget_tokens": 512,
+    "response_reasoning_characters": [
+      1661,
+      1495
+    ],
+    "complete_responses": 2,
+    "task_outcome": "Failed: reversed before/after local timing values",
+    "review": {
+      "proposal_sha256": "1e61639b87154773b6912f817091053bea06e94e86238861bceccd0e6ce0c0e1",
+      "source_snapshot_sha256": "7071bc5f9fae90cca492145376f5d0261176b2a9889fd0fbec946fd9dd69a7d0",
+      "input_sha256": "463bd499bf3c0468d5ac2295f0ae7fe9725448291a40f8cf882a97daf6666526",
+      "schema_version": 1,
+      "event_id": "a4bc7587dbb04e759aca80690a9e8e17",
+      "sequence": 1,
+      "created_at": "2026-09-22T04:29:30.566608+00:00",
+      "job_id": "bf946ea3176446949a7963bcb38ed474",
+      "author": "Codex development audit",
+      "reviewer_kind": "codex",
+      "action": "reject",
+      "note": "Temporal direction is reversed: source says 520us (was 14ms), while output places 520us before and 14ms after. Numeric values alone do not establish a correct comparison. This is Codex review, not human acceptance.",
+      "identity_basis": "self_declared_local_reviewer",
+      "previous_event_id": null
+    },
+    "training_examples": 0
+  },
+  "decision": "Keep bounded profile opt-in; no default change. Completion and task accuracy are separate.",
+  "checks": [
+    "287 Python tests passed",
+    "First request payloads matched except explicit thinking budget"
+  ],
+  "limitations": [
+    "Single seed and repeated development source",
+    "No human confirmation or rendered build",
+    "No new verified MongoDB archive"
+  ]
+}

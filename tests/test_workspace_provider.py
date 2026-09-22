@@ -73,6 +73,17 @@ class ProviderTest(unittest.TestCase):
         return self.provider.generate([{'role': 'user', 'content': 'edit existing'}], self.tools,
                                       'workspace-test', self.cancel, self.deltas.append, 512)
 
+    def test_bounded_reasoning_reserves_output_and_reaches_transport(self):
+        provider=self.provider.configured({'profile':'bonsai2-bounded','seed':42})
+        provider.generate([{'role':'user','content':'Compare evidence'}],[], 'bounded-test',self.cancel,self.deltas.append,4096)
+        request=self.server.requests[-1][2]
+        self.assertEqual(request['thinking_budget_tokens'],512)
+        self.assertEqual(request['max_tokens'],4096)
+        self.assertTrue(request['chat_template_kwargs']['enable_thinking'])
+        self.assertEqual(provider.payload([],[],256)['thinking_budget_tokens'],128)
+        medium=self.provider.configured({'profile':'bonsai2-medium','seed':42})
+        self.assertNotIn('thinking_budget_tokens',medium.payload([],[],4096))
+
     def test_streams_native_tools_and_keeps_proxy_lineage(self):
         self.server.stream = (
             ': heartbeat\r\n\r\n' + chunk({'reasoning_content': 'Generated reasoning'})
