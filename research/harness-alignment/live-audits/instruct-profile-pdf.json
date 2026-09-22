@@ -1,0 +1,47 @@
+{
+  "case": "Per-attempt Bonsai instruct sampling for scoped PDF structuring",
+  "job_id": "4b5bc6a5c4f64c0a9c05bfbdcef4edcc",
+  "run_id": "4d97e165a8804c5e95e73afa78488d9d",
+  "baseline_job_id": "7fb560854ced4e78b82631849882bbe6",
+  "baseline_run_id": "ec68a7c304d64b638c5d937358297359",
+  "matched": {
+    "source-manifest.json": true,
+    "source-packet.json": true,
+    "model-info.json": true
+  },
+  "same_prompt_sha256": "e518ccf8b378f82fae7a38ae7d461d8a1b9375fb2384e1664b0781164e382e65",
+  "generation_config": {
+    "profile": "bonsai2-instruct",
+    "seed": 42
+  },
+  "changed_settings": {
+    "temperature": 0.7,
+    "seed": 42,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "top_p": 0.8,
+    "top_k": 20,
+    "min_p": 0.0,
+    "presence_penalty": 1.5,
+    "repeat_penalty": 1.0
+  },
+  "status": "failed",
+  "error": "Plan validation failed within the two-call budget: Evidence quote is not present in r80, field text\nstructure.records[3].evidence[0]: Evidence quote is not present in r80, field text",
+  "observations": [
+    "Extracted numeric local current 520 us and previous 14 ms, baseline 402.1 ms and vectorized 389.1 ms",
+    "Repeated non-contiguous quote prevented proposal validation",
+    "Profiler context converted >99.9% into exact 99.9; not accepted as factual",
+    "Sampling changes alone do not establish task success or justify a default change"
+  ],
+  "checks": [
+    "286 Python tests passed",
+    "14 source-job tests passed after adding revision inheritance assertion",
+    "Live MLflow tags match frozen profile and seed"
+  ],
+  "limitations": [
+    "Single seed on repeated development PDF; no held-out accuracy claim",
+    "No human acceptance or confirmed build",
+    "No new verified MongoDB archive"
+  ]
+}
