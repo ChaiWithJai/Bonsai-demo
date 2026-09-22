@@ -1224,3 +1224,25 @@ test('Evidence note drafts remain bound to their record during a save',async({pa
  await expect(note).toHaveValue(textB);
  await expect(page.getByRole('button',{name:'Save note',exact:true})).toBeEnabled();
 });
+
+test('Workstream sidebar separates conversations from file activity',async({page},info)=>{
+ await page.goto('/#/workspace');
+ await expect(page.getByRole('textbox',{name:'Message Research analyst',exact:true})).toBeVisible();
+ if(info.project.name==='mobile')await page.locator('.mobile-stream-toggle').click();
+ const sidebar=page.getByRole('complementary',{name:'Workstreams'});
+ await expect(sidebar.getByRole('button',{name:'New workstream',exact:true})).toHaveCount(1);
+ const views=sidebar.locator('details.stream-group').filter({has:page.locator('summary', {hasText:'Saved views'})});
+ const files=sidebar.locator('details.stream-group').filter({has:page.locator('summary', {hasText:'Files & activity'})});
+ await expect(views).not.toHaveAttribute('open','');
+ await expect(files).not.toHaveAttribute('open','');
+ await files.locator('summary').click();
+ await expect(files).toHaveAttribute('open','');
+ await files.locator('summary').click();
+ await sidebar.getByRole('textbox',{name:'Search workstreams'}).fill('development');
+ await expect(files).toHaveAttribute('open','');
+ await expect(views).toHaveAttribute('open','');
+ await sidebar.getByRole('textbox',{name:'Search workstreams'}).fill('');
+ await expect(files).not.toHaveAttribute('open','');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/47-workstream-sidebar.'+info.project.name+'.png'),fullPage:true});
+});
