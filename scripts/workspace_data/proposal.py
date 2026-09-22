@@ -229,3 +229,33 @@ def validate_proposal(manifest, value, aliases):
     if value['structure'] is not None:
         compiled['grouping_origin']='model-structured fields, unreviewed; not learned similarity clusters'
     return compiled
+
+
+def repair_diagnostics(manifest, value, aliases, first_error):
+    """Collect independent repair hints without changing or accepting the proposal."""
+    errors = [str(first_error)]
+    if not isinstance(value, dict):
+        return errors
+    interpretation = value.get('interpretation')
+    if isinstance(interpretation, dict) and isinstance(interpretation.get('findings'), list):
+        for index, finding in enumerate(interpretation['findings']):
+            if isinstance(finding, dict) and isinstance(finding.get('record_ids'), list):
+                if not 1 <= len(finding['record_ids']) <= 5:
+                    errors.append(f'interpretation.findings[{index}].record_ids has {len(finding["record_ids"])} entries; use one to five references per finding and split claims when needed.')
+    plan = value.get('plan')
+    if isinstance(plan, dict):
+        try:
+            working = structured_manifest(manifest, value.get('structure'), aliases)
+            declared = plan.get('fields')
+            if isinstance(declared, list) and all(isinstance(f, dict) and isinstance(f.get('name'), str) for f in declared):
+                expected = {key for row in working['records'] for key in row['data']}
+                names = {f['name'] for f in declared}
+                if names != expected:
+                    errors.append('plan.fields must classify every record field. Missing: '+', '.join(sorted(expected-names))+'; unexpected: '+', '.join(sorted(names-expected))+'. Preserve supported source values.')
+        except (ValueError, TypeError, KeyError) as exc:
+            errors.append(str(exc))
+        view = plan.get('view')
+        if isinstance(view, dict) and view.get('component') == 'RecordTable' and isinstance(view.get('columns'), list):
+            if not 1 <= len(view['columns']) <= 6:
+                errors.append(f'plan.view.columns has {len(view["columns"])} entries; choose one to six overview columns. All classified fields remain available in record details.')
+    return list(dict.fromkeys(errors))[:10]

@@ -7,7 +7,7 @@ import threading
 import time
 import uuid
 from workspace_data.desktop_plan import profile, compile_plan, PLAN_INSTRUCTIONS, ensure_group_root
-from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal, revision_messages, planning_profile
+from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal, revision_messages, planning_profile, repair_diagnostics
 from workspace_data.record_review import apply_human_reviews
 from workspace_provider import GenerationCancelled, LocalProvider
 from workspace_store import RevisionConflict
@@ -332,6 +332,7 @@ class SourceJobs:
                     self.save(folder, f'preflight-{turn}.json', preflight)
                     if not preflight['fits']:
                         raise ValueError('Source profile exceeds the model context; choose fewer fields or a smaller source')
+                    proposal = None
                     response = span('model.plan', {'turn':turn,'messages':messages}, lambda:self.proposal_planner.generate(messages, [], 'source-'+status['id'], cancel, lambda delta:None, 4096))
                     self.save(folder, f'model-{turn}.json', response)
                     try:
@@ -346,8 +347,9 @@ class SourceJobs:
                         plan = proposal['plan']
                         break
                     except (ValueError, TypeError, KeyError) as exc:
-                        error = str(exc)
-                        self.save(folder, f'validation-{turn}.json', {'error':error})
+                        diagnostics = repair_diagnostics(manifest, proposal, packet['record_id_map'], exc)
+                        error = '\n'.join(diagnostics)
+                        self.save(folder, f'validation-{turn}.json', {'error':error,'diagnostics':diagnostics})
                         if error in failures or turn == 1:
                             raise ValueError('Plan validation failed within the two-call budget: '+error) from exc
                         failures.add(error)
