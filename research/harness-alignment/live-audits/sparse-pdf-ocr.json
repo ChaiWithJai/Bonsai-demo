@@ -1,0 +1,46 @@
+{
+  "source_id": "91d10b75eb64a3635f8706ab6f7f90711f71e5c30474d55d5a004fa273b41072",
+  "source_sha256": "1516f295ac1270d13d717cfc10833869328e12e5fcb39245b7f66d7e36f21297",
+  "run_id": "6d3f06ca66d747b0bfc7dea2e9f0e942",
+  "baseline_text": "Development fixture - page 1",
+  "recovered_phrases": [
+    "Project: Orchard",
+    "Owner: Maya",
+    "Status: Ready for review",
+    "Open issues: 3"
+  ],
+  "checks": {
+    "baseline_missed_scanned_body": true,
+    "live_upload_preserved_header": true,
+    "live_upload_recovered_body": true
+  },
+  "coverage": {
+    "page_count": 1,
+    "pages_with_text": 1,
+    "ocr_pages": [
+      1
+    ],
+    "unresolved_pages": [],
+    "pages": [
+      {
+        "page": 1,
+        "method": "poppler+apple-vision-ocr",
+        "characters": 120,
+        "embedded_characters": 28,
+        "ocr_trigger": "sparse_embedded_text",
+        "status": "extracted",
+        "error": null
+      }
+    ],
+    "limitation": "Embedded text is extracted on text-bearing pages. OCR supplements pages with fewer than 120 non-whitespace embedded characters, including header-only scans. Existing text is preserved; denser mixed text/image pages may still contain unread image content. Diagrams, charts and tables are not semantically interpreted; page text is unreviewed."
+  },
+  "tests_passed": 254,
+  "scope": "Synthetic mixed embedded-header/image-body PDF; extraction-only check",
+  "extractor": "Poppler plus Apple Vision, not Bonsai inference",
+  "limitations": [
+    "120-character threshold is a heuristic",
+    "Denser mixed-image pages can still contain unread content",
+    "No diagram or table semantic understanding claimed",
+    "No user PDF was modified or confirmed"
+  ]
+}

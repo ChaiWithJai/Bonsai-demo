@@ -16,7 +16,7 @@ class PDFTest(unittest.TestCase):
         def command(argv,timeout=60):
             calls.append(argv)
             if argv[0]=='pdfinfo':return b'Pages: 2\n'
-            if argv[0]=='pdftotext':return b'Native text\f\f'
+            if argv[0]=='pdftotext':return (('Native text '*30)+'\f\f').encode()
             if argv[0]=='pdftoppm' or argv[0]=='swiftc':return b''
             return json.dumps([{'text':'Scanned page text','confidence':0.9}]).encode()
         with tempfile.TemporaryDirectory() as root, patch('workspace_data.pdf.command',side_effect=command),patch('workspace_data.pdf.shutil.which',return_value='/test/bin'):
@@ -45,3 +45,26 @@ class PDFTest(unittest.TestCase):
     def test_page_count_mismatch_cannot_be_reported_as_success(self):
         with tempfile.TemporaryDirectory() as root,patch('workspace_data.pdf.shutil.which',return_value='/test/bin'),patch('workspace_data.pdf.command',side_effect=[b'Pages: 2\n',b'Only one page\f']):
             with self.assertRaisesRegex(ValueError,'coverage mismatch'):extract_pdf(b'%PDF-test',Path(root))
+
+    def test_sparse_embedded_header_is_supplemented_with_ocr(self):
+        def command(argv,timeout=60):
+            if argv[0]=='pdfinfo':return b'Pages: 1\n'
+            if argv[0]=='pdftotext':return b'Page 1\f'
+            if argv[0] in ('pdftoppm','swiftc'):return b''
+            return json.dumps([{'text':'Page 1'},{'text':'Owner: Maya'},{'text':'Open issues: 3'}]).encode()
+        with tempfile.TemporaryDirectory() as root,patch('workspace_data.pdf.command',side_effect=command),patch('workspace_data.pdf.shutil.which',return_value='/test/bin'):
+            result=extract_pdf(b'%PDF-test',root)
+            self.assertEqual(result['records'][0]['data']['text'],'Page 1\nOwner: Maya\nOpen issues: 3')
+            self.assertEqual(result['extraction_coverage']['pages'][0]['ocr_trigger'],'sparse_embedded_text')
+            self.assertEqual(result['extraction_coverage']['ocr_pages'],[1])
+
+    def test_sparse_page_ocr_failure_retains_embedded_text_and_reports_gap(self):
+        def command(argv,timeout=60):
+            if argv[0]=='pdfinfo':return b'Pages: 1\n'
+            if argv[0]=='pdftotext':return b'Page 1\f'
+            raise ValueError('OCR unavailable')
+        with tempfile.TemporaryDirectory() as root,patch('workspace_data.pdf.command',side_effect=command),patch('workspace_data.pdf.shutil.which',return_value='/test/bin'):
+            result=extract_pdf(b'%PDF-test',root)
+            self.assertEqual(result['records'][0]['data']['text'],'Page 1')
+            self.assertEqual(result['records'][0]['data']['extraction_status'],'needs_review')
+            self.assertEqual(result['extraction_coverage']['unresolved_pages'],[1])
