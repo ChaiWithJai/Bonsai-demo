@@ -345,7 +345,8 @@ class Handler(BaseHTTPRequestHandler):
                 elif len(parts) == 4 and parts[3] == 'collection' and self.command == 'POST':
                     result = sources.collection(payload.get('source_ids'),payload.get('apply_reviews',False))
                 elif len(parts) == 4 and self.command == 'GET':
-                    result = sources.get(parts[3])
+                    query = parse_qs(parsed.query)
+                    result = sources.get(parts[3], offset=int(query.get('offset',['0'])[0]), limit=int(query.get('limit',['100'])[0]))
                 elif len(parts) == 5 and parts[4] == 'extract' and self.command == 'POST':
                     result = sources.extract_media(parts[3], refresh_pdf=payload.get('refresh_pdf') is True)
                 elif len(parts) == 5 and parts[4] == 'vision' and self.command == 'POST':
