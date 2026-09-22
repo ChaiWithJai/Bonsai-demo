@@ -1,0 +1,33 @@
+{
+  "scope": "Static SVG geometry for the pinned Semiotic renderer; no model quality or human acceptance claim",
+  "source_job": "d2bf4ae056d74a519cf57a9249a143b8",
+  "model_calls": 0,
+  "tests_passed": 6,
+  "geometry_contract": {
+    "status": "passed",
+    "scope": "Circle bounds and target coordinates in the pinned SVG scene; not collision or semantic accuracy",
+    "circle_count": 3
+  },
+  "rendering_adjustments": [
+    {
+      "axis": "x",
+      "reason": "Keep boundary marks inside the plot",
+      "previous_extent": [
+        1789516800000,
+        1789776000000
+      ],
+      "extent": [
+        1789513081205.165,
+        1789779718794.835
+      ],
+      "padding_pixels": 10,
+      "source_values_changed": false
+    }
+  ],
+  "point_count": 3,
+  "limitations": [
+    "Other glyph shapes and collision detection are not assessed.",
+    "Previously built project revisions remain unchanged.",
+    "No new verified MongoDB backup."
+  ]
+}
