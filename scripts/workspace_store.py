@@ -163,7 +163,7 @@ class WorkspaceStore:
         return aid
 
     def event(self,attempt,kind,payload):
-        allowed={'trace.started','context.checkpoint','loop.detected','model.delta','tool.started','tool.finished','build.finished','preview.ready','check.finished','attempt.completed','attempt.failed','attempt.cancelled'}
+        allowed={'verification.reused','trace.started','context.checkpoint','loop.detected','model.delta','tool.started','tool.finished','build.finished','preview.ready','check.finished','attempt.completed','attempt.failed','attempt.cancelled'}
         if kind not in allowed or not isinstance(payload,dict):raise ValueError('Unknown event contract')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
