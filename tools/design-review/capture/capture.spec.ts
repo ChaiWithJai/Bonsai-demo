@@ -422,6 +422,7 @@ test('Structured proposal links quotes to their original sources',async({page},i
  await page.goto('/#/workspace');
  const proposal=page.getByRole('region',{name:'Bonsai proposal'});
  await expect(proposal).toBeVisible();
+ await proposal.locator('.record-review > summary').click();
  const records=proposal.locator('.structured-records article');
  for(let i=0;i<job.proposal.structure.records.length;i++) {
   const record=records.nth(i);await record.locator('summary').click();
@@ -1460,6 +1461,18 @@ test('Alternative view choice drafts feedback before any revision request',async
  await nav.getByRole('button',{name:'Files',exact:true}).click();
  await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);
  await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const recordReview=page.locator('.proposal .record-review');
+ await expect(recordReview.locator('.structured-records')).not.toBeVisible();
+ await recordReview.locator(':scope > summary').click();
+ const recordRows=recordReview.locator('.structured-records > article');
+ await expect(recordRows).toHaveCount(job.proposal.structure.records.length);
+ for(let i=0;i<job.proposal.structure.records.length;i++){
+  for(const value of Object.values(job.proposal.structure.records[i].values)){
+   await expect(recordRows.nth(i)).toContainText(String(value));
+  }
+ }
+ await recordReview.locator(':scope > summary').click();
+ await expect(recordReview.locator('.structured-records')).not.toBeVisible();
  await page.locator('.view-choice summary').click();
  await page.getByRole('combobox',{name:'View to discuss',exact:true}).selectOption('LineChart');
  const feedback=page.getByRole('textbox',{name:'Clarify or change this proposal',exact:true});
