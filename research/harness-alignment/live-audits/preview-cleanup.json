@@ -1,0 +1,73 @@
+{
+  "scope": "Close inactive development preview listeners without deleting projects",
+  "closed": [
+    {
+      "id": "1822cd08700a4980b63604f522b91e3b",
+      "title": "Development: status filter with verification reuse",
+      "port": 63694,
+      "source_preserved": true
+    },
+    {
+      "id": "4e5192af1fcd4e5698154d49da6bf2cc",
+      "title": "Orchard Review Thread: Issue Count Over Time",
+      "port": 63701,
+      "source_preserved": true
+    },
+    {
+      "id": "87b461493c5c4a548eee8ec6d6603d9c",
+      "title": "Development \u00b7 inspect timeline observations",
+      "port": 63703,
+      "source_preserved": true
+    },
+    {
+      "id": "cecb54fb6b604fdd85c8230f7dabaa53",
+      "title": "Inspectable Project Review Record",
+      "port": 63705,
+      "source_preserved": true
+    },
+    {
+      "id": "989fd3b9fa3e4ca5be317bb8a54a176a",
+      "title": "Bonsai Model Family Exploration",
+      "port": 63707,
+      "source_preserved": true
+    },
+    {
+      "id": "54079179a81a442ba7aabcf8e3e0ff6d",
+      "title": "Frame Annotation Explorer",
+      "port": 63709,
+      "source_preserved": true
+    },
+    {
+      "id": "76adc869e2bf473e83cda2d197fa9347",
+      "title": "Development \u00b7 inspect cited video moments",
+      "port": 63711,
+      "source_preserved": true
+    },
+    {
+      "id": "99baac295ccc4914af961bc62a8c7a2c",
+      "title": "Side-by-Side Comparison of Two Video Frame Observations",
+      "port": 63713,
+      "source_preserved": true
+    },
+    {
+      "id": "d59c4df594b34ffc8fece1aea401df2c",
+      "title": "Video evidence: observations and requirements",
+      "port": 63715,
+      "source_preserved": true
+    }
+  ],
+  "retained": [
+    {
+      "id": "171bc98e7caf4aa48ef1a600cea1f028",
+      "title": "Cedar development review issue count over time",
+      "url": "http://127.0.0.1:63692/"
+    },
+    {
+      "id": "9a7aa8e346a544ee9132500f06f43fb6",
+      "title": "Orchard review issue change",
+      "url": "http://127.0.0.1:63697/"
+    }
+  ],
+  "main_ui": "http://127.0.0.1:5257/#/workspace",
+  "model_and_mlflow_untouched": true
+}
