@@ -1,0 +1,147 @@
+{
+  "scope": "Original status-filter request replay from frozen source",
+  "attempt_id": "bde0a4d8c22a4aeaad20228929a6c04a",
+  "run_id": "81182380b2d648f59ed542619cc00016",
+  "baseline_attempt": "236dfbd658cc4c7b9735a8b0505561ec",
+  "workspace_id": "1822cd08700a4980b63604f522b91e3b",
+  "status": "completed",
+  "elapsed_seconds": 255.38958349986933,
+  "repairs": 1,
+  "result_revision": "3a3d412a3f9572b498e665bc2224307561ef589dc26f8753331a8ef5cbfe8943",
+  "comparison": {
+    "same_initial_files": true,
+    "same_fixture": true,
+    "same_request_and_checks": true,
+    "same_generation_settings": true,
+    "same_first_model_message": false,
+    "fresh_workspace_and_conversation": true
+  },
+  "verification_reuse_events": 0,
+  "request_verification": "passed_supplied_checks",
+  "extended_check": {
+    "passed": true,
+    "scope": "Only the supplied request checks, not full semantic correctness",
+    "viewports": [
+      {
+        "width": 1440,
+        "steps": [
+          {
+            "index": 0,
+            "passed": true
+          },
+          {
+            "index": 1,
+            "passed": true
+          },
+          {
+            "index": 2,
+            "passed": true
+          },
+          {
+            "index": 3,
+            "passed": true
+          },
+          {
+            "index": 4,
+            "passed": true
+          },
+          {
+            "index": 5,
+            "passed": true
+          },
+          {
+            "index": 6,
+            "passed": true
+          },
+          {
+            "index": 7,
+            "passed": true
+          },
+          {
+            "index": 8,
+            "passed": true
+          },
+          {
+            "index": 9,
+            "passed": true
+          },
+          {
+            "index": 10,
+            "passed": true
+          },
+          {
+            "index": 11,
+            "passed": true
+          },
+          {
+            "index": 12,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "width": 390,
+        "steps": [
+          {
+            "index": 0,
+            "passed": true
+          },
+          {
+            "index": 1,
+            "passed": true
+          },
+          {
+            "index": 2,
+            "passed": true
+          },
+          {
+            "index": 3,
+            "passed": true
+          },
+          {
+            "index": 4,
+            "passed": true
+          },
+          {
+            "index": 5,
+            "passed": true
+          },
+          {
+            "index": 6,
+            "passed": true
+          },
+          {
+            "index": 7,
+            "passed": true
+          },
+          {
+            "index": 8,
+            "passed": true
+          },
+          {
+            "index": 9,
+            "passed": true
+          },
+          {
+            "index": 10,
+            "passed": true
+          },
+          {
+            "index": 11,
+            "passed": true
+          },
+          {
+            "index": 12,
+            "passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "interpretation": "Original request completed after one failed request check without supplying the targeted correction. The reuse guard was not exercised, so this result does not establish a causal improvement from that guard.",
+  "limits": [
+    "One reused synthetic development case, not held-out reliability",
+    "No human acceptance or training label",
+    "No new verified MongoDB backup"
+  ]
+}
