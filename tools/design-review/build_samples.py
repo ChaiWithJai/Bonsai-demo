@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "47-workstream-sidebar": ("workstreams", "Compact roles and conversations with searchable saved views and file activity"),
     "46-video-timestamp": ("workstreams", "Speech from video retains video playback at a nonzero timestamp"),
     "46-audio-timestamp": ("workstreams", "Standalone audio seeks to a cited transcript timestamp"),
     "45-inline-source-media": ("workstreams", "Selected video evidence plays beside record notes"),
