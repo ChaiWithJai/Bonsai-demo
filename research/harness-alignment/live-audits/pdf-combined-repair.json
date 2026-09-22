@@ -1,0 +1,24 @@
+{
+  "job_id": "822dcb824ec8440489d1d6b91c7c2470",
+  "run_id": "ca00764271944289b2cd4ba4a743ad6c",
+  "baseline_run_id": "da9274705a8941ccb2474e481a62886c",
+  "status": "awaiting_confirmation",
+  "same_source_snapshot": true,
+  "same_source_packet": true,
+  "same_model_configuration": true,
+  "same_initial_response": true,
+  "structured_records_and_quotes_preserved": true,
+  "model_calls": 2,
+  "records_shown": 79,
+  "records_total": 79,
+  "structured_records": 5,
+  "overview_columns": 6,
+  "all_fields_declared": true,
+  "confirmed": false,
+  "limitations": [
+    "Single repeated development case, not a general repair-success estimate",
+    "Timing units, incremental versus cumulative improvements, and grouping require human review",
+    "No interface build or human acceptance was performed",
+    "MongoDB restore-verified backup remains unavailable"
+  ]
+}
