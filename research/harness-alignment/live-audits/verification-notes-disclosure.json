@@ -1,0 +1,38 @@
+{
+  "scope": "Keep automated browser-check notes separate from discussion in generated views",
+  "behavior": [
+    "Known workspace-automated-check notes remain saved and available under a closed disclosure",
+    "Other note origins remain visible",
+    "No review labels or note contents changed"
+  ],
+  "engineering_revisions": [
+    {
+      "workspace_id": "171bc98e7caf4aa48ef1a600cea1f028",
+      "base_revision": "e01d4597fb36fa005695095c66cfc55ae0d997a059d3b08948a9f801198f6657",
+      "revision": "8aece56fc0ba023ff5c7394c616c30b7584c4abad5ba3b8ee63cf3ff3a97f32c",
+      "author_scope": "Codex engineering change; not model output or human review"
+    },
+    {
+      "workspace_id": "9a7aa8e346a544ee9132500f06f43fb6",
+      "base_revision": "da7aa248b4e86b9454ce487dcd2a1ab3c744b1193cc02e4f98c3e003e93f0037",
+      "revision": "ed914c031e76d81c1cfd8e34ccda66638fc16825385ee3897c27030f2f1364f4",
+      "author_scope": "Codex engineering change; preserves model-generated filters"
+    }
+  ],
+  "checks": [
+    "Both updated projects built successfully",
+    "Svelte autofixer found no issues; local derived-computation Map/Set suggestions reviewed",
+    "Desktop/mobile disclosure checks passed using intercepted note fixtures, not saved human reviews",
+    "Live meeting-note source, chart-selection and note-persistence checks passed",
+    "All 13 corrected-email filter checks passed at both viewports"
+  ],
+  "screens": [
+    "71-discussion-and-verification-notes.desktop.png",
+    "71-discussion-and-verification-notes.mobile.png"
+  ],
+  "limits": [
+    "Codex engineering changes, not a new Bonsai generation result",
+    "Existing earlier project revisions remain unchanged",
+    "No human acceptance or verified MongoDB backup"
+  ]
+}
