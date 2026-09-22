@@ -45,8 +45,23 @@ def stop_owned(process):
 
 
 
+def context_capacity(config):
+    """Require an explicit bounded context; zero must never request the full model window."""
+    value = config.get('context', 16384)
+    if type(value) is not int or not 4096 <= value <= 262144:
+        raise ValueError('Workspace context must be an integer from 4096 to 262144 tokens; omit it for 16384')
+    return value
+
+
+def server_command(config, runtime, model, port):
+    return [str(runtime), '-m', str(model), '--host', '127.0.0.1', '--port', str(port),
+            '-ngl', '99', '-c', str(context_capacity(config)), '-np', '1', '--jinja',
+            '--reasoning-budget', '0', '--alias', config['alias']]
+
+
 @contextmanager
 def model_server(config, output):
+    context = context_capacity(config)
     output = Path(output)
     model = Path(config['model'])
     runtime = Path(config['runtime_directory'])/'llama-server'
@@ -55,7 +70,7 @@ def model_server(config, output):
     identity = {key:config[key] for key in ('model_sha256','runtime_sha256','model_revision','model_label')}
     identity.update(runtime_libraries={p.name:sha(p) for p in runtime.parent.glob('*.dylib') if not p.is_symlink()},
                     platform=platform.platform(), hardware=subprocess.check_output(['sysctl','-n','machdep.cpu.brand_string','hw.memsize'],text=True).strip(),
-                    context=16384, gpu_layers=99)
+                    context=context, gpu_layers=99)
     save(output/'identity.json',identity)
     if config.get('mmproj'):
         projector=Path(config['mmproj'])
@@ -84,7 +99,7 @@ def model_server(config, output):
             for name,digest in identity['runtime_libraries'].items():
                 if sha(runtime.parent/name)!=digest:raise ValueError('Runtime library changed before launch')
             port=free_port()
-            command=[str(runtime),'-m',str(model),'--host','127.0.0.1','--port',str(port),'-ngl','99','-c','16384','-np','1','--jinja','--reasoning-budget','0','--alias',config['alias']]
+            command=server_command(config, runtime, model, port)
             if config.get('mmproj'):
                 if sha(config['mmproj'])!=identity['mmproj_sha256']:raise ValueError('Vision projector changed before launch')
                 command+=['--mmproj',config['mmproj'],'--image-max-tokens','1024']

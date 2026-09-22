@@ -87,8 +87,8 @@ class SourceJobsTest(unittest.TestCase):
             result=jobs.start(source['source_id'],'Inspect the source records')
             jobs.active[result['id']][1].join(10)
             path=jobs.root/result['id']
-            first=json.loads((path/'packing-32000.json').read_text())
-            second=json.loads((path/'packing-24000.json').read_text())
+            first=json.loads((path/'packing-64000.json').read_text())
+            second=json.loads((path/'packing-48000.json').read_text())
             self.assertGreater(first['records_shown'],second['records_shown'])
             self.assertFalse(first['preflight']['fits']);self.assertTrue(second['preflight']['fits'])
             self.assertEqual(provider.calls,2)
