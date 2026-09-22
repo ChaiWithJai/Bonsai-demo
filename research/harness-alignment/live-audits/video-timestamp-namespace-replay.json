@@ -1,0 +1,38 @@
+{
+  "job_id": "0693770cdf354f71bc49e9a706cafd71",
+  "run_id": "50ef50046aef4272a29822341204339f",
+  "status": "failed",
+  "same_inputs": {
+    "source-packet.json": true,
+    "source-manifest.json": true,
+    "profile.json": true,
+    "model-info.json": true
+  },
+  "model_calls": 2,
+  "timestamp_citations": [
+    {
+      "record_id": "r2",
+      "field": "locator.time_seconds",
+      "quote": "0.0"
+    },
+    {
+      "record_id": "r6",
+      "field": "locator.time_seconds",
+      "quote": "2.875"
+    },
+    {
+      "record_id": "r10",
+      "field": "locator.time_seconds",
+      "quote": "5.75"
+    }
+  ],
+  "first_pass_valid": false,
+  "repair_valid": false,
+  "failure": "Extra id keys remained in structured records after a vague validator error",
+  "change": "Validator now names unexpected and missing keys and states that the harness assigns IDs",
+  "limits": [
+    "No first-pass reliability improvement established",
+    "Updated repair message has unit coverage but no live model replay yet",
+    "No confirmation or generated project; no human labels"
+  ]
+}

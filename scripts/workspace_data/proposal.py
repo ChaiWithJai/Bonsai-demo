@@ -131,8 +131,14 @@ def structured_manifest(manifest, structure, aliases):
     original={r['id']:r for r in manifest['records']}
     fields=None;output=[]
     for index,record in enumerate(records):
-        if not isinstance(record,dict) or set(record)!={'values','evidence'}:
-            raise ValueError('Each structured record requires values and evidence')
+        if not isinstance(record,dict):
+            raise ValueError('Each structured record must be an object with exactly values and evidence')
+        if set(record)!={'values','evidence'}:
+            unexpected=sorted(set(record)-{'values','evidence'})
+            missing=sorted({'values','evidence'}-set(record))
+            raise ValueError('Each structured record requires exactly values and evidence. '
+                             f'Unexpected keys: {unexpected}; missing keys: {missing}. '
+                             'Remove unexpected keys. The harness assigns record IDs; do not add an id field.')
         values=record['values']
         if not isinstance(values,dict) or not 1<=len(values)<=20 or any(not isinstance(k,str) or not k or len(k)>100 for k in values):
             raise ValueError('Structured records require one to twenty named fields')
