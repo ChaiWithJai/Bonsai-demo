@@ -1,0 +1,32 @@
+{
+  "scope": "development retrieval regression, no new inference or human acceptance",
+  "changes": [
+    "Revision feedback participates in evidence selection",
+    "Explicit page numbers and ranges precede keyword ranking",
+    "Requested pages are reported as shown, omitted, or not found"
+  ],
+  "original_pdf_probe": {
+    "requested": [
+      10,
+      11,
+      12,
+      79
+    ],
+    "shown": [
+      10,
+      11,
+      12,
+      79
+    ],
+    "omitted": [],
+    "not_found": []
+  },
+  "tests_passed": 267,
+  "limitations": [
+    "Selection remains bounded, not exhaustive document understanding",
+    "Collection page numbers may match multiple files",
+    "Original PDF source and pending proposal remain unchanged",
+    "MongoDB backup remains unavailable"
+  ],
+  "run_id": "716962ff8e0f4e579676bc4ab03fa6d3"
+}
