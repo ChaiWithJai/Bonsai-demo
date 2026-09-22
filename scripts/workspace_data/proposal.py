@@ -192,7 +192,7 @@ def structured_manifest(manifest, structure, aliases):
     if not isinstance(records,list) or not 1<=len(records)<=30:
         raise ValueError('Structure must contain one to thirty source-grounded records')
     original={r['id']:r for r in manifest['records']}
-    fields=None;output=[]
+    fields=set();output=[]
     for index,record in enumerate(records):
         if not isinstance(record,dict):
             raise ValueError('Each structured record must be an object with exactly values and evidence')
@@ -207,9 +207,9 @@ def structured_manifest(manifest, structure, aliases):
             raise ValueError('Structured records require one to twenty named fields')
         if any(v is not None and (type(v) not in (str,int,float,bool) or isinstance(v,str) and len(v)>4000) for v in values.values()):
             raise ValueError('Structured values must be short scalar values or null')
-        if fields is not None and set(values)!=fields:
-            raise ValueError('All structured records must use the same fields; use null for missing values')
-        fields=set(values)
+        fields.update(values)
+        if len(fields)>20:
+            raise ValueError('Structured records may use at most twenty distinct fields across the dataset')
         evidence=record['evidence']
         if not isinstance(evidence,list) or not 1<=len(evidence)<=5:
             raise ValueError('Every structured record needs one to five supporting source passages')
@@ -220,7 +220,15 @@ def structured_manifest(manifest, structure, aliases):
         output.append({'id':manifest['source_id']+':structured:'+str(index)+':'+digest,'source_id':manifest['source_id'],
                        'locator':{'structured_record':index+1,'source_evidence':resolved},'data':values,
                        'evidence_status':'model_structured_unreviewed'})
-    return {**manifest,'records':output,'extractor':'bonsai-source-structuring-v1','review_status':'model_structured_unreviewed'}
+    added=[]
+    for row in output:
+        missing=sorted(fields-set(row['data']))
+        if missing:
+            added.append({'record_id':row['id'],'fields':missing})
+        row['data']={key:row['data'].get(key) for key in sorted(fields)}
+    return {**manifest,'records':output,'extractor':'bonsai-source-structuring-v1','review_status':'model_structured_unreviewed',
+            'structuring_normalization':{'operation':'fill_absent_fields_with_null','added_fields':added,'model_values_changed':False}}
+
 
 
 def validate_proposal(manifest, value, aliases):
@@ -251,6 +259,7 @@ def validate_proposal(manifest, value, aliases):
     compiled['original_record_count']=len(manifest['records'])
     if value['structure'] is not None:
         compiled['grouping_origin']='model-structured fields, unreviewed; not learned similarity clusters'
+        compiled['structuring_normalization']=working['structuring_normalization']
     return compiled
 
 
