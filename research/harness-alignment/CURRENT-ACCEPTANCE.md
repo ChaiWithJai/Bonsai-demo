@@ -223,3 +223,9 @@ Planning run ca63cc323c1e480ea7e42802518da1ed preserved the three structured val
 The structure contract now accepts locator.time_seconds, locator.start_seconds and locator.end_seconds as explicit provenance evidence. Values must match a present, finite, nonnegative numeric locator exactly. Bare timestamp keys remain invalid content fields. This separates source positions from words visible in the source and preserves zero-second evidence.
 
 All 248 tests pass. The frozen first response from planning run ca63cc323c1e480ea7e42802518da1ed validates when only its three time_seconds citation fields are changed to locator.time_seconds. This is a deterministic contract check, not a new model run or proof of first-pass model adherence. The original model output remains unchanged. No proposal was confirmed.
+
+### Timestamp namespace replay and repair feedback
+
+Replay 0693770cdf354f71bc49e9a706cafd71 used identical source packet, manifest, profile and model metadata. It correctly cited all three locator.time_seconds values on the first call, but introduced extra id fields in structured records. Both calls failed the strict record shape contract. Run 50ef50046aef4272a29822341204339f preserves both outputs and the audit. No first-pass reliability improvement or generated interface is claimed.
+
+The record-shape validator now names unexpected and missing keys and explicitly tells the model that the harness assigns IDs. A regression check reproduces the extra-id failure and verifies that removing it makes the same record valid. Live model effectiveness of this feedback remains unverified. No proposal was confirmed, and no human labels were created.

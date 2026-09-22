@@ -36,3 +36,11 @@ class TimestampEvidenceTests(unittest.TestCase):
         for value,quote in [(True,'true'),(float('inf'),'Infinity'),(-1,'-1'),('2.875','2.875')]:
             with self.subTest(value=value),self.assertRaises(ValueError):
                 structured_manifest(self.source(value),self.structure('locator.time_seconds',quote),{'r1':'s:0'})
+
+    def test_extra_record_id_error_identifies_the_required_repair(self):
+        structure=self.structure('locator.time_seconds','0')
+        structure['records'][0]['id']='stage_intake'
+        with self.assertRaisesRegex(ValueError, "Unexpected keys: \['id'\]; missing keys: \[\]"):
+            structured_manifest(self.source(0),structure,{'r1':'s:0'})
+        del structure['records'][0]['id']
+        self.assertEqual(len(structured_manifest(self.source(0),structure,{'r1':'s:0'})['records']),1)
