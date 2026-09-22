@@ -18,7 +18,7 @@ python3 scripts/workspace_regression_case.py --case email-thread \
   --compiled /absolute/path/to/compiled.json --output /absolute/path/to/check.json
 ```
 
-The command exits with status 1 when a checked contract fails. It compares record values without depending on row order, retains duplicate counts, checks the expected field mapping and rejects excluded records. Numerically equal integers and floats compare equally. Booleans remain distinct. Expected field names are exact; a semantically equivalent renamed field needs review.
+The command exits with status 1 when a checked contract fails. It requires the compiled source hash to match the frozen input, compares record values without depending on row order, retains duplicate counts, checks the expected field mapping and rejects excluded records. Numerically equal integers and floats compare equally. Booleans remain distinct. Expected field names are exact; a semantically equivalent renamed field needs review.
 
 The original email proposal fails the view mapping check because it groups by review status. Its corrected proposal groups by project and passes. Both retain the same record values. The dated-series proposal passes these checks even though its original renderer joined the teams into one line. Rendering therefore still needs its separate series-count and browser checks.
 

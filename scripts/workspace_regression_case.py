@@ -27,6 +27,7 @@ def assess(case, compiled):
     expected_view = case['expected_view']
     actual_view = compiled['plan']['view']
     checks = {
+        'source_identity': compiled.get('source_sha256') == case['sha256'],
         'record_values': keyed([row['data'] for row in compiled['rows']]) == keyed(case['expected_records']),
         'view_mapping': all(actual_view.get(key) == value for key,value in expected_view.items()),
         'no_excluded_records': compiled['excluded_record_ids'] == [],

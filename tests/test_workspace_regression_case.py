@@ -7,10 +7,13 @@ from workspace_regression_case import assess, load_case, DEFAULT_SUITE
 class RegressionCaseTests(unittest.TestCase):
     def test_values_preserve_multiplicity_and_distinguish_bool_from_number(self):
         case=load_case(DEFAULT_SUITE,'email-thread')
-        compiled={'rows':[{'data':dict(row)} for row in case['expected_records']],
+        compiled={'source_sha256':case['sha256'],'rows':[{'data':dict(row)} for row in case['expected_records']],
                   'plan':{'view':case['expected_view']},'excluded_record_ids':[]}
         compiled['rows'][0]['data']['open_issue_count']=5.0
         self.assertTrue(assess(case,compiled)['passed'])
+        compiled['source_sha256']='wrong-source'
+        self.assertFalse(assess(case,compiled)['checks']['source_identity'])
+        compiled['source_sha256']=case['sha256']
         compiled['rows'].reverse()
         self.assertTrue(assess(case,compiled)['passed'])
         compiled['rows'][0]['data']['open_issue_count']=True
