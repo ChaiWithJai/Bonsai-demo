@@ -1,0 +1,49 @@
+{
+  "case": "Compile sparse model records without a schema-only model repair",
+  "parent_job_id": "7e3d28a1867e429bb3aaff79ce5d6eae",
+  "parent_run_id": "a419aa0d10834febac88969450551fb7",
+  "model_response_sha256": "ac94a0d206096c6f26e4c2b150637be9a4864b11fee5fce38673ef77a222ed24",
+  "previous_first_response_error": "All structured records must use the same fields; use null for missing values\nMake every structured record contain the union of existing fields: after_unit, after_value, annotation_scope, annotation_unit, annotation_value, before_unit, before_value, evidence_channel, extraction_status, measurement_scope, operation_name, page. Preserve record order and all existing values, labels and units. Add null only where a field was absent; do not remove fields or replace measurements with null. Declare the full union in plan.fields; overview columns may show a subset.",
+  "new_result": "Saved first response compiles with unchanged model values and citations",
+  "normalization": {
+    "operation": "fill_absent_fields_with_null",
+    "added_fields": [
+      {
+        "record_id": "02f32dd8bdd1d72b2e5293c89d06b739e19f789ad35820614bdcaec3f6ac3777:structured:0:9a8b0875653f474cebe8",
+        "fields": [
+          "annotation_scope",
+          "annotation_unit",
+          "annotation_value"
+        ]
+      },
+      {
+        "record_id": "02f32dd8bdd1d72b2e5293c89d06b739e19f789ad35820614bdcaec3f6ac3777:structured:1:0de436e88ef957667ae2",
+        "fields": [
+          "annotation_scope",
+          "annotation_unit",
+          "annotation_value"
+        ]
+      }
+    ],
+    "model_values_changed": false
+  },
+  "model_calls": 0,
+  "raw_proposal_unchanged": true,
+  "verified_measurements": {
+    "local_before": 14,
+    "local_before_unit": "ms",
+    "local_after": 520,
+    "local_after_unit": "us",
+    "whole_before": 402.1,
+    "whole_after": 389.1,
+    "whole_unit": "ms",
+    "annotation": -3,
+    "annotation_scope": "uncertain"
+  },
+  "limitations": [
+    "Offline replay, not a measured inference latency improvement",
+    "The source correction supplied the expected values",
+    "No human acceptance or build confirmation",
+    "No new verified MongoDB archive"
+  ]
+}
