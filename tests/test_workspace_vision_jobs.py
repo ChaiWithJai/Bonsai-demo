@@ -37,3 +37,47 @@ class VisionTest(unittest.TestCase):
             worker=SimpleNamespace(store=WorkspaceStore(root/'workspace'),provider=BadPlanner(),model_info={})
             jobs=SourceJobs(worker,sources)
             with self.assertRaisesRegex(ValueError,'no verified vision'):jobs.start_vision('x')
+
+    def test_pdf_page_vision_keeps_ocr_and_other_pages_and_replaces_only_selected_visuals(self):
+        import hashlib
+        from unittest.mock import patch
+        class Provider(BadPlanner):
+            def generate(self,*args):
+                return {'message':{'content':json.dumps({'rows':[{'Baseline_ms':402.1,'Vectorized_ms':389.1}]})}}
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);client=Client();sources=WorkspaceSources(root/'sources',client,'http://localhost:5210')
+            raw=b'%PDF-test';sid=hashlib.sha256(raw).hexdigest();directory=sources.root/sid;directory.mkdir()
+            (directory/'source.bin').write_bytes(raw)
+            ocr={'id':sid+':page:2','source_id':sid,'locator':{'page':2},'data':{'text':'Original OCR'}}
+            other={'id':sid+':other','source_id':sid,'locator':{'page':1,'evidence_channel':'visual'},'data':{'text':'Other page'}}
+            old={'id':sid+':old','source_id':sid,'locator':{'page':2,'evidence_channel':'visual'},'data':{'text':'Old observation'}}
+            manifest={'source_id':sid,'sha256':sid,'filename':'source.pdf','kind':'document','status':'extracted','extractor':'OCR','records':[ocr,other,old]}
+            (directory/'manifest.json').write_text(json.dumps(manifest));frame=root/'page.png';frame.write_bytes(b'png-fixture')
+            provider=Provider();worker=SimpleNamespace(store=WorkspaceStore(root/'workspace'),client=client,provider=provider,guard=threading.Lock(),running={},source_jobs=set(),tracking_uri='http://localhost:5210',model_info={'checkpoint_release':{'runtime':{'mmproj_sha256':'test'}}})
+            jobs=SourceJobs(worker,sources)
+            for invalid in (None,0,251,True,'2'):
+                with self.assertRaisesRegex(ValueError,'Select one PDF page'):jobs.start_vision(sid,invalid)
+            with patch('workspace_vision_jobs.image_units',return_value=[{'path':str(frame),'mime':'image/png','locator':{'page':2}}]) as units:
+                status=jobs.start_vision(sid,2);thread=jobs.active[status['id']][1];thread.join(10)
+            self.assertEqual(jobs.get(status['id'])['status'],'completed')
+            self.assertEqual(units.call_args.kwargs,{'page':2})
+            updated=sources.manifest(sid)
+            self.assertEqual(updated['records'][:2],[ocr,other])
+            self.assertNotIn(old,updated['records'])
+            self.assertEqual(updated['records'][-1]['locator']['page'],2)
+            self.assertEqual(updated['records'][-1]['evidence_status'],'model_extracted_unreviewed')
+            self.assertEqual(updated['vision_coverage']['pages'],[1,2])
+            self.assertEqual((directory/'source.bin').read_bytes(),raw)
+            # A rendering failure leaves the entire previous source snapshot intact.
+            with patch('workspace_vision_jobs.image_units',side_effect=ValueError('Page unavailable')):
+                failed=jobs.start_vision(sid,3);thread=jobs.active[failed['id']][1];thread.join(10)
+            self.assertEqual(jobs.get(failed['id'])['status'],'failed')
+            self.assertEqual(sources.manifest(sid),updated)
+            self.assertFalse(worker.source_jobs)
+
+    def test_packet_retains_unreviewed_model_provenance(self):
+        from workspace_data.proposal import source_packet
+        row={'id':'source:visual','locator':{'page':25,'evidence_channel':'visual'},'data':{'value':0},'evidence_status':'model_extracted_unreviewed','extraction_id':'run'}
+        packet=source_packet({'records':[row]},request='page 25')
+        self.assertEqual(packet['records'][0]['evidence_status'],'model_extracted_unreviewed')
+        self.assertEqual(packet['records'][0]['extraction_id'],'run')

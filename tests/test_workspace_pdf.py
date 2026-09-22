@@ -130,3 +130,22 @@ class PDFTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'Source extraction changed'):
                 save_review(root,refreshed,body)
             self.assertEqual(state(root,old)['latest'][body['record_id']]['event_id'],event['event_id'])
+
+    def test_refresh_keeps_separate_pdf_model_observations(self):
+        with tempfile.TemporaryDirectory() as root:
+            sources=WorkspaceSources(root,PDFClient(),'http://localhost:5210')
+            def result(text):
+                return {'kind':'document','status':'extracted','extractor':'test','records':[{'locator':{'page':1},'data':{'text':text}}],'extraction_coverage':{'page_count':1,'pages_with_text':1,'unresolved_pages':[]}}
+            with patch('workspace_data.pdf.extract_pdf',return_value=result('Before')):
+                first=sources.upload('page.pdf',b'%PDF-original')
+            sid=first['source_id'];manifest=sources.manifest(sid)
+            visual={'id':sid+':visual','locator':{'page':1,'evidence_channel':'visual'},'data':{'text':'Unreviewed interpretation'},'evidence_status':'model_extracted_unreviewed'}
+            manifest['records'].append(visual)
+            manifest['pdf_visual_runs']={'1':{'run_id':'vision'}}
+            manifest['vision_coverage']={'samples':1,'records':1,'pages':[1]}
+            (Path(root)/sid/'manifest.json').write_text(json.dumps(manifest))
+            with patch('workspace_data.pdf.extract_pdf',return_value=result('After')):
+                refreshed=sources.extract_media(sid,refresh_pdf=True)
+            self.assertEqual(refreshed['records'][0]['data']['text'],'After')
+            self.assertEqual(refreshed['records'][1],visual)
+            self.assertEqual(sources.manifest(sid)['pdf_visual_runs'],manifest['pdf_visual_runs'])

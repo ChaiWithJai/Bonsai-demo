@@ -1,0 +1,73 @@
+{
+  "case": "Original PDF page 25, selected-page Bonsai vision development experiment",
+  "source_sha256": "2ab8e898b0f0208138af7e71629e05925b333afe8d13e49953bfad6dfbc1cb93",
+  "page": 25,
+  "runs": [
+    {
+      "job_id": "f7c959f728c8419989cfd0760266c3b0",
+      "run_id": "3ddd23d136c64efe96528882abf817e7",
+      "status": "completed",
+      "elapsed_seconds": 19.081,
+      "records": 7,
+      "error": null,
+      "rendered_page_sha256": "a3c1ee5d107dfc06d66b05c3f984ceb69aa7a97b4e760377bc204782ad989a51",
+      "model_info_sha256": "06107d76265624ef9229f720c1702397effd4c65bb0bb4ffa2b9150c9071d7a7",
+      "config": {
+        "profile": "legacy-greedy",
+        "seed": 42,
+        "max_tokens": 4096,
+        "selected_pdf_page": 25
+      },
+      "constrained_output": false
+    },
+    {
+      "job_id": "e5cc29ad88df4ad4bf233dfab82f9b62",
+      "run_id": "9f5d5298363d4723bbad8dc01ce6b444",
+      "status": "failed",
+      "elapsed_seconds": 12.571,
+      "records": 0,
+      "error": "OCR fields must be scalar text, numbers, booleans or null",
+      "rendered_page_sha256": "a3c1ee5d107dfc06d66b05c3f984ceb69aa7a97b4e760377bc204782ad989a51",
+      "model_info_sha256": "06107d76265624ef9229f720c1702397effd4c65bb0bb4ffa2b9150c9071d7a7",
+      "config": {
+        "profile": "legacy-greedy",
+        "seed": 42,
+        "max_tokens": 4096,
+        "selected_pdf_page": 25
+      },
+      "constrained_output": false
+    },
+    {
+      "job_id": "4ced98dc31564f0eb0ca06abb53aa97b",
+      "run_id": "7390f0804fca43ada2db4f4c42a48b5a",
+      "status": "completed",
+      "elapsed_seconds": 8.09,
+      "records": 3,
+      "error": null,
+      "rendered_page_sha256": "a3c1ee5d107dfc06d66b05c3f984ceb69aa7a97b4e760377bc204782ad989a51",
+      "model_info_sha256": "06107d76265624ef9229f720c1702397effd4c65bb0bb4ffa2b9150c9071d7a7",
+      "config": {
+        "profile": "legacy-greedy",
+        "seed": 42,
+        "max_tokens": 4096,
+        "selected_pdf_page": 25
+      },
+      "constrained_output": true
+    }
+  ],
+  "preserved_original_records": 79,
+  "current_visual_observations": 3,
+  "previous_proposal_unchanged": true,
+  "human_review": "none; no confirmation or acceptance recorded",
+  "findings": [
+    "The first table-oriented prompt copied baseline/vectorized values but turned software screenshot annotations into table headers with null values.",
+    "The region-oriented prompt separated the regions but returned nested table arrays; validation rejected it and preserved the prior source.",
+    "The same region prompt with a scalar-row response schema completed with three unreviewed regions. Table columns and values remain comma-separated strings; numeric structuring is still required."
+  ],
+  "limits": [
+    "One reused development page, not held-out validation.",
+    "Elapsed times are observations with changing prompt/cache state, not a performance comparison.",
+    "No conclusion about other pages or general diagram comprehension.",
+    "The local MongoDB backup remains unavailable; no new verified restore archive."
+  ]
+}

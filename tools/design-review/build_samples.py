@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    '62-pdf-visual-observation': ('workspace', 'Selected PDF page observations stay separate from OCR and marked unreviewed'),
     '61-original-pdf-page': ('workspace', 'Original PDF page rendered on demand beside searchable extracted text'),
     '60-source-content-search': ('workspace', 'Read-only PDF content search finds a later-page measurement with its original record position'),
     '59-source-pagination': ('workspace', 'Development fixture: source inspection reaches the final records and returns to earlier pages'),
