@@ -164,6 +164,35 @@ class WorkerTest(unittest.TestCase):
         self.assertFalse(summary['check']['request_check']['ok'])
         self.assertIn('Requested heading is absent', json.dumps(self.provider.calls))
 
+    def test_unchanged_request_failure_is_reused_until_a_patch(self):
+        builds=[];checks=[];calls=[]
+        original_build=self.worker.tools.build
+        def build(workspace,*args):
+            builds.append(workspace['head']);return original_build(workspace,*args)
+        def check(workspace,*args):
+            checks.append(workspace['head'])
+            return {'ok':workspace['head']!=self.workspace['head'],'revision':workspace['head'],
+                    'report':{'error':'Requested heading is absent'}}
+        self.worker.tools.build=build;self.worker.tools.check_request=check
+        def generate(messages,*args):
+            index=len(calls);calls.append(json.loads(json.dumps(messages)))
+            if index==5:return {'message':{'role':'assistant','content':'Done'}}
+            if index==3:
+                name='apply_patch';parameters={'base_revision':self.workspace['head'],'edits':[{'path':'App.svelte','old_text':'Bonsai repository observations','new_text':'Requested heading'}]}
+            else:name,parameters=('check_browser' if index==2 else 'build'),{}
+            return {'message':{'role':'assistant','content':'','tool_calls':[{'id':str(index),'type':'function','function':{'name':name,'arguments':json.dumps(parameters)}}]}}
+        self.provider.generate=generate
+        expected=[{'target':{'role':'heading','name':'Requested heading'},'action':'visible','value':True}]
+        aid=self.worker.start(self.workspace['id'],self.workspace['head'],'Change heading',request_checks=expected)['attempt_id']
+        self.assertEqual(self.wait(aid)['status'],'completed')
+        self.assertEqual(len(builds),2);self.assertEqual(len(checks),2)
+        self.assertNotEqual(builds[0],builds[1])
+        reused=[e for e in self.store.events(aid) if e['kind']=='verification.reused']
+        self.assertEqual([e['payload']['tool'] for e in reused],['build','check_browser'])
+        self.assertEqual(self.client.runs[-1]['summary']['repairs'],1)
+        self.assertIn('Requested heading is absent',json.dumps(calls[2]))
+        self.assertIn('cached_verification',json.dumps(calls[2]))
+
     def test_fixed_request_checks_reach_model_and_trace(self):
         seen = []
         def check(workspace, preview, directory, cancel, checks):

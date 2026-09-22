@@ -318,7 +318,15 @@ class WorkspaceWorker:
             workspace = self.store.get(key)
             self.store.event(aid, 'tool.started', {'name': name, 'sequence': sequence})
             with span('tool.' + name, args) as output:
-                if name == 'read_file' and set(args) == {'path'}:
+                if (name in ('build', 'check_browser') and not args and checked
+                        and checked.get('revision') == workspace['head']
+                        and checked.get('request_check', {}).get('ok') is False):
+                    output.update(ok=False, revision=workspace['head'], cached_verification=True,
+                                  request_check=checked['request_check'],
+                                  error='This unchanged revision already failed the supplied request checks. Read the diagnostics and edit the source before building again. A new attempt can rerun verification if the failure was transient.')
+                    self.store.event(aid, 'verification.reused', {'revision':workspace['head'],
+                                     'tool':name, 'reason':'unchanged_revision_failed_request_checks'})
+                elif name == 'read_file' and set(args) == {'path'}:
                     if args['path'] not in workspace['files']:
                         raise ValueError('Source file not found')
                     output.update(path=args['path'], content=workspace['files'][args['path']], revision=workspace['head'])

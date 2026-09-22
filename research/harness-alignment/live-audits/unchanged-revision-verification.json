@@ -1,0 +1,16 @@
+{
+  "scope": "Prevent repeated request verification on unchanged source within an edit attempt",
+  "motivating_attempt": "236dfbd658cc4c7b9735a8b0505561ec",
+  "behavior": [
+    "Repeated build or browser-check calls return the saved failed request diagnostics for the same revision",
+    "No extra build, browser run, or repair-budget increment for a reused result",
+    "Successful source patch clears verification state",
+    "A new attempt can rerun verification; compiler and baseline failures are not cached"
+  ],
+  "verification": "Worker integration test uses a scripted provider to request build, repeated build, repeated browser check, patch, and build. It asserts two builds and checks, one failed-repair count, both reuse events, and successful post-patch verification.",
+  "limits": [
+    "Scripted-provider evidence does not prove Bonsai changes its tool choices",
+    "No live model performance improvement claimed",
+    "No human acceptance or new verified MongoDB backup"
+  ]
+}
