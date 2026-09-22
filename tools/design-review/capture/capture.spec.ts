@@ -2045,3 +2045,26 @@ test('Presentation generated view retains unplotted observation and original dec
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/77-presentation-generated-view.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Proposal revision comparison preserves evidence and supports retry',async({page,request},info)=>{
+ const jid='2dbbd4b2699342a39f7c1d02c56ef2e7';const job=await (await request.get('/api/workspace/source-jobs/'+jid)).json();
+ const mutations:string[]=[];page.on('request',r=>{if(r.url().includes('/api/workspace/') && ['POST','PUT','DELETE'].includes(r.method()))mutations.push(r.url());});
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ let requests=0;let fail=false;
+ await page.route('**/api/workspace/source-jobs/'+jid+'/comparison',route=>{requests++;return fail ? route.fulfill({status:503,json:{error:'Development comparison outage'}}) : route.continue();});
+ await page.goto('/#/workspace');const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ expect(requests).toBe(0);
+ const comparison=page.locator('details.proposal-comparison');await comparison.locator(':scope > summary').click();
+ await expect(comparison).toContainText('4 structured records keep the same values and citations. 0 appear only in the previous version; 0 appear only in this version.');
+ await expect(comparison).toContainText('The visualization choice changed.');
+ const previous=comparison.getByRole('region',{name:'Previous proposal version'});const current=comparison.getByRole('region',{name:'Current proposal version'});
+ await expect(previous).toContainText('Table ·');await expect(current).toContainText('Scatterplot ·');
+ await previous.getByText('Interpretation and uncertainties',{exact:true}).click();await current.getByText('Interpretation and uncertainties',{exact:true}).click();
+ await expect(previous).toContainText('six provided observations');await expect(current).toContainText('four dated observations, not six');
+ await previous.getByText('Interpretation and uncertainties',{exact:true}).click();await current.getByText('Interpretation and uncertainties',{exact:true}).click();
+ await comparison.locator(':scope > summary').evaluate(el=>el.scrollIntoView({block:'start'}));expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/78-proposal-revision-comparison.'+info.project.name+'.png'),fullPage:true});
+ fail=true;await page.reload();await page.locator('details.proposal-comparison > summary').click();await expect(page.getByRole('alert')).toContainText('Development comparison outage');
+ fail=false;await page.getByRole('button',{name:'Retry comparison',exact:true}).click();await expect(comparison).toContainText('4 structured records keep the same values and citations');expect(mutations).toEqual([]);
+});
