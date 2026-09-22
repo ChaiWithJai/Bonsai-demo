@@ -1,0 +1,6 @@
+{
+  "run_id": "4aad3153077c4d5fbc3ed824e27e4bb3",
+  "document_sha256": "14c95e6f0d545230be67f730366d5f920f6b1a33becf5f4a906a6d126f6a2eef",
+  "artifact_readback_matched": true,
+  "scope": "Synthesis of existing extraction, context and repair evidence; no new model inference or human review"
+}
