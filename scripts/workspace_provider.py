@@ -36,7 +36,7 @@ class LocalProvider:
             raise ValueError('Provider limits exceed the bounded attempt contract')
         self.host, self.port = url.hostname, url.port or 80
         self.model, self.timeout, self.max_bytes = model, timeout, max_bytes
-        if profile not in ('legacy-greedy', 'bonsai2-instruct', 'bonsai2-medium'):
+        if profile not in ('legacy-greedy', 'bonsai2-instruct', 'bonsai2-medium', 'bonsai2-bounded'):
             raise ValueError('Unknown Workspace sampling profile')
         if not isinstance(seed, int) or isinstance(seed, bool) or not 0 <= seed < 2**32:
             raise ValueError('Seed must be an unsigned 32-bit integer')
@@ -212,12 +212,14 @@ class LocalProvider:
             payload['response_format'] = ({'type':'json_schema','json_schema':{'name':'workspace_proposal','strict':True,'schema':self.response_schema}}
                                           if self.response_schema is not None else {'type':'json_object'})
         if self.profile != 'legacy-greedy':
-            thinking = self.profile == 'bonsai2-medium'
+            thinking = self.profile in ('bonsai2-medium', 'bonsai2-bounded')
             payload.update(temperature=1.0 if thinking else 0.7,
                            top_p=0.95 if thinking else 0.8, top_k=20, min_p=0.0,
                            presence_penalty=0.0 if thinking else 1.5, repeat_penalty=1.0)
             if thinking:
                 payload['chat_template_kwargs'] = {'enable_thinking': True, 'reasoning_effort': 'medium'}
+                if self.profile == 'bonsai2-bounded':
+                    payload['thinking_budget_tokens'] = min(512, max_tokens // 2)
         return payload
 
     def preflight(self, messages, tools, max_tokens):
