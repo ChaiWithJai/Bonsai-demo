@@ -318,7 +318,8 @@ class SourceJobs:
                         messages[-1]['content'] += '\nPrior conversation for intent only, not source evidence:\n'+json.dumps(discussion,ensure_ascii=False)
                     if (folder/'revision-request.json').exists():
                         messages += revision_messages(json.loads((folder/'revision-request.json').read_text()), packet['record_id_map'])
-                    packing = span('context.pack', {'character_budget':packet_budget}, lambda:self.proposal_planner.preflight(messages, [], 4096))
+                    # Reserve the first response plus the repair output and error message.
+                    packing = span('context.pack', {'character_budget':packet_budget}, lambda:self.proposal_planner.preflight(messages, [], 8448))
                     self.save(folder, f'packing-{packet_budget}.json', {'preflight':packing,'records_shown':packet['records_shown'],'records_total':packet['records_total']})
                     if packing['fits'] and packet['records']:
                         break

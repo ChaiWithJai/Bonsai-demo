@@ -75,7 +75,9 @@ class SourceJobsTest(unittest.TestCase):
             def __init__(self):super().__init__();self.preflights=0;self.release.set()
             def preflight(self,*args):
                 self.preflights+=1
-                if self.preflights<=2:assert self.calls==0
+                if self.preflights<=2:
+                    assert self.calls==0
+                    assert args[2]==8448
                 return {'fits':self.preflights>1}
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);store=WorkspaceStore(root/'workspace');client=Client();provider=TightPlanner()
