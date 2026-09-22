@@ -1,0 +1,19 @@
+{
+  "run_id": "3ccccfee26924fa5a6385b5e1fb660ce",
+  "url": "http://127.0.0.1:5210/#/experiments/32/runs/3ccccfee26924fa5a6385b5e1fb660ce",
+  "summary": {
+    "indexed_jobs": 31,
+    "in_progress": 0,
+    "validated_proposals": 24,
+    "first_pass_valid": 12,
+    "completed_builds": 12,
+    "formats": {
+      "json_object": 26,
+      "unknown": 1,
+      "json_schema": 4
+    }
+  },
+  "matched_cohorts": 8,
+  "artifact_readback_matched": true,
+  "scope": "Observed planning shape and execution only; not an accuracy score or training dataset"
+}

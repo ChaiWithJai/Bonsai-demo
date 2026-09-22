@@ -35,3 +35,32 @@ class PlanningAuditTests(unittest.TestCase):
             self.assertEqual(row['completed_responses'],0);self.assertEqual(row['request_attempts'],1)
             self.assertFalse(row['first_pass_valid']);self.assertFalse(row['proposal_validated'])
             self.assertEqual(len(result['unreadable_jobs']),1)
+
+    def test_validated_proposal_does_not_imply_completed_build(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            for key,state in [('live','running'),('interrupted','interrupted'),('cancelled','cancelled'),('failed','failed'),('built','completed')]:
+                p=self.job(root,key,status=state)
+                status=json.loads((p/'status.json').read_text())
+                status.update(planning_run_id='plan',run_id='build',workspace_id='project')
+                (p/'status.json').write_text(json.dumps(status))
+            result=audit(root);rows={r['job_id']:r for r in result['jobs']}
+            self.assertTrue(all(r['proposal_validated'] for r in rows.values()))
+            self.assertEqual(result['summary']['completed_builds'],1)
+            self.assertTrue(rows['built']['build_completed'])
+            self.assertFalse(rows['live']['first_pass_valid'])
+            self.assertFalse(rows['interrupted']['comparison_eligible'])
+            self.assertFalse(rows['failed']['build_completed'])
+
+    def test_queued_build_does_not_relabel_planning_run(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            p=self.job(root,'queued',status='queued')
+            status=json.loads((p/'status.json').read_text())
+            status.update(planning_run_id='plan',run_id='plan')
+            (p/'status.json').write_text(json.dumps(status))
+            row=audit(root)['jobs'][0]
+            self.assertEqual(row['planning_run_id'],'plan')
+            self.assertIsNone(row['build_run_id'])
+            self.assertFalse(row['build_completed'])
+            self.assertFalse(row['comparison_eligible'])
