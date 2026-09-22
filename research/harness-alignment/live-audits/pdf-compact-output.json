@@ -1,0 +1,32 @@
+{
+  "job_id": "cbee554d941c41069943fdb9ca8002d0",
+  "run_id": "da9274705a8941ccb2474e481a62886c",
+  "status": "failed",
+  "error": "Plan validation failed within the two-call budget: Classify every source field without adding fields",
+  "intervention": "Compact JSON and shortest supporting excerpts, target 240 characters per quote",
+  "source_snapshot_same": true,
+  "model_configuration_same": true,
+  "records_shown": 79,
+  "model_calls": 2,
+  "first_response_characters": 5908,
+  "first_response_quote_characters": 1236,
+  "first_response_longest_quote": 217,
+  "baseline_partial_analysis": {
+    "response_complete": false,
+    "characters_received": 13213,
+    "completed_structured_records": 5,
+    "quote_count": 20,
+    "quote_characters": 4243,
+    "max_quote_characters": 536,
+    "quotes_over_240": 10,
+    "observation": "Partial response contains distinct records and reaches plan generation; quotations account for about 32% of received characters before JSON escaping. This does not rule out every form of repetition."
+  },
+  "remaining_contract_errors": [
+    "Initial finding has six citations, limit five",
+    "Repaired structure includes evidence_field absent from plan.fields",
+    "Repaired RecordTable includes seven columns, limit six"
+  ],
+  "scope": "Development comparison, no validated proposal or human acceptance; no speed benchmark",
+  "next_work": "Expose structural violations together in the one repair request, then verify source-aware validation.",
+  "backup": "MongoDB restore-verified backup remains unavailable"
+}
