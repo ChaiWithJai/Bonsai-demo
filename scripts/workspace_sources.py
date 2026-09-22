@@ -116,7 +116,7 @@ class WorkspaceSources:
             raise ValueError("This extraction route is for PDF documents")
         return self.extract_media(source_id)
 
-    def extract_media(self, source_id):
+    def extract_media(self, source_id, refresh_pdf=False):
         from workspace_data.pdf import extract_pdf
         from workspace_data.image import extract_image
         from workspace_data.audio import extract_audio
@@ -134,8 +134,11 @@ class WorkspaceSources:
             is_audio=manifest['kind']=='audio'
             if not is_pdf and not is_audio and Path(manifest['filename']).suffix.lower() not in ('.png','.jpg','.jpeg','.webp'):
                 raise ValueError('Extraction is available for PDF, image, and audio files')
-            if manifest['status'] == 'extracted':
+            if refresh_pdf and not is_pdf:
+                raise ValueError('Refresh extraction is currently supported only for PDFs')
+            if manifest['status'] == 'extracted' and not refresh_pdf:
                 return self.get(source_id)
+            previous = json.loads(json.dumps(manifest))
             folder = self.root / source_id
             raw = (folder / 'source.bin').read_bytes()
             if hashlib.sha256(raw).hexdigest() != manifest['sha256']:
@@ -153,6 +156,7 @@ class WorkspaceSources:
                     row.update(id=f'{source_id}:'+('page' if is_pdf else ('segment' if is_audio else 'region'))+f':{i+1}',source_id=source_id)
                 manifest.update(result,extraction_run_id=run_id)
                 manifest.pop('extraction_error',None)
+                manifest.pop('refresh_error',None)
                 if is_pdf:
                     self.client.log_metric(run_id,'pages',result['extraction_coverage']['page_count'])
                     self.client.log_metric(run_id,'pages_with_text',result['extraction_coverage']['pages_with_text'])
@@ -160,13 +164,17 @@ class WorkspaceSources:
                 else:
                     self.client.log_metric(run_id,'speech_segments' if is_audio else 'text_regions',len(result['records']))
             except Exception as exc:
-                manifest.update(status='extraction_failed',extraction_error=str(exc),extraction_run_id=run_id)
+                if refresh_pdf and previous['status'] == 'extracted':
+                    manifest = previous
+                    manifest.update(refresh_error=str(exc),refresh_run_id=run_id)
+                else:
+                    manifest.update(status='extraction_failed',extraction_error=str(exc),extraction_run_id=run_id)
                 (evidence/'failure.json').write_text(json.dumps({'error':str(exc)}))
-            manifest['extraction_run_url']=f'{self.tracking_uri}/#/experiments/{eid}/runs/{run_id}'
+            manifest['refresh_run_url' if manifest.get('refresh_error') else 'extraction_run_url']=f'{self.tracking_uri}/#/experiments/{eid}/runs/{run_id}'
             (evidence/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
             self.client.log_artifacts(run_id,str(evidence),'pdf-extraction' if is_pdf else ('audio-extraction' if is_audio else 'image-extraction'))
             self.client.log_artifact(run_id,str(folder/'source.bin'),'source')
-            self.client.set_terminated(run_id,'FINISHED' if manifest['status']=='extracted' else 'FAILED')
+            self.client.set_terminated(run_id,'FINISHED' if manifest['status']=='extracted' and not manifest.get('refresh_error') else 'FAILED')
             temp=folder/'manifest.tmp'
             temp.write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
             temp.replace(folder/'manifest.json')
