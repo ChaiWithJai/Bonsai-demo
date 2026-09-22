@@ -1424,3 +1424,26 @@ test('Timeline observations select source records and retain note drafts',async(
  await page.locator('.chart').scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/54-timeline-inspection.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Email thread correction preserves messages and review states',async({page},info)=>{
+ const status=JSON.parse(await fs.readFile(path.resolve('.cache/email-thread-experiment/build-status.json'),'utf8'));
+ const current=await (await page.request.get('/api/workspace/'+status.workspace_id)).json();
+ await page.goto(current.preview.url);
+ const model=await (await page.request.get(new URL('/api/desktop',current.preview.url).href)).json();
+ expect(model.rows.map((r:any)=>[r.data.sent_date,r.data.project,r.data.owner,r.data.open_issue_count,r.data.review_status])).toEqual([
+ ['2026-09-18','Orchard','Maya',5,'Needs revision'],['2026-09-20','Orchard','Maya',2,'Ready for review']]);
+ expect(model.chart.props.data.map((r:any)=>r.group)).toEqual(['Orchard','Orchard']);
+ await expect(page.getByRole('button',{name:/^Inspect observation /})).toHaveCount(2);
+ const rows=page.getByTestId('record-row');await expect(rows).toHaveCount(2);
+ for(let i=0;i<2;i++){
+  await rows.nth(i).locator('summary').filter({hasText:'Supporting source passages'}).click();
+  await expect(rows.nth(i).getByRole('heading',{name:'development-review-thread.mbox · Message '+(i+1),exact:true})).toBeVisible();
+  const link=rows.nth(i).getByRole('link',{name:'Open original source',exact:true});
+  await expect(link).toHaveCount(1);
+  const bytes=await (await page.request.get(await link.getAttribute('href') as string)).body();
+  expect(bytes.equals(await fs.readFile(path.resolve('.cache/email-thread-experiment/development-review-thread.mbox')))).toBe(true);
+ }
+ await page.getByRole('button',{name:/^Inspect observation /}).last().click();
+ await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toBeVisible();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/55-email-thread.'+info.project.name+'.png'),fullPage:true});
+});

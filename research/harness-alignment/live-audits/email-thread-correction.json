@@ -1,0 +1,25 @@
+{
+  "scope": "Synthetic email development workflow; automated correction and confirmation, not human training labels",
+  "initial_job": "f21d1a481e9246edb193e11467da389c",
+  "initial_run": "22a2028d0e784dc29b19c5636a90815a",
+  "corrected_job": "937b2d7b8fb946fcb7db9075e4d482d5",
+  "corrected_planning_run": "3edec43d7f72494988b3a4e9a50711eb",
+  "build_run": "77712da30c0747af9098242ebc436fd5",
+  "project_id": "4e5192af1fcd4e5698154d49da6bf2cc",
+  "failure": "Review status grouped each dated observation into its own line",
+  "correction": "Group by stable project field and retain review status in records",
+  "structured_records_and_citations_unchanged": true,
+  "checks": [
+    "Two dates and issue counts 5 and 2 preserved",
+    "Needs revision and Ready for review preserved without approval inference",
+    "Message numbers distinguish citations",
+    "Original mailbox download matches source bytes",
+    "Desktop/mobile point selection passed",
+    "259 Python tests passed"
+  ],
+  "limitations": [
+    "Two synthetic messages do not establish email extraction accuracy",
+    "Attachments are listed but not extracted",
+    "Backup recovery remains unresolved"
+  ]
+}
