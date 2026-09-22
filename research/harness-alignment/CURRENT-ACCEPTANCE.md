@@ -249,3 +249,9 @@ Replay 20ba0fbeed3b453b9a63a62751883606 produced a valid proposal in one call, p
 The constrained planner selected ForceDirectedGraph grouped by parameter_size then runtime in one call for the existing 14-record cached source. It retained structure=null, all source fields, unknown release labels and the distinction between observation date and release date. This verifies a second view branch; the data was already used in development and is not held-out evidence.
 
 The proposal was confirmed with actor codex-development-constrained-graph and built through Semiotic. Desktop/mobile checks compared every rendered row with its original data, checked every node membership, exercised a visible 8B node and clear filters, and verified source URLs as clickable links. The desktop starter now links valid HTTP/HTTPS fields in record details. Svelte autofixer reported no issues; the generated build and its baseline checks passed. The audit and screenshots are attached to the planning/build runs. No human labels were created; backup remains unverified.
+
+### Source-derived record titles
+
+Generated record cards, the selected note context and saved-note labels now use available title, name, model, stage, subject or ID fields before falling back to a source location. Long headings are bounded while full values remain in record details. This avoids fourteen indistinguishable Source record cards in the model-family view.
+
+Development project 989fd3b9fa3e4ca5be317bb8a54a176a retains its original generated revision and adds an authored test revision. Four desktop/mobile checks passed for source model headings, node membership and links, matching note context, and draft isolation while switching records. The generated Svelte build passed and autofixer reported no issues. No inference or new saved review labels were created.
