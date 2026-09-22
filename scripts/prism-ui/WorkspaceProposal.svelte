@@ -86,6 +86,19 @@
       <p class="coverage">{coverage.structured_usage.cited_records} of {coverage.structured_usage.supplied_records} supplied source records are cited by the proposed data. This counts data citations, not mentions in the explanation.</p>
       {#if coverage.structured_usage.uncited_record_ids.length}
         <p class="omitted">Source records without data citations: {coverage.structured_usage.uncited_record_ids.length}. Check whether relevant observations were left out; some sources may be outside your question.</p>
+        <details class="unused-sources"><summary>Inspect sources without data citations</summary>
+          <p class="coverage">Compare these supplied records with the proposed data. An unused record may be context rather than a missing observation.</p>
+          <div class="source-comparison">{#each coverage.structured_usage.uncited_record_ids as id (id)}
+            {@const row=evidence.find((r:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>})=>r.id===id)}{@const link=sourceLink(id)}
+            <article aria-label={'Unused source '+(row?.locator.source_filename ?? id)}>
+              <strong>{row?.locator.source_filename ?? sourceFilename ?? 'Source record'}</strong>
+              {#if row?.locator.evidence_channel==='visual'}<p class="coverage">Bonsai visual observation · unreviewed. Check the original source.</p>{/if}
+              {#if row}<dl>{#each Object.entries(row.data).sort(([a],[b])=>Number(['body','text','content'].includes(b))-Number(['body','text','content'].includes(a))) as [field,value] (field)}<dt>{field}</dt><dd>{value===null ? 'Missing value' : typeof value==='object' ? JSON.stringify(value) : String(value)}</dd>{/each}</dl>{:else}<p>Record is not available in this preview.</p>{/if}
+              {#if link}<a href={link.url} target="_blank" rel="noreferrer">{link.label}</a>{/if}
+              <details><summary>Record provenance</summary><pre>{JSON.stringify({id,locator:row?.locator},null,2)}</pre></details>
+            </article>
+          {/each}</div>
+        </details>
         {#if !readOnly}<button onclick={draftUncitedSources} disabled={busy}>Ask Bonsai to check unused sources</button>{/if}
       {/if}
       <p class="coverage">Citation coverage does not prove that every relevant fact was extracted correctly.</p>

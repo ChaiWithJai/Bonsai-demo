@@ -2106,3 +2106,18 @@ test('Selected view preview is identified as an explicit choice',async({page,req
  await img.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/79-saved-data-view-selection.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Unused source evidence can be inspected before requesting a correction',async({page,request},info)=>{
+ const job=await (await request.get('/api/workspace/source-jobs/9e7e5ff6004043479e2581a61a71e2e9')).json();
+ expect(job.source_coverage.structured_usage.uncited_record_ids).toHaveLength(1);
+ const mutations:string[]=[];page.on('request',r=>{if(r.url().includes('/api/workspace/')&&['POST','PUT','DELETE'].includes(r.method()))mutations.push(r.url());});
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.goto('/#/workspace');const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const unused=page.locator('details.unused-sources');await unused.locator(':scope > summary').click();
+ await expect(unused.locator('article')).toHaveCount(1);await expect(unused).toContainText('Orchard');
+ await expect(unused.locator('article dl')).not.toBeEmpty();const original=unused.getByRole('link');await expect(original).toHaveCount(1);expect((await request.get(await original.getAttribute('href'))).ok()).toBe(true);
+ await unused.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/80-unused-source-evidence.'+info.project.name+'.png'),fullPage:true});
+ expect(mutations).toEqual([]);
+});
