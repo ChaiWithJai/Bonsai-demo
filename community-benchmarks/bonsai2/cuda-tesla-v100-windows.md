@@ -98,6 +98,10 @@ build: unknown (0)
   prefill throughput falls from ~563 t/s at the start of a 250K-token prompt to ~256 t/s near the end
   (402.7 t/s average for 120K tokens; 252.6 t/s average for 250K tokens).
 
+## KV-cache quality (q4_0 with and without the mean-centering bias)
+
+The long-context numbers above use a plain `q4_0` KV cache. What that costs in quality, and whether the calibrated mean-centering bias from KV-CACHE.md recovers it, is measured in [cuda-tesla-v100-windows-kv-cache-quality.md](cuda-tesla-v100-windows-kv-cache-quality.md) on the same machine and build. Headline: mean logit KLD against an F16-cache reference over 12x512-token held-out chunks drops from **0.00150** (no bias) to **0.00129** with a bias calibrated in the rotated basis, end-to-end perplexity over a 350 KB held-out slice moves by +0.16% (no bias) and +0.07% (with bias), and a bias file whose calibration basis does not match the serving rotation is refused at load.
+
 ## Hardware
 
 ```powershell
