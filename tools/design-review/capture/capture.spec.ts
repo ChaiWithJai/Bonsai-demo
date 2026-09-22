@@ -1993,3 +1993,21 @@ test('Recorded proposal configuration stays independent of composer selection',a
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/74-recorded-model-configuration.'+info.project.name+'.png'),fullPage:true});
  job.generation_config=null;await page.reload();await recorded.locator('summary').click();await expect(recorded).toContainText('Configuration was not recorded for this result');
 });
+
+test('Embedded saved view preserves exploration across workspace tabs',async({page,request},info)=>{
+ const id='171bc98e7caf4aa48ef1a600cea1f028';const project=await (await request.get('/api/workspace/'+id)).json();
+ await page.goto('/#/workspace');
+ if(info.project.name==='mobile')await page.locator('.mobile-stream-toggle').click();
+ const sidebar=page.getByRole('complementary',{name:'Workstreams'});await sidebar.getByRole('textbox',{name:'Search workstreams'}).fill(project.title);await sidebar.getByRole('button').filter({hasText:project.title}).click();
+ const iframe=page.locator('iframe[title="Generated project preview"]');await iframe.scrollIntoViewIfNeeded();
+ const frame=page.frameLocator('iframe[title="Generated project preview"]');await expect(frame.getByRole('heading',{name:project.title,exact:true})).toBeVisible({timeout:10000});
+ await expect(frame.getByTestId('record-row')).toHaveCount(4);
+ await frame.getByRole('searchbox',{name:'Search records',exact:true}).fill('Awaiting update');await expect(frame.getByTestId('record-row')).toHaveCount(1);await expect(frame.getByText('Not provided',{exact:true})).toBeVisible();
+ await frame.locator('summary').filter({hasText:'Supporting source passages'}).click();await expect(frame.getByRole('link',{name:'Open original source',exact:true})).toBeVisible();
+ await frame.getByRole('button',{name:'Clear filters',exact:true}).click();await expect(frame.getByTestId('record-row')).toHaveCount(4);
+ const tabs=page.getByRole('navigation',{name:'Workspace views'});await tabs.getByRole('button',{name:'Source',exact:true}).click();await expect(page.locator('pre.source')).toContainText('verificationNotes');
+ await tabs.getByRole('button',{name:'Evidence',exact:true}).click();await page.getByText('Review source interpretation',{exact:true}).click();await expect(page.getByText('Review source interpretation',{exact:true})).toBeVisible();
+ await tabs.getByRole('button',{name:'Preview',exact:true}).click();await iframe.scrollIntoViewIfNeeded();await expect(frame.getByTestId('record-row')).toHaveCount(4);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/75-embedded-workstream-exploration.'+info.project.name+'.png'),fullPage:true});
+});
