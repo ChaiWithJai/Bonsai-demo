@@ -1,0 +1,51 @@
+{
+  "vision_job": {
+    "id": "308dc6cd32794991a24da495a524017e",
+    "source_id": "2b7c5ea8bb1ec8dd502d5989998cf8a1adf6380d4b6ddd3a80312c70c835e93c",
+    "filename": "development-three-stage.mp4",
+    "request": "Read visible source content with Bonsai vision",
+    "kind": "vision_extraction",
+    "status": "completed",
+    "stage": "Visual records ready for review",
+    "created_at": 1790036701.194229,
+    "run_id": "b098a0dcc614467fba299aa3d6c03104",
+    "mlflow_url": "http://127.0.0.1:5210/#/experiments/32/runs/b098a0dcc614467fba299aa3d6c03104",
+    "record_count": 12,
+    "elapsed_seconds": 17.063
+  },
+  "checks": [
+    {
+      "expected": {
+        "stage": "Intake",
+        "records": 12,
+        "sample_seconds": 0
+      },
+      "observed_text": "DEVELOPMENT WORKSTREAM Stage: Intake Records: 12 Synthetic evaluation data",
+      "passed": true
+    },
+    {
+      "expected": {
+        "stage": "Review",
+        "records": 7,
+        "sample_seconds": 2.875
+      },
+      "observed_text": "DEVELOPMENT WORKSTREAM Stage: Review Records: 7 Synthetic evaluation data",
+      "passed": true
+    },
+    {
+      "expected": {
+        "stage": "Approved",
+        "records": 3,
+        "sample_seconds": 5.75
+      },
+      "observed_text": "DEVELOPMENT WORKSTREAM Stage: Approved Records: 3 Synthetic evaluation data",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "label_origin": "Codex development exact-text check; not human acceptance",
+  "limitations": [
+    "Synthetic card OCR only",
+    "No motion or natural-video semantic accuracy measured"
+  ]
+}

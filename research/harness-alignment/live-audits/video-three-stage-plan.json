@@ -1,0 +1,32 @@
+{
+  "job_id": "62cb8fc492784df9ac0b141e3cc106ec",
+  "run_id": "ca63cc323c1e480ea7e42802518da1ed",
+  "status": "awaiting_confirmation",
+  "structured_values": [
+    {
+      "stage": "Intake",
+      "record_count": 12,
+      "sample_seconds": 0.0
+    },
+    {
+      "stage": "Review",
+      "record_count": 7,
+      "sample_seconds": 2.875
+    },
+    {
+      "stage": "Approved",
+      "record_count": 3,
+      "sample_seconds": 5.75
+    }
+  ],
+  "exact_values_passed": true,
+  "model_calls": 2,
+  "repair_reason": "First response cited time_seconds as a data field; it is locator metadata. Repair retained values and source citations.",
+  "review_origin": "Codex development audit, not human acceptance",
+  "remaining": [
+    "Proposal has not been confirmed or built",
+    "Uncertainty text conflates 12 extracted text rows with 12 records; wording needs correction",
+    "This synthetic test does not establish natural-video understanding"
+  ],
+  "backup": "failed: local MongoDB 127.0.0.1:27028 refused connection"
+}

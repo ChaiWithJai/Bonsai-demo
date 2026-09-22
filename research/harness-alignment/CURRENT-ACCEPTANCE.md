@@ -211,3 +211,9 @@ The development project's four automated notes were exported to MLflow run 98352
 Video extraction now distributes up to 20 samples across the video stream. Clips of at least half a second normally receive beginning, middle, and near-end samples, with duplicates removed when sparse frames make positions coincide. The sampler uses video-stream duration and a frame-rate margin rather than the audio/container duration. A first extraction attempt exposed a one-frame-per-second fixture whose last decodable frame preceded its nominal end; the margin resolves that case.
 
 CPU extraction verified the narrated fixture at 0, 2, and 4 seconds and the real 15-second clip at 0, 7.375, and 14.75 seconds. Hashes are in live-audits/video-sampling.json. All 245 tests, Svelte check, and UI build passed. The idle harness was reloaded and active previews restored. Existing extraction artifacts were not replaced. This establishes frame extraction coverage, not multi-frame reasoning or motion understanding; those require a new model run.
+
+### Three-timestamp video development check
+
+Bonsai read three synthetic cards at 0, 2.875 and 5.75 seconds, preserving Intake 12, Review 7 and Approved 3. Vision run b098a0dcc614467fba299aa3d6c03104 retains the source, frame hashes and exact-text audit. The checked-in fixture generator reproduced the original video bytes locally.
+
+Planning run ca63cc323c1e480ea7e42802518da1ed preserved the three structured values after one repair: the first response incorrectly cited locator time_seconds as a content field. The proposal remains awaiting confirmation, without a generated project. Its uncertainty wording conflates twelve extracted text rows with records, so this is not an overall semantic pass. This is a synthetic development check, not held-out validation or human acceptance. Local MongoDB backup still fails on port 27028; GB10's separate imagine-memory-local container uses port 27019 and is not this backup target.
