@@ -96,6 +96,19 @@ class RepairDiagnosticsTest(unittest.TestCase):
         self.assertEqual(json.dumps(value,sort_keys=True),before)
         self.assertEqual(repair_diagnostics(manifest,None,{},'Malformed JSON'),['Malformed JSON'])
 
+    def test_citation_errors_survive_an_earlier_record_schema_failure(self):
+        from workspace_data.proposal import repair_diagnostics
+        manifest={'records':[{'id':'visual','locator':{'page':2},'data':{'region':'annotation','text':'520 us'},'evidence_status':'model_extracted_unreviewed'}]}
+        value={'structure':{'records':[
+            {'values':{'before':14},'evidence':[{'record_id':'r1','field':'text','quote':'invented passage'}]},
+            {'values':{'after':520},'evidence':[{'record_id':'r1','field':'evidence_status','quote':'model_extracted_unreviewed'}]}]}}
+        frozen=json.dumps(value,sort_keys=True)
+        errors=repair_diagnostics(manifest,value,{'r1':'visual'},'All structured records must use the same fields')
+        self.assertTrue(any('union of existing fields' in error for error in errors))
+        self.assertTrue(any('evidence[0]: Evidence quote is not present' in error for error in errors))
+        self.assertTrue(any('evidence_status is not a data field' in error and 'region, text' in error for error in errors))
+        self.assertEqual(json.dumps(value,sort_keys=True),frozen)
+
     def test_schema_repair_preserves_heterogeneous_measurements(self):
         from workspace_data.proposal import repair_diagnostics,validate_schema_repair_preservation
         previous={'structure':{'records':[{'values':{'before':14,'after':520}},{'values':{'variant':'Baseline','value':402.1}}]}}
