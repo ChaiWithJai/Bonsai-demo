@@ -25,7 +25,7 @@ def revalidate(jobs, jid):
         for name in required+['original-manifest.json']:
             if (source/name).is_file():shutil.copy2(source/name,folder/name)
         for response in responses:shutil.copy2(response,folder/response.name)
-        status={key:parent[key] for key in ('source_id','source_ids','filename','request','intake_job_id','apply_reviews','source_scope') if key in parent}
+        status={key:parent[key] for key in ('source_id','source_ids','filename','request','intake_job_id','apply_reviews','source_scope','generation_config') if key in parent}
         status.update(id=ident,parent_job_id=jid,kind='source_revalidation',status='running',stage='Checking saved model response',created_at=time.time(),model_calls=0)
         jobs.save(folder,'status.json',status)
         client=jobs.worker.client;run_id=None

@@ -120,11 +120,17 @@ class SourceJobs:
     def list(self):
         return {'jobs': [self.get(p.parent.name) for p in sorted(self.root.glob('*/status.json'), key=lambda p:p.stat().st_mtime, reverse=True)]}
 
-    def start(self, source_id, request, apply_reviews=False, revision=None, intake_job_id=None, source_scope=None):
+    def start(self, source_id, request, apply_reviews=False, revision=None, intake_job_id=None, source_scope=None, generation_config=None):
         if not isinstance(request, str) or not 10 <= len(request.strip()) <= 4000:
             raise ValueError('Describe the visualization in 10 to 4,000 characters')
         if type(apply_reviews) is not bool:
             raise ValueError('apply_reviews must be a boolean')
+        provider=self.proposal_planner
+        if generation_config is not None:
+            if not isinstance(provider,LocalProvider):
+                raise ValueError('Generation configuration requires a local provider')
+            provider=provider.configured(generation_config)
+        generation_config={'profile':provider.profile,'seed':provider.seed} if isinstance(provider,LocalProvider) else None
         from workspace_intake_chat import context as intake_context
         intake_messages = intake_context(self, intake_job_id)
         with self.sources.lock:
@@ -166,7 +172,7 @@ class SourceJobs:
                 self.save(folder, 'revision-request.json', revision)
             status = {'id':jid, 'source_id':source_id, 'filename':manifest['filename'], 'request':request.strip(),
                       'source_ids':[s['source_id'] for s in manifest.get('sources',[])] or [source_id],
-                      'intake_job_id':intake_job_id, 'source_scope':source_scope, 'apply_reviews':apply_reviews, 'status':'queued', 'stage':'Preparing source', 'created_at':time.time()}
+                      'intake_job_id':intake_job_id, 'source_scope':source_scope, 'generation_config':generation_config, 'apply_reviews':apply_reviews, 'status':'queued', 'stage':'Preparing source', 'created_at':time.time()}
             if revision:
                 status['parent_job_id'] = revision['parent_job_id']
                 status['feedback'] = revision['feedback']
@@ -243,7 +249,7 @@ class SourceJobs:
                            'parent_proposal_sha256':status.get('proposal_sha256'),
                            'parent_planning_run_id':status.get('run_id'),
                            'parent_source_snapshot_sha256':hashlib.sha256((self.root/jid/'source-manifest.json').read_bytes()).hexdigest(),
-                           'identity_basis':'local unauthenticated interaction; not a training label'}, intake_job_id=status.get('intake_job_id'),source_scope=status.get('source_scope'))
+                           'identity_basis':'local unauthenticated interaction; not a training label'}, intake_job_id=status.get('intake_job_id'),source_scope=status.get('source_scope'),generation_config=status.get('generation_config'))
 
     def cancel(self, jid):
         with self.worker.guard:
@@ -281,11 +287,17 @@ class SourceJobs:
                 w.client.end_span(root.trace_id, child.span_id, outputs={'error':str(exc)}, status='ERROR')
                 raise
         try:
+            planner=self.proposal_planner
+            if status.get('generation_config') and isinstance(planner,LocalProvider):
+                planner=planner.configured(status['generation_config'])
+            self.save(folder,'generation-config.json',{'profile':planner.profile,'seed':planner.seed})
+            if hasattr(planner,'payload'):
+                self.save(folder,'generation-settings.json',{key:value for key,value in planner.payload([],[],4096).items() if key not in ('messages','tools')})
             experiment = w.client.get_experiment_by_name('bonsai-workspace-data')
             eid = experiment.experiment_id if experiment else w.client.create_experiment('bonsai-workspace-data')
             tags = {'mlflow.runName':'Build confirmed visualization' if confirmed else 'Discuss source interpretation', 'source_id':manifest['source_id'],
                     'job_id':status['id'], 'scope':'development', 'model':w.provider.model, 'model_call_timeout_seconds':str(getattr(self.planner,'timeout','test')),
-                    'sampling_profile':w.provider.profile, 'sampling_seed':str(w.provider.seed),
+                    'sampling_profile':planner.profile, 'sampling_seed':str(planner.seed),
                     'prompt_sha256':hashlib.sha256(PROPOSAL_INSTRUCTIONS.encode()).hexdigest(),
                     'initial_ui_origin':'authored scaffold with model-authored typed visualization plan'}
             if status.get('intake_job_id'):
@@ -326,7 +338,7 @@ class SourceJobs:
                     if (folder/'revision-request.json').exists():
                         messages += revision_messages(json.loads((folder/'revision-request.json').read_text()), packet['record_id_map'])
                     # Reserve the first response plus the repair output and error message.
-                    packing = span('context.pack', {'character_budget':packet_budget}, lambda:self.proposal_planner.preflight(messages, [], 8448))
+                    packing = span('context.pack', {'character_budget':packet_budget}, lambda:planner.preflight(messages, [], 8448))
                     self.save(folder, f'packing-{packet_budget}.json', {'preflight':packing,'records_shown':packet['records_shown'],'records_total':packet['records_total']})
                     if packing['fits'] and packet['records']:
                         break
@@ -336,12 +348,12 @@ class SourceJobs:
                 previous_invalid_proposal = None
                 for turn in range(2):
                     check()
-                    preflight = span('context.preflight', {'turn':turn}, lambda:self.proposal_planner.preflight(messages, [], 4096))
+                    preflight = span('context.preflight', {'turn':turn}, lambda:planner.preflight(messages, [], 4096))
                     self.save(folder, f'preflight-{turn}.json', preflight)
                     if not preflight['fits']:
                         raise ValueError('Source profile exceeds the model context; choose fewer fields or a smaller source')
                     proposal = None
-                    response = span('model.plan', {'turn':turn,'messages':messages}, lambda:self.proposal_planner.generate(messages, [], 'source-'+status['id'], cancel, lambda delta:None, 4096))
+                    response = span('model.plan', {'turn':turn,'messages':messages}, lambda:planner.generate(messages, [], 'source-'+status['id'], cancel, lambda delta:None, 4096))
                     self.save(folder, f'model-{turn}.json', response)
                     try:
                         proposal = json.loads(response['message']['content'])

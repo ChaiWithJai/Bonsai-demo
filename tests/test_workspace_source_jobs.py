@@ -30,6 +30,32 @@ class BadPlanner:
         return {'message':{'role':'assistant','content':'{"bad":"plan"}'}}
 
 class SourceJobsTest(unittest.TestCase):
+    def test_attempt_profile_is_frozen_used_and_does_not_mutate_default(self):
+        from unittest.mock import patch
+        from workspace_provider import LocalProvider
+        seen=[]
+        def generate(provider,*args):
+            seen.append(provider.payload([],[],4096))
+            return {'message':{'role':'assistant','content':'{"bad":"plan"}'}}
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);client=Client();provider=LocalProvider('http://127.0.0.1:1','test-model')
+            worker=SimpleNamespace(store=WorkspaceStore(root/'workspace'),client=client,provider=provider,guard=threading.Lock(),running={},source_jobs=set(),tracking_uri='http://localhost:5210',model_info={})
+            sources=WorkspaceSources(root/'sources',client,worker.tracking_uri);source=sources.upload('data.json',b'[{"value":0}]');jobs=SourceJobs(worker,sources)
+            config={'profile':'bonsai2-instruct','seed':73}
+            with patch.object(LocalProvider,'preflight',return_value={'fits':True}),patch.object(LocalProvider,'generate',generate):
+                job=jobs.start(source['source_id'],'Compare the measurements',generation_config=config)
+                config['seed']=99
+                jobs.active[job['id']][1].join(10)
+            self.assertEqual(len(seen),2)
+            self.assertTrue(all(payload['seed']==73 and payload['temperature']==0.7 for payload in seen))
+            self.assertTrue(all(payload['response_format']['type']=='json_schema' for payload in seen))
+            self.assertEqual(provider.profile,'legacy-greedy');self.assertEqual(provider.seed,42)
+            self.assertEqual(jobs.get(job['id'])['generation_config'],{'profile':'bonsai2-instruct','seed':73})
+            self.assertEqual(json.loads((jobs.root/job['id']/'generation-config.json').read_text()),{'profile':'bonsai2-instruct','seed':73})
+            before=set(jobs.root.iterdir())
+            with self.assertRaises(ValueError):jobs.start(source['source_id'],'Compare the measurements',generation_config={'profile':'unknown','seed':42})
+            self.assertEqual(set(jobs.root.iterdir()),before)
+
     def test_invalid_plan_is_bounded_persisted_and_releases_model_lane(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);store=WorkspaceStore(root/'workspace');client=Client();provider=BadPlanner()
@@ -326,7 +352,8 @@ class ScopedPlanningTest(unittest.TestCase):
             saved=json.loads((jobs.root/job['id']/'source-manifest.json').read_text())
             self.assertEqual(saved,manifest)
             from unittest.mock import patch
-            pending={**jobs.get(job['id']),'status':'awaiting_confirmation','proposal':{},'proposal_sha256':'test-version'}
+            pending={**jobs.get(job['id']),'status':'awaiting_confirmation','proposal':{},'proposal_sha256':'test-version','generation_config':{'profile':'bonsai2-medium','seed':81}}
             with patch.object(jobs,'get',return_value=pending),patch.object(jobs,'start',return_value={'id':'new'}) as start:
                 jobs.revise(job['id'],'Inspect labels too')
                 self.assertEqual(start.call_args.kwargs['source_scope'],{'pages':[2]})
+                self.assertEqual(start.call_args.kwargs['generation_config'],pending['generation_config'])
