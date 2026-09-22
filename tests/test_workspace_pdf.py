@@ -92,3 +92,41 @@ class PDFTest(unittest.TestCase):
             history=[json.loads(p.read_text()) for p in (Path(root)/sid/'extractions').glob('*/previous-manifest.json')]
             self.assertTrue(any(m.get('records') and m['records'][0]['data']['text']=='Header' for m in history))
             self.assertTrue(any(m.get('records') and m['records'][0]['data']['text']=='Header and recovered content' for m in history))
+
+    def test_refresh_invalidates_old_reviews_only_after_success(self):
+        from workspace_data.record_review import state, save_review, apply_human_reviews, export_reviews
+        class VersionedClient(PDFClient):
+            count=0
+            def create_run(self,*args,**kwargs):
+                from types import SimpleNamespace
+                self.count+=1
+                return SimpleNamespace(info=SimpleNamespace(run_id='extraction-'+str(self.count)))
+        with tempfile.TemporaryDirectory() as root:
+            sources=WorkspaceSources(root,VersionedClient(),'http://localhost:5210')
+            def result(text):
+                return {'kind':'document','status':'extracted','extractor':'test','records':[{'locator':{'page':1},'data':{'text':text}}],'extraction_coverage':{'page_count':1,'pages_with_text':1,'unresolved_pages':[]}}
+            with patch('workspace_data.pdf.extract_pdf',return_value=result('Old extracted text')):
+                source=sources.upload('reviewed.pdf',b'%PDF-review-fixture')
+            sid=source['source_id'];old=sources.manifest(sid)
+            body={'snapshot_id':state(root,old)['snapshot_id'],'record_id':old['records'][0]['id'],
+                  'author':'Isolated unit fixture','reviewer_kind':'human','action':'correct',
+                  'note':'Test-only correction, never a live human label','corrected_data':{'text':'Reviewed correction'}}
+            event=save_review(root,old,body)
+            with patch('workspace_data.pdf.extract_pdf',side_effect=ValueError('OCR unavailable')):
+                sources.extract_media(sid,refresh_pdf=True)
+            retained=sources.manifest(sid)
+            self.assertEqual(state(root,retained)['snapshot_id'],body['snapshot_id'])
+            self.assertEqual(export_reviews(root,retained)['example_count'],1)
+            with patch('workspace_data.pdf.extract_pdf',return_value=result('New recovered content')):
+                sources.extract_media(sid,refresh_pdf=True)
+            refreshed=sources.manifest(sid)
+            self.assertNotEqual(state(root,refreshed)['snapshot_id'],body['snapshot_id'])
+            self.assertEqual(state(root,refreshed)['prior_snapshot_events'],1)
+            self.assertEqual(state(root,refreshed)['latest'],{})
+            self.assertEqual(export_reviews(root,refreshed)['example_count'],0)
+            applied=apply_human_reviews(root,refreshed)
+            self.assertEqual(applied['records'][0]['data']['text'],'New recovered content')
+            self.assertEqual(applied['review_application']['events'],[])
+            with self.assertRaisesRegex(ValueError,'Source extraction changed'):
+                save_review(root,refreshed,body)
+            self.assertEqual(state(root,old)['latest'][body['record_id']]['event_id'],event['event_id'])
