@@ -1,0 +1,162 @@
+{
+  "scope": "Targeted correction of saved status-filter edit",
+  "attempt_id": "cc6cceb40f1d4ced939c7e0ab9f1a7b6",
+  "run_id": "ca7187333c8c4473ae0ed27263f86471",
+  "parent_attempt_id": "236dfbd658cc4c7b9735a8b0505561ec",
+  "base_revision": "e2a1dbb9c4dbda4411d96104989bea8c0a65126ec42eb3a803bf05e48f3cd9c9",
+  "result_revision": "da7aa248b4e86b9454ce487dcd2a1ab3c744b1193cc02e4f98c3e003e93f0037",
+  "outcome": "completed",
+  "elapsed_seconds": 184.32311662496068,
+  "generation_config": {
+    "profile": "bonsai2-bounded",
+    "seed": 42
+  },
+  "request": "Repair the saved review-status filter. The Needs revision and Ready for review filters pass. All statuses fails aria-pressed: its click handler sets statusFilter to an empty string but its selected-state comparison uses the display label. Make the selected and active styling predicates compare the same normalized value used by the click handler. Preserve the existing filters, underlying records, chart, citations, and notes. Clear filters must restore both records and select All statuses. Read the current App.svelte, apply a focused exact patch, and build. This is a Codex development correction, not human acceptance.",
+  "request_verification": "passed_supplied_checks",
+  "request_report": {
+    "passed": true,
+    "scope": "Only the supplied request checks, not full semantic correctness",
+    "viewports": [
+      {
+        "width": 1440,
+        "steps": [
+          {
+            "index": 0,
+            "passed": true
+          },
+          {
+            "index": 1,
+            "passed": true
+          },
+          {
+            "index": 2,
+            "passed": true
+          },
+          {
+            "index": 3,
+            "passed": true
+          },
+          {
+            "index": 4,
+            "passed": true
+          },
+          {
+            "index": 5,
+            "passed": true
+          },
+          {
+            "index": 6,
+            "passed": true
+          },
+          {
+            "index": 7,
+            "passed": true
+          },
+          {
+            "index": 8,
+            "passed": true
+          },
+          {
+            "index": 9,
+            "passed": true
+          },
+          {
+            "index": 10,
+            "passed": true
+          },
+          {
+            "index": 11,
+            "passed": true
+          },
+          {
+            "index": 12,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "width": 390,
+        "steps": [
+          {
+            "index": 0,
+            "passed": true
+          },
+          {
+            "index": 1,
+            "passed": true
+          },
+          {
+            "index": 2,
+            "passed": true
+          },
+          {
+            "index": 3,
+            "passed": true
+          },
+          {
+            "index": 4,
+            "passed": true
+          },
+          {
+            "index": 5,
+            "passed": true
+          },
+          {
+            "index": 6,
+            "passed": true
+          },
+          {
+            "index": 7,
+            "passed": true
+          },
+          {
+            "index": 8,
+            "passed": true
+          },
+          {
+            "index": 9,
+            "passed": true
+          },
+          {
+            "index": 10,
+            "passed": true
+          },
+          {
+            "index": 11,
+            "passed": true
+          },
+          {
+            "index": 12,
+            "passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "baseline_report": {
+    "passed": true,
+    "scope": "Source fidelity, chart loading, filtering and note persistence; not human design quality",
+    "chart_record_selection": [
+      "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:structured:0:f38c3e72287b9250cadc",
+      "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:structured:1:4761059a6ed9ece95e25"
+    ],
+    "record_ids": [
+      "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:structured:0:f38c3e72287b9250cadc",
+      "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:structured:1:4761059a6ed9ece95e25"
+    ],
+    "note_persistence": true,
+    "runtime_errors": []
+  },
+  "context_checkpoint": {
+    "prompt_tokens_before": 28722,
+    "prompt_tokens_after": 7694,
+    "capacity": 32768,
+    "output_reservation": 4096
+  },
+  "limits": [
+    "Correction supplied the exact root cause",
+    "Repeated synthetic development example, not held-out reliability",
+    "No human acceptance or training label",
+    "No new verified MongoDB backup"
+  ]
+}
