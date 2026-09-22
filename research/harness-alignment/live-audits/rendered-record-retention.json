@@ -1,0 +1,59 @@
+{
+  "case": "Retain required email records through Semiotic rendering",
+  "source_job_id": "589fedcd1527418a8865cfd6babe3906",
+  "source_run_id": "56eb11abb66f4521b86419d71bc64b5a",
+  "check": {
+    "required_source_records": 2,
+    "retained_rows": 2,
+    "checked_targets": "point_targets",
+    "status": "passed",
+    "scope": "Source identities and interaction targets; not geometry, factual accuracy or human acceptance"
+  },
+  "renderer_evidence": {
+    "component": "Scatterplot",
+    "frameType": "xy",
+    "status": "ok",
+    "empty": false,
+    "markCount": 2,
+    "markCountByType": {
+      "point": 2
+    },
+    "width": 900,
+    "height": 520,
+    "xDomain": [
+      1789689600000,
+      1789862400000
+    ],
+    "yDomain": [
+      1.7,
+      5.3
+    ],
+    "legendItems": 1,
+    "annotationCount": 0,
+    "ariaLabel": "Two unreviewed email records for Orchard show open issue count falling from 5 to 2 between 2026-09-18 and 2026-09-20. The plan presents both messages in a table and uses a scatter plot so both observations are preserved without splitting the time series by status.",
+    "warnings": [],
+    "semanticStatus": "not-assessed",
+    "semanticDiagnostics": [],
+    "margin": {
+      "top": 50,
+      "right": 119,
+      "bottom": 60,
+      "left": 70
+    },
+    "plot": {
+      "x": 70,
+      "y": 50,
+      "width": 711,
+      "height": 410
+    },
+    "sceneHashVersion": 2,
+    "sceneHash": "0afd79a153c3a40448e69b855cdb08bb9e136cd6042de7f633a09bdaf3e779b4"
+  },
+  "model_calls": 0,
+  "build_confirmed": false,
+  "limits": [
+    "Rendered saved Scatterplot; canonical fixture still expects LineChart",
+    "Interaction identity coverage does not verify pixel positions or factual accuracy",
+    "No user confirmation, project creation, or new verified MongoDB archive"
+  ]
+}
