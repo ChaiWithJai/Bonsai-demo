@@ -307,7 +307,7 @@ class SourceJobs:
                 revision_path = folder/'revision-request.json'
                 if revision_path.exists():
                     selection_request += '\n' + json.loads(revision_path.read_text())['feedback']
-                for packet_budget in (32000, 24000, 18000, 12000):
+                for packet_budget in (64000, 48000, 32000, 24000, 18000, 12000):
                     check()
                     packet=source_packet(manifest,max_chars=packet_budget,request=selection_request)
                     self.save(folder,'source-packet.json',packet)
@@ -324,7 +324,7 @@ class SourceJobs:
                     if packing['fits'] and packet['records']:
                         break
                 else:
-                    raise ValueError('The request and available evidence do not fit the model context after four bounded packing attempts. Narrow the question or choose specific pages.')
+                    raise ValueError('The request and available evidence do not fit the model context after six bounded packing attempts. Narrow the question or choose specific pages.')
                 failures = set()
                 for turn in range(2):
                     check()

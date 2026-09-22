@@ -1,0 +1,19 @@
+{
+  "scope": "Tokenizer preflight only, no inference and no runtime change",
+  "records_shown": 79,
+  "records_total": 79,
+  "current_runtime_preflight": {
+    "prompt_tokens": 15325,
+    "reserved_output_tokens": 8448,
+    "context_capacity": 16384,
+    "fits": false
+  },
+  "candidate_context": 32768,
+  "candidate_arithmetic_fit": true,
+  "limitations": [
+    "32768 context memory, latency and model quality remain unmeasured",
+    "All extracted page text is not complete visual interpretation"
+  ],
+  "run_id": "eff0c2d38c294665a3db655a85c00b15",
+  "tests_passed": 272
+}
