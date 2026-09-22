@@ -1,0 +1,96 @@
+{
+  "scope": "Frozen synthetic development regressions under bounded reasoning and sparse-record normalization",
+  "cases": [
+    {
+      "case_id": "dated-series",
+      "job_id": "1c94c8b71f5e42c0826ba179c2495956",
+      "run_id": "10809d03b15945a98c40a7efdd630e43",
+      "contract": {
+        "case_id": "dated-series",
+        "scope": "Exact development regression contract, not semantic accuracy",
+        "checks": {
+          "source_identity": true,
+          "record_values": true,
+          "view_mapping": true,
+          "no_excluded_records": true
+        },
+        "passed": true,
+        "not_assessed": [
+          "Rendered geometry",
+          "Citation support",
+          "Human acceptance",
+          "Interpretation completeness"
+        ],
+        "field_policy": "Exact expected field names; equivalent renamed fields require review"
+      },
+      "completed_model_responses": 1,
+      "generation_config": {
+        "profile": "bonsai2-bounded",
+        "seed": 42
+      },
+      "status": "awaiting_confirmation",
+      "rendered_series": 2,
+      "source_contract": {
+        "status": "passed",
+        "scope": "Rendered line count matches compiled series count; not semantic accuracy",
+        "expected_series": 2,
+        "rendered_series": 2
+      },
+      "render_warnings": []
+    },
+    {
+      "case_id": "email-thread",
+      "job_id": "285132378cda464384902eebb8d9ac16",
+      "run_id": "1732f8237ff74e01a121f5a9b28ccf47",
+      "contract": {
+        "case_id": "email-thread",
+        "scope": "Exact development regression contract, not semantic accuracy",
+        "checks": {
+          "source_identity": true,
+          "record_values": false,
+          "view_mapping": false,
+          "no_excluded_records": true
+        },
+        "passed": false,
+        "not_assessed": [
+          "Rendered geometry",
+          "Citation support",
+          "Human acceptance",
+          "Interpretation completeness"
+        ],
+        "field_policy": "Exact expected field names; equivalent renamed fields require review"
+      },
+      "completed_model_responses": 1,
+      "generation_config": {
+        "profile": "bonsai2-bounded",
+        "seed": 42
+      },
+      "status": "awaiting_confirmation",
+      "review": {
+        "proposal_sha256": "bf7179243954041e4c426e1debcddde24a31a0849454db5f4bf85fdbebfe5b98",
+        "source_snapshot_sha256": "89c5021272622bec7108388aaa3a3241254b8394dc9e1e629af73f50572480fe",
+        "input_sha256": "018f82e8146eb8447d7729a47d8335f6113fb4ecb9e6402d8da7098ef5ea7d45",
+        "schema_version": 1,
+        "event_id": "f1693ecb08994504a87b35a6b7b56787",
+        "sequence": 1,
+        "created_at": "2026-09-22T04:41:02.140571+00:00",
+        "job_id": "285132378cda464384902eebb8d9ac16",
+        "author": "Codex development regression audit",
+        "reviewer_kind": "codex",
+        "action": "reject",
+        "note": "Frozen email-thread contract fails: structure contains only the first message although the interpretation and summary claim two records. The second dated observation is omitted, and RecordTable replaces the requested time-series comparison. Schema validity is not task completion.",
+        "identity_basis": "self_declared_local_reviewer",
+        "previous_event_id": null
+      },
+      "training_examples": 0,
+      "render_attempt": "Chart renderer rejected RecordTable as unsupported; tables use the separate authored HTML renderer. No rendered email result claimed."
+    }
+  ],
+  "conclusion": "Dated table values and two-line mapping passed. Email structuring silently omitted the second message despite prose claiming two. No overall configuration success or default change.",
+  "limitations": [
+    "Previously used development fixtures, not held-out evaluation",
+    "No browser interaction or human acceptance established",
+    "No new confirmed projects",
+    "No new verified MongoDB archive"
+  ]
+}
