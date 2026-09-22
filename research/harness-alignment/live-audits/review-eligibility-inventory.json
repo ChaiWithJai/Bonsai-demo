@@ -1,0 +1,20 @@
+{
+  "run_id": "4d7444c512f9439d84f7cc8fd17a43a9",
+  "summary": {
+    "proposals": 28,
+    "proposal_candidates": 0,
+    "interfaces": 27,
+    "interface_candidates": 0,
+    "review_events": {
+      "proposal:test:accept": 6,
+      "interface:test:accept": 2
+    },
+    "unreadable": 0
+  },
+  "artifact_readback_matched": true,
+  "limitations": [
+    "Human identity is self-declared in this local harness",
+    "No names, review notes, prompts, filenames or source text are exported",
+    "Build confirmation and record notes do not count as acceptance"
+  ]
+}
