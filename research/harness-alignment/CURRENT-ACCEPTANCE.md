@@ -273,3 +273,9 @@ The actual upload path recovered Project: Orchard, Owner: Maya, Status: Ready fo
 The sparse-header PDF passed through Bonsai structuring and generated project cecb54fb6b604fdd85c8230f7dabaa53. The record retains Orchard, Maya, Ready for review and three open issues, with verbatim page evidence. It does not infer approval or resolution. Confirmation used codex-development-scanned-pdf, not a human reviewer.
 
 Desktop/mobile checks passed for the exact values, page-1 source links returning PDF bytes, and the Orchard note context. The starter now recognizes a project field as a record title. Build and baseline checks passed; Svelte autofixer reported no issues. Planning run 04fcf240fc714cd4bd7833c74763ad33 and build run 02b92d9278324266a5cfff0f4e26523a contain the protocol and screenshots. This synthetic workflow combines Apple Vision OCR with Bonsai structuring; native PDF vision, broad accuracy and human training labels are not established.
+
+### Group source citations by location
+
+The generated starter now groups supporting quotes by their full source URL, including page or timestamp fragments. Each source card retains all quotes and identifies their fields, with a single original-source link. Timestamp metadata is labeled as a source position. Missing links fall back to grouping by record identity rather than mixing unrelated records.
+
+The scanned-PDF development project retains its previous revision and has an authored test revision. Four desktop/mobile checks passed: all five PDF quotes remain, one page link returns the original PDF, note context remains Orchard, and a browser-only second-location fixture stays in its own group. The fixture did not change server data or claim a real second PDF page. Generated build and Svelte autofixer passed. No model inference or human review labels were created.
