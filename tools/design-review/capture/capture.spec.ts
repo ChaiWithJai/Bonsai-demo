@@ -1494,3 +1494,31 @@ test('Alternative view choice drafts feedback before any revision request',async
  await expect.poll(()=>sent.length).toBe(1);
  expect(sent[0]).toContain('Preserve the source records, values and citations.');
 });
+
+test('Proposal feedback survives reload and stays with its proposal',async({page})=>{
+ const original=JSON.parse(await fs.readFile(path.resolve('.cache/email-contract-replay/status.json'),'utf8'));
+ let job=original;
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ async function openProposal(){
+  await page.goto('/#/workspace');
+  const nav=page.getByRole('navigation',{name:'Workstream sections'});
+  await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+  await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);
+  await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ }
+ await openProposal();
+ const feedback=page.getByRole('textbox',{name:'Clarify or change this proposal',exact:true});
+ await feedback.fill('Keep both messages and group by project.');
+ await expect(page.getByText('Draft saved in this browser.',{exact:true}).first()).toBeVisible();
+ await page.reload();await openProposal();
+ await expect(feedback).toHaveValue('Keep both messages and group by project.');
+ await expect(page.getByRole('button',{name:'Yes, build this view',exact:true})).toBeDisabled();
+ job={...original,id:'development-distinct-proposal',proposal_sha256:'different'};
+ await page.reload();await openProposal();
+ await expect(feedback).toHaveValue('');
+ job=original;await page.reload();await openProposal();
+ await expect(feedback).toHaveValue('Keep both messages and group by project.');
+ await feedback.fill('');await page.reload();await openProposal();
+ await expect(feedback).toHaveValue('');
+ await expect(page.getByRole('button',{name:'Yes, build this view',exact:true})).toBeEnabled();
+});

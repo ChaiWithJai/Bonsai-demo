@@ -1,7 +1,25 @@
 <script lang="ts">
+  import {onMount} from 'svelte';
   type Proposal = {structure?: {rationale:string;records:{values:Record<string,unknown>;evidence:{record_id:string;field:string;quote:string}[]}[]} | null;interpretation:{findings:{text:string;record_ids:string[]}[];rationale:string;uncertainties:string[];questions:string[]};plan:{title:string;summary:string;fields:{name:string;type:string}[];view:{component:string;groupBy?:string[];x?:string;y?:string;color?:string}}};
-  let {proposal, coverage, evidence = [], busy = false, readOnly = false, onConfirm, onRevise} = $props<{proposal:Proposal;coverage?:{records_shown:number;records_total:number;coverage:string;member_coverage?:{source_id:string;filename:string;records_shown:number;records_total?:number;represented:boolean}[]};evidence?:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>}[];busy?:boolean;readOnly?:boolean;onConfirm:()=>void;onRevise:(feedback:string)=>void}>();
+  let {proposal, draftKey = '', coverage, evidence = [], busy = false, readOnly = false, onConfirm, onRevise} = $props<{proposal:Proposal;draftKey?:string;coverage?:{records_shown:number;records_total:number;coverage:string;member_coverage?:{source_id:string;filename:string;records_shown:number;records_total?:number;represented:boolean}[]};evidence?:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>}[];busy?:boolean;readOnly?:boolean;onConfirm:()=>void;onRevise:(feedback:string)=>void}>();
   let feedback=$state('');
+  let draftReady=$state(false);
+  let draftNotice=$state('');
+  onMount(()=>{
+    if(draftKey && !readOnly) {
+      try {feedback=localStorage.getItem('bonsai-proposal-feedback:v1:'+draftKey)?.slice(0,4000) ?? '';}
+      catch {draftNotice='Draft storage is unavailable. Keep this page open.';}
+    }
+    draftReady=true;
+  });
+  $effect(()=>{
+    if(!draftReady || !draftKey || readOnly)return;
+    try {
+      const key='bonsai-proposal-feedback:v1:'+draftKey;
+      if(feedback)localStorage.setItem(key,feedback);else localStorage.removeItem(key);
+      draftNotice=feedback ? 'Draft saved in this browser.' : '';
+    } catch {draftNotice='Draft could not be saved. Keep this page open.';}
+  });
   let alternativeView=$state('');
   function draftViewChange() {
     if(!alternativeView)return;
@@ -65,6 +83,7 @@
   {#if proposal.interpretation.uncertainties.length}<h4>What remains uncertain</h4><ul>{#each proposal.interpretation.uncertainties as item (item)}<li>{item}</li>{/each}</ul>{/if}
   <h4>Does this match what you need?</h4><ul>{#each proposal.interpretation.questions as question (question)}<li>{question}</li>{/each}</ul>
   {#if !readOnly}<label>Clarify or change this proposal<textarea bind:this={feedbackInput} bind:value={feedback} maxlength="4000" placeholder="For example: group by the bottleneck being addressed, then show the evidence for each fix." disabled={busy}></textarea></label>
+  {#if draftNotice}<p class="coverage" role="status">{draftNotice}</p>{/if}
   <div class="actions"><button onclick={()=>onRevise(feedback)} disabled={busy || !feedback.trim()}>Discuss this change</button><button class="confirm" onclick={onConfirm} disabled={busy || Boolean(feedback.trim())}>Yes, build this view</button></div>
   {#if feedback.trim()}<p class="coverage" role="status">Discuss your drafted change first, or clear it to build the current proposal.</p>{/if}
   <p class="coverage">Your response stays with this proposal and its evidence. Confirming a view does not label its findings as fact or train the model.</p>{/if}
