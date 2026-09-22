@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "56-proposal-view-choice": ("workstreams", "Draft a different visualization choice before submitting a revision"),
     "55-email-thread": ("workstreams", "Corrected email timeline with per-message citations and original mailbox download"),
     "54-timeline-inspection": ("workstreams", "Clickable timeline observations with selected-record note drafts"),
     "53-dated-series": ("workstreams", "Two dated series with zero values, full chart and inspectable records"),
