@@ -44,8 +44,10 @@ def extract_pdf(content, evidence):
         for number, text in enumerate(pages,1):
             method='poppler-embedded-text';ocr_lines=[];error=None
             text=text.strip()
-            if not text:
-                method='apple-vision-ocr'
+            embedded=text
+            ocr_trigger='empty_embedded_text' if not text else 'sparse_embedded_text' if len(re.sub(r'\s+', '', text)) < 120 else None
+            if ocr_trigger:
+                method='poppler+apple-vision-ocr' if embedded else 'apple-vision-ocr'
                 try:
                     prefix=Path(temp)/f'page-{number}'
                     command(['pdftoppm','-f',str(number),'-l',str(number),'-singlefile','-scale-to','2000','-png',str(original),str(prefix)])
@@ -56,20 +58,23 @@ def extract_pdf(content, evidence):
                         binary.parent.mkdir(parents=True,exist_ok=True)
                         command(['swiftc',str(ROOT/'scripts/workspace-tools/ocr_image.swift'),'-o',str(binary)],timeout=120)
                     ocr_lines=json.loads(command([str(binary),str(prefix)+'.png']))
-                    text='\n'.join(line['text'] for line in ocr_lines).strip()
+                    existing={' '.join(line.split()) for line in embedded.splitlines()}
+                    additional=[line['text'] for line in ocr_lines if ' '.join(line['text'].split()) not in existing]
+                    text='\n'.join(([embedded] if embedded else [])+additional).strip()
                     (evidence/f'ocr-page-{number}.json').write_text(json.dumps(ocr_lines,indent=2))
                 except (ValueError,subprocess.TimeoutExpired,OSError) as exc:
                     error=str(exc)
-            coverage.append({'page':number,'method':method,'characters':len(text),'status':'extracted' if text else 'needs_review','error':error})
+            page_status='extracted' if text and not error else 'needs_review'
+            coverage.append({'page':number,'method':method,'characters':len(text),'embedded_characters':len(embedded),'ocr_trigger':ocr_trigger,'status':page_status,'error':error})
             # Keep every page addressable, including a blank or unreadable page.
             records.append({'locator':{'page':number},'data':{'page':number,'title':next((line.strip() for line in text.splitlines() if line.strip()),'Page '+str(number)),
-                            'text':text,'extraction_method':method,'extraction_status':'extracted' if text else 'needs_review'}})
+                            'text':text,'extraction_method':method,'extraction_status':page_status}})
         report={'page_count':count,'pages_with_text':sum(bool(r['data']['text']) for r in records),
-                'ocr_pages':[p['page'] for p in coverage if p['method']=='apple-vision-ocr'],
+                'ocr_pages':[p['page'] for p in coverage if p['ocr_trigger'] is not None],
                 'unresolved_pages':[p['page'] for p in coverage if p['status']=='needs_review'],
-                'pages':coverage,'limitation':'Embedded text is extracted on text-bearing pages. OCR is used only when embedded text is absent. Diagrams, charts and tables are not semantically interpreted; page text is unreviewed.'}
+                'pages':coverage,'limitation':'Embedded text is extracted on text-bearing pages. OCR supplements pages with fewer than 120 non-whitespace embedded characters, including header-only scans. Existing text is preserved; denser mixed text/image pages may still contain unread image content. Diagrams, charts and tables are not semantically interpreted; page text is unreviewed.'}
         (evidence/'coverage.json').write_text(json.dumps(report,indent=2))
         if not report['pages_with_text']:
             raise ValueError('No readable text was extracted from any page; inspect the saved coverage report')
-        return {'kind':'document','status':'extracted','extractor':'pdf-pages-v1:poppler+apple-vision',
+        return {'kind':'document','status':'extracted','extractor':'pdf-pages-v2:poppler+apple-vision',
                 'records':records,'extraction_coverage':report,'review_status':'page_text_unreviewed'}
