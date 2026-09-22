@@ -220,7 +220,10 @@ class SourceJobsTest(unittest.TestCase):
                 folder.mkdir(parents=True,exist_ok=True)
                 spec=json.loads(Path(argv[2]).read_text());assert spec['props']['edges']
                 (folder/'render-evidence.json').write_text('{}');(folder/'chart.svg').write_text('<svg/>');return {'ok':True}
-            def build(self,*args):return {'ok':True}
+            build_calls=0
+            def build(self,*args):
+                self.build_calls+=1
+                return {'ok':self.build_calls>1,'stderr':'Development first build failure'}
             def preview(self,project,*args):return {'url':'http://test/','revision':project['head']}
             def check_browser(self,*args):return {'ok':True}
         with tempfile.TemporaryDirectory() as temp:
@@ -238,9 +241,16 @@ class SourceJobsTest(unittest.TestCase):
             with self.assertRaises(RevisionConflict):jobs.retry_build(jid,'wrong')
             jobs.retry_build(jid,'exact','test-retry');active=jobs.active.get(jid)
             if active:active[1].join(10)
+            self.assertEqual(jobs.get(jid)['status'],'failed')
+            saved_project=worker.store.get(jobs.get(jid)['workspace_id'])
+            jobs.retry_build(jid,'exact','test-retry-saved-project');active=jobs.active.get(jid)
+            if active:active[1].join(10)
             self.assertEqual(jobs.get(jid)['status'],'completed');self.assertEqual(provider.calls,0)
+            self.assertEqual(jobs.get(jid)['workspace_id'],saved_project['id'])
+            self.assertEqual(worker.store.get(saved_project['id'])['head'],saved_project['head'])
+            self.assertEqual(len(worker.store.list()),1)
             self.assertEqual(json.loads((folder/'confirmation.json').read_text())['actor'],'test-original')
-            archives=list((folder/'build-retries').glob('*/status.json'));self.assertEqual(len(archives),1)
-            self.assertEqual(json.loads(archives[0].read_text()),status)
-            self.assertEqual(jobs.get(jid)['retry_of_run_id'],'failed-build')
+            archives=list((folder/'build-retries').glob('*/status.json'));self.assertEqual(len(archives),2)
+            self.assertIn(status,[json.loads(path.read_text()) for path in archives])
+            self.assertEqual(jobs.get(jid)['retry_of_run_id'],'test')
             with self.assertRaises(RevisionConflict):jobs.retry_build(jid,'exact')

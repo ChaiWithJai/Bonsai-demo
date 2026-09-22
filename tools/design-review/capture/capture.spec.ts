@@ -1362,3 +1362,23 @@ test('Citation groups retain separate source locations',async({page},info)=>{
  await expect(row.locator('.source-citation').nth(1)).toContainText('Browser-only page two quote');
  await expect(row.getByRole('link')).toHaveCount(2);
 });
+
+test('Failed saved project offers confirmed build retry',async({page},info)=>{
+ const job={id:'development-saved-build-retry',source_id:'91d10b75eb64a3635f8706ab6f7f90711f71e5c30474d55d5a004fa273b41072',filename:'Review data.csv',request:'Explore the attached records',status:'failed',stage:'Build stopped',workspace_id:'development-saved-project',planning_run_id:'development-plan',proposal_sha256:'development-confirmed-hash',error:'Development build failure'};
+ let retried=false;
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.route('**/api/workspace/source-jobs/'+job.id+'/retry-build',async route=>{
+  expect(route.request().postDataJSON()).toEqual({proposal_sha256:job.proposal_sha256});
+  retried=true;await route.fulfill({json:{...job,status:'queued'}});
+ });
+ await page.goto('/#/workspace');
+ const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:'Files',exact:true}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);
+ await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const button=page.getByRole('button',{name:'Retry confirmed build',exact:true});
+ await expect(button).toBeVisible();await expect(button).toBeEnabled();
+ await button.scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/52-saved-build-retry.'+info.project.name+'.png'),fullPage:true});
+ await button.click();await expect.poll(()=>retried).toBe(true);
+});
