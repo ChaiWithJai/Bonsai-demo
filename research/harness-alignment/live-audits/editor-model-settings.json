@@ -1,0 +1,27 @@
+{
+  "scope": "Choose a generation profile for an edit of a saved view",
+  "behavior": [
+    "Collapsed Model settings disclosure with Server default initially selected",
+    "Custom profiles submit generation_config with selected profile and seed 42",
+    "Server default omits generation_config",
+    "Choice remains with per-project in-memory draft across navigation and failed submission",
+    "Controls disabled while an attempt or source job is active"
+  ],
+  "checks": [
+    "Svelte check zero errors and warnings",
+    "Production build passed",
+    "Autofixer no issues; existing local Map/Set suggestions reviewed",
+    "Desktop and mobile intercepted-submission checks passed, including draft navigation and default fallback"
+  ],
+  "screens": [
+    "72-editor-model-settings.desktop.png",
+    "72-editor-model-settings.mobile.png"
+  ],
+  "verification_repair": "Initial browser check found an old served route; corrected the build route copy and reran both checks successfully.",
+  "limits": [
+    "UI checks intercepted submissions; no inference or model quality claim",
+    "This control currently applies to saved-view edits, not source-intake proposals",
+    "Draft configuration lasts within the current app session",
+    "No human acceptance or verified MongoDB backup"
+  ]
+}

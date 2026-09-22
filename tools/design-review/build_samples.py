@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "72-editor-model-settings": ("workspace", "Per-edit model configuration with server-default fallback"),
     "71-discussion-and-verification-notes": ("workspace", "Discussion notes stay visible while automated verification notes are collapsed"),
     "70-proposed-chart-preview": ("workspace", "Inspect a proposed chart before confirming a build"),
     '68-record-retention-draft': ('workspace', 'Explicit retention requirement persists in draft and can be cleared'),
