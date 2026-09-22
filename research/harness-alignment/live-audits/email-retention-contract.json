@@ -1,0 +1,49 @@
+{
+  "case": "Explicit one-record-per-source task contract",
+  "job_id": "589fedcd1527418a8865cfd6babe3906",
+  "run_id": "56eb11abb66f4521b86419d71bc64b5a",
+  "baseline_job_id": "285132378cda464384902eebb8d9ac16",
+  "baseline_rejected_by_contract": "Task requires exactly one output record per source record. Missing: r2; repeated: . Extract the missing records from their supplied evidence. Do not change the chart type to bypass this data requirement",
+  "task_contract": {
+    "record_policy": "one_per_source_record"
+  },
+  "required_record_count": 2,
+  "records_retained": 2,
+  "regression_check": {
+    "case_id": "email-thread",
+    "scope": "Exact development regression contract, not semantic accuracy",
+    "checks": {
+      "source_identity": true,
+      "record_values": true,
+      "view_mapping": false,
+      "no_excluded_records": true
+    },
+    "passed": false,
+    "not_assessed": [
+      "Rendered geometry",
+      "Citation support",
+      "Human acceptance",
+      "Interpretation completeness"
+    ],
+    "field_policy": "Exact expected field names; equivalent renamed fields require review"
+  },
+  "actual_view": {
+    "component": "Scatterplot",
+    "x": "sent_date",
+    "y": "open_issue_count",
+    "color": null
+  },
+  "intervention": "Explicit task instruction plus minimum generated row count and source-to-output retention validation. Combined harness intervention, not isolated model reasoning improvement.",
+  "conclusion": "Both email observations and expected field values retained. Repair switched to Scatterplot; canonical LineChart grouping is still not satisfied.",
+  "checks": [
+    "298 Python tests passed",
+    "20 source-job and task-contract tests passed after inheritance/schema isolation assertions"
+  ],
+  "limits": [
+    "Opt-in API contract; not inferred for summaries or filters",
+    "Requires 1 to 30 source records; context omissions fail explicitly",
+    "Citation identity and count do not establish factual correctness",
+    "No human acceptance or confirmed build",
+    "No new verified MongoDB archive"
+  ]
+}

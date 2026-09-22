@@ -9,6 +9,7 @@ import uuid
 from workspace_data.desktop_plan import profile, compile_plan, PLAN_INSTRUCTIONS, ensure_group_root
 from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal, revision_messages, planning_profile, repair_diagnostics, validate_schema_repair_preservation, validate_source_scope, structured_source_usage
 from workspace_data.record_review import apply_human_reviews
+from workspace_data.task_contract import task_record_ids, validate_task_records
 from workspace_provider import GenerationCancelled, LocalProvider
 from workspace_store import RevisionConflict
 from workspace_tools import ROOT
@@ -122,7 +123,7 @@ class SourceJobs:
     def list(self):
         return {'jobs': [self.get(p.parent.name) for p in sorted(self.root.glob('*/status.json'), key=lambda p:p.stat().st_mtime, reverse=True)]}
 
-    def start(self, source_id, request, apply_reviews=False, revision=None, intake_job_id=None, source_scope=None, generation_config=None):
+    def start(self, source_id, request, apply_reviews=False, revision=None, intake_job_id=None, source_scope=None, generation_config=None, task_contract=None):
         if not isinstance(request, str) or not 10 <= len(request.strip()) <= 4000:
             raise ValueError('Describe the visualization in 10 to 4,000 characters')
         if type(apply_reviews) is not bool:
@@ -145,6 +146,7 @@ class SourceJobs:
                 manifest = apply_human_reviews(self.sources.root, manifest)
             source_scope=validate_source_scope(manifest,source_scope)
             scoped_manifest={**manifest,'records':[row for row in manifest['records'] if row.get('locator',{}).get('page') in source_scope['pages']]} if source_scope else manifest
+            required_records=task_record_ids(manifest,source_scope,task_contract)
             context = profile(scoped_manifest)
         with self.worker.guard:
             if self.worker.running or self.worker.source_jobs:
@@ -174,7 +176,7 @@ class SourceJobs:
                 self.save(folder, 'revision-request.json', revision)
             status = {'id':jid, 'source_id':source_id, 'filename':manifest['filename'], 'request':request.strip(),
                       'source_ids':[s['source_id'] for s in manifest.get('sources',[])] or [source_id],
-                      'intake_job_id':intake_job_id, 'source_scope':source_scope, 'generation_config':generation_config, 'apply_reviews':apply_reviews, 'status':'queued', 'stage':'Preparing source', 'created_at':time.time()}
+                      'intake_job_id':intake_job_id, 'source_scope':source_scope, 'generation_config':generation_config, 'task_contract':task_contract, 'task_record_ids':required_records, 'apply_reviews':apply_reviews, 'status':'queued', 'stage':'Preparing source', 'created_at':time.time()}
             if revision:
                 status['parent_job_id'] = revision['parent_job_id']
                 status['feedback'] = revision['feedback']
@@ -251,7 +253,7 @@ class SourceJobs:
                            'parent_proposal_sha256':status.get('proposal_sha256'),
                            'parent_planning_run_id':status.get('run_id'),
                            'parent_source_snapshot_sha256':hashlib.sha256((self.root/jid/'source-manifest.json').read_bytes()).hexdigest(),
-                           'identity_basis':'local unauthenticated interaction; not a training label'}, intake_job_id=status.get('intake_job_id'),source_scope=status.get('source_scope'),generation_config=status.get('generation_config'))
+                           'identity_basis':'local unauthenticated interaction; not a training label'}, intake_job_id=status.get('intake_job_id'),source_scope=status.get('source_scope'),generation_config=status.get('generation_config'),task_contract=status.get('task_contract'))
 
     def cancel(self, jid):
         with self.worker.guard:
@@ -292,6 +294,10 @@ class SourceJobs:
             planner=self.proposal_planner
             if status.get('generation_config') and isinstance(planner,LocalProvider):
                 planner=planner.configured(status['generation_config'])
+            if status.get('task_record_ids') and isinstance(planner,LocalProvider):
+                # configured() owns a deep copy of the schema; never mutate shared defaults.
+                planner=planner.configured({'profile':planner.profile,'seed':planner.seed})
+                planner.response_schema['properties']['structure']['anyOf'][0]['properties']['records']['minItems']=len(status['task_record_ids'])
             self.save(folder,'generation-config.json',{'profile':planner.profile,'seed':planner.seed})
             if hasattr(planner,'payload'):
                 self.save(folder,'generation-settings.json',{key:value for key,value in planner.payload([],[],4096).items() if key not in ('messages','tools')})
@@ -320,7 +326,7 @@ class SourceJobs:
             update(status='running', stage='Planning visualization', run_id=run_id, trace_id=root.trace_id,
                    mlflow_url=f'{w.tracking_uri}/#/experiments/{eid}/runs/{run_id}')
             self.save(folder, 'model-info.json', w.model_info)
-            source_files = ['workspace_data/intake.py','workspace_data/xlsx.py','workspace_sources.py','workspace_source_jobs.py','workspace_data/proposal.py','workspace_data/proposal_schema.py','workspace_provider.py','workspace_data/desktop_plan.py','workspace-tools/render_chart.mjs',
+            source_files = ['workspace_data/task_contract.py','workspace_data/intake.py','workspace_data/xlsx.py','workspace_sources.py','workspace_source_jobs.py','workspace_data/proposal.py','workspace_data/proposal_schema.py','workspace_provider.py','workspace_data/desktop_plan.py','workspace-tools/render_chart.mjs',
                             'workspace_provider.py','workspace_intake_chat.py','workspace-tools/package-lock.json']
             self.save(folder,'harness-hashes.json',{name:hashlib.sha256((ROOT/'scripts'/name).read_bytes()).hexdigest() for name in source_files})
             if not confirmed:
@@ -332,8 +338,12 @@ class SourceJobs:
                     check()
                     packet=source_packet(manifest,max_chars=packet_budget,request=selection_request,source_scope=status.get('source_scope'))
                     self.save(folder,'source-packet.json',packet)
+                    if status.get('task_record_ids') and set(status['task_record_ids'])-set(packet['record_id_map'].values()):
+                        raise ValueError('Required source records do not fit the model context; narrow the source scope explicitly')
                     messages = [{'role':'system','content':PROPOSAL_INSTRUCTIONS},
                                 {'role':'user','content':json.dumps({'request':status['request'],'source_profile':planning_profile(context),'source_evidence':{k:v for k,v in packet.items() if k!='record_id_map'}},ensure_ascii=False)}]
+                    if status.get('task_contract'):
+                        messages[-1]['content'] += '\nExplicit task contract: '+json.dumps({'record_policy':'one_per_source_record','required_record_ids':list(packet['record_id_map']),'instruction':'Create exactly one output record for each required source record, using that record as its evidence. Preserve every requested observation. Summarizing multiple source records into one output record or omitting a source is not permitted for this task.'})
                     if (folder/'intake-context.json').exists():
                         discussion=json.loads((folder/'intake-context.json').read_text())
                         messages[-1]['content'] += '\nPrior conversation for intent only, not source evidence:\n'+json.dumps(discussion,ensure_ascii=False)
@@ -360,7 +370,10 @@ class SourceJobs:
                     try:
                         proposal = json.loads(response['message']['content'])
                         validate_schema_repair_preservation(previous_invalid_proposal, proposal)
+                        validate_task_records(proposal,packet,status.get('task_record_ids',[]))
                         compiled = span('plan.validate', {'proposal':proposal}, lambda:validate_proposal(manifest, proposal, packet['record_id_map']))
+                        if status.get('task_record_ids') and compiled['excluded_record_ids']:
+                            raise ValueError('The task requires every source record, but the selected chart excludes records; preserve them in the proposed view')
                         for finding in proposal['interpretation']['findings']:
                             finding['record_ids']=[packet['record_id_map'][ref] for ref in finding['record_ids']]
                         if proposal.get('structure'):

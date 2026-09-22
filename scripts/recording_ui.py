@@ -354,7 +354,7 @@ class Handler(BaseHTTPRequestHandler):
                 elif len(parts) == 5 and parts[4] == 'vision' and self.command == 'POST':
                     result = self.server.workspace_source_jobs.start_vision(parts[3],payload.get('page'))
                 elif len(parts) == 5 and parts[4] == 'generate' and self.command == 'POST':
-                    result = self.server.workspace_source_jobs.start(parts[3], payload.get('request'), payload.get('apply_reviews', False), intake_job_id=payload.get('intake_job_id'),source_scope=payload.get('source_scope'), generation_config=payload.get('generation_config'))
+                    result = self.server.workspace_source_jobs.start(parts[3], payload.get('request'), payload.get('apply_reviews', False), intake_job_id=payload.get('intake_job_id'),source_scope=payload.get('source_scope'), generation_config=payload.get('generation_config'),task_contract=payload.get('task_contract'))
                 elif len(parts) == 6 and parts[4] == 'pages' and self.command == 'GET':
                     raw, mime = sources.pdf_page(parts[3], int(parts[5]))
                     return self.respond(200, raw, mime)

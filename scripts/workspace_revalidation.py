@@ -25,7 +25,7 @@ def revalidate(jobs, jid):
         for name in required+['original-manifest.json']:
             if (source/name).is_file():shutil.copy2(source/name,folder/name)
         for response in responses:shutil.copy2(response,folder/response.name)
-        status={key:parent[key] for key in ('source_id','source_ids','filename','request','intake_job_id','apply_reviews','source_scope','generation_config') if key in parent}
+        status={key:parent[key] for key in ('source_id','source_ids','filename','request','intake_job_id','apply_reviews','source_scope','generation_config','task_contract','task_record_ids') if key in parent}
         status.update(id=ident,parent_job_id=jid,kind='source_revalidation',status='running',stage='Checking saved model response',created_at=time.time(),model_calls=0)
         jobs.save(folder,'status.json',status)
         client=jobs.worker.client;run_id=None
@@ -45,7 +45,11 @@ def revalidate(jobs, jid):
                 except json.JSONDecodeError:pass
             validate_schema_repair_preservation(previous,proposal)
             packet=read('source-packet.json')
+            from workspace_data.task_contract import validate_task_records
+            validate_task_records(proposal,packet,status.get('task_record_ids',[]))
             compiled=validate_proposal(read('source-manifest.json'),proposal,packet['record_id_map'])
+            if status.get('task_record_ids') and compiled['excluded_record_ids']:
+                raise ValueError('The selected chart excludes required source records')
             for finding in proposal['interpretation']['findings']:
                 finding['record_ids']=[packet['record_id_map'][ref] for ref in finding['record_ids']]
             for row in (proposal.get('structure') or {}).get('records',[]):
