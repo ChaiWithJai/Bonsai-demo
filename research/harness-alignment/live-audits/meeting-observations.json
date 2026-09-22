@@ -1,0 +1,45 @@
+{
+  "scope": "Fresh synthetic text-document workflow with zero and unknown count",
+  "job_id": "2c829db9c92e4894a9a2307f85dc19d3",
+  "planning_run_id": "b21205b61e2d492cb0a8f41d6970e3d6",
+  "build_run_id": "b826f010b27044c3a30cfdd3e85f6041",
+  "workspace_id": "171bc98e7caf4aa48ef1a600cea1f028",
+  "status": "completed",
+  "generation_config": {
+    "profile": "bonsai2-bounded",
+    "seed": 42
+  },
+  "contract": "fixtures/desktop-regressions/meeting-observations-contract.json",
+  "contract_checks": {
+    "source_hash": true,
+    "records": true,
+    "view": true,
+    "unplotted": true,
+    "plotted_points": true
+  },
+  "browser_check": {
+    "passed": true,
+    "scope": "Source fidelity, chart loading, filtering and note persistence; not human design quality",
+    "chart_record_selection": [
+      "a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4:structured:0:5e55e417e8b7e631a734",
+      "a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4:structured:1:b9b305c38b9f372382e7",
+      "a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4:structured:3:cb92829b17a26b4ac2ad"
+    ],
+    "record_ids": [
+      "a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4:structured:0:5e55e417e8b7e631a734",
+      "a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4:structured:1:b9b305c38b9f372382e7",
+      "a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4:structured:2:4023f2eae72bdb5d2c37",
+      "a54743cb88a798bb97e49576bc52fad025b3433b52c23577a889f029de6753d4:structured:3:cb92829b17a26b4ac2ad"
+    ],
+    "note_persistence": true,
+    "runtime_errors": []
+  },
+  "visual_review": "Codex inspected mobile screenshot: three plotted observations, four record cards, zero shown as 0 and null as Not provided.",
+  "confirmation_actor": "codex-development-missing-value-check",
+  "limits": [
+    "Synthetic document with explicit requested field names and chart type",
+    "No human acceptance or training label",
+    "Not evidence of general PDF/audio/video reliability",
+    "No new verified MongoDB backup"
+  ]
+}

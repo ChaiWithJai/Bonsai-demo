@@ -1,0 +1,48 @@
+{
+  "source_sha256": "2d11cc1a75fb91c4b3d208ab1e2be265449b4668217c280a7646cb97d025e503",
+  "request": "Structure these meeting notes into one record per dated observation, using date, project, owner, open_issues, and review_status fields with source citations. Keep every observation, including the zero and the unreported count as null. Let me explore the known issue counts over time with a Scatterplot and inspect all four records, including the unplotted unknown count. Do not join across the unknown count or imply approval. Group points by project. These are synthetic development notes.",
+  "generation_config": {
+    "profile": "bonsai2-bounded",
+    "seed": 42
+  },
+  "expected_records": [
+    {
+      "date": "2026-09-14",
+      "project": "Cedar",
+      "owner": "Lina",
+      "open_issues": 5,
+      "review_status": "Needs revision"
+    },
+    {
+      "date": "2026-09-15",
+      "project": "Cedar",
+      "owner": "Lina",
+      "open_issues": 0,
+      "review_status": "Ready for review"
+    },
+    {
+      "date": "2026-09-16",
+      "project": "Cedar",
+      "owner": "Lina",
+      "open_issues": null,
+      "review_status": "Awaiting update"
+    },
+    {
+      "date": "2026-09-17",
+      "project": "Cedar",
+      "owner": "Omar",
+      "open_issues": 2,
+      "review_status": "Needs revision"
+    }
+  ],
+  "expected_view": {
+    "component": "Scatterplot",
+    "x": "date",
+    "y": "open_issues",
+    "color": "project"
+  },
+  "expected_unplotted_dates": [
+    "2026-09-16"
+  ],
+  "scope": "Fresh synthetic development case, not held-out real-user evaluation"
+}
