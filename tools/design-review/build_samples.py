@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "51-scanned-pdf-record": ("workstreams", "Scanned PDF structured into a project record with page evidence"),
     "50-record-title": ("workstreams", "Source-derived model title and matching selected-note context"),
     "49-model-family-graph": ("workstreams", "Constrained model-family graph with categorical membership and source links"),
     "48-three-stage-video": ("workstreams", "Generated three-stage records with timestamped source video inspection"),

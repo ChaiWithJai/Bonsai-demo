@@ -1316,3 +1316,27 @@ test('Evidence note context names the selected model record',async({page},info)=
  await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toHaveValue('Draft remains attached to this model');
  await first.screenshot({path:path.resolve(import.meta.dirname,'../shots/50-record-title.'+info.project.name+'.png')});
 });
+
+test('Scanned PDF becomes a source-linked review record',async({page},info)=>{
+ const preview=JSON.parse(await fs.readFile(path.resolve('.cache/scanned-pdf-interface/preview.json'),'utf8'));
+ const source=JSON.parse(await fs.readFile(path.resolve('.cache/scanned-pdf-interface/source.json'),'utf8'));
+ await page.goto(preview.url);
+ const row=page.getByTestId('record-row');await expect(row).toHaveCount(1);
+ await expect(row.getByRole('heading',{name:'Orchard',exact:true})).toBeVisible();
+ const data=JSON.parse((await row.getByTestId('record-data').textContent())!);
+ expect(data).toMatchObject({project:'Orchard',owner:'Maya',review_status:'Ready for review',open_issue_count:3});
+ await row.getByText('Supporting source passages',{exact:true}).click();
+ await expect(row).toContainText('Status: Ready for review');
+ await expect(row).toContainText('Open issues: 3');
+ const links=row.getByRole('link');expect(await links.count()).toBeGreaterThan(0);
+ for(const link of await links.all()){
+   const href=await link.getAttribute('href');expect(href).toContain(source.source_id+'/file#page=1');
+ }
+ const response=await page.request.get((await links.first().getAttribute('href'))!);
+ expect(response.ok()).toBe(true);expect((await response.body()).subarray(0,5).toString()).toBe('%PDF-');
+ await row.getByRole('button',{name:/Inspect /}).click();
+ await expect(page.locator('aside .selected-context')).toHaveText('Adding a note to Orchard');
+ await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/51-scanned-pdf-record.'+info.project.name+'.png'),fullPage:true});
+});
