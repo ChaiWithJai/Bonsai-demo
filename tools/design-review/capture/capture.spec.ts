@@ -1862,3 +1862,28 @@ test('Structured coverage exposes a source mentioned only in findings',async({pa
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/67-structured-source-coverage.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Record retention is explicit, draft-persistent, and sent with the request',async({page},info)=>{
+ const sid='60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c';const sent:any[]=[];
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[]}}));
+ await page.route('**/api/workspace/sources/'+sid+'/generate',route=>{sent.push(route.request().postDataJSON());return route.fulfill({json:{id:'test'}});});
+ await page.goto('/#/workspace');const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);
+ await nav.getByRole('button',{name:'Conversation',exact:true}).click();await page.getByText('Data requirements',{exact:true}).click();
+ const checkbox=page.getByRole('checkbox',{name:'Keep one output row per source record'});await expect(checkbox).not.toBeChecked();await checkbox.check();
+ await page.getByLabel('Message Research analyst',{exact:true}).fill('Keep each message as a separate observation over time.');
+ await page.reload();await page.getByText('Data requirements · Preserve every record',{exact:true}).click();await expect(checkbox).toBeChecked();expect(sent).toHaveLength(0);
+ await page.getByRole('button',{name:'Send ↑',exact:true}).click();await expect.poll(()=>sent.length).toBe(1);expect(sent[0].task_contract).toEqual({record_policy:'one_per_source_record'});
+ await checkbox.uncheck();await page.getByRole('button',{name:'Send ↑',exact:true}).click();await expect.poll(()=>sent.length).toBe(2);expect(sent[1].task_contract).toBeNull();
+ await checkbox.check();await checkbox.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/68-record-retention-draft.'+info.project.name+'.png'),fullPage:true});
+});
+
+test('Saved proposal displays its frozen record retention requirement',async({page,request},info)=>{
+ const response=await request.get('/api/workspace/source-jobs/589fedcd1527418a8865cfd6babe3906');expect(response.ok()).toBe(true);const job=await response.json();
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));await page.goto('/#/workspace');
+ const nav=page.getByRole('navigation',{name:'Workstream sections'});await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const requirement=page.getByLabel('Record retention requirement',{exact:true});await expect(requirement).toContainText('one output row for each of the 2 source records');await expect(requirement).toContainText('Revisions retain this requirement');
+ await requirement.scrollIntoViewIfNeeded();await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/69-record-retention-proposal.'+info.project.name+'.png'),fullPage:true});
+});
