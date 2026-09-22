@@ -1447,3 +1447,30 @@ test('Email thread correction preserves messages and review states',async({page}
  await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toBeVisible();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/55-email-thread.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Alternative view choice drafts feedback before any revision request',async({page},info)=>{
+ const job=JSON.parse(await fs.readFile(path.resolve('.cache/email-contract-replay/status.json'),'utf8'));
+ let sent:string[]=[];
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.route('**/api/workspace/source-jobs/'+job.id+'/revise',async route=>{
+  sent.push(route.request().postDataJSON().feedback);await route.fulfill({json:{...job,id:'development-view-revision',status:'queued'}});
+ });
+ await page.goto('/#/workspace');
+ const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:'Files',exact:true}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);
+ await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ await page.locator('.view-choice summary').click();
+ await page.getByRole('combobox',{name:'View to discuss',exact:true}).selectOption('LineChart');
+ const feedback=page.getByRole('textbox',{name:'Clarify or change this proposal',exact:true});
+ await feedback.fill('Keep the original review status wording.');
+ await page.getByRole('button',{name:'Draft this change',exact:true}).click();
+ expect(await feedback.inputValue()).toContain('Keep the original review status wording.');
+ expect(await feedback.inputValue()).toContain('Follow changes over time');
+ expect(sent).toHaveLength(0);
+ await page.locator('.view-choice').scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/56-proposal-view-choice.'+info.project.name+'.png'),fullPage:true});
+ await page.getByRole('button',{name:'Discuss this change',exact:true}).click();
+ await expect.poll(()=>sent.length).toBe(1);
+ expect(sent[0]).toContain('Preserve the source records, values and citations.');
+});
