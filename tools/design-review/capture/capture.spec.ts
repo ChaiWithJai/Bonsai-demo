@@ -1607,7 +1607,7 @@ test('Source inspection reaches records beyond the initial page',async({page},in
  await expect(page.getByText(/Showing records 101–200 of 205/)).toBeVisible();
  await nav.getByRole('button',{name:'Next records'}).click();
  await expect(rows).toHaveCount(5);
- await rows.last().locator('summary').click();
+ await rows.last().locator(':scope > summary').click();
  await expect(rows.last()).toContainText('204');
  await expect(nav.getByRole('button',{name:'Next records'})).toBeDisabled();
  await page.getByText('Review records and export corrections',{exact:true}).click();
@@ -1636,8 +1636,12 @@ test('PDF content search reaches a measurement beyond the first ten pages',async
  await expect(page.getByText(/Showing records .* matches/)).toBeVisible();
  const row=page.locator('.records > details').filter({has:page.locator('summary',{hasText:/^Page 25$/})});
  await expect(row).toHaveCount(1);
- await row.locator('summary').click();
- await expect(row).toContainText('520us');
+ await row.locator(':scope > summary').click();
+ await expect(row.locator('.record-content')).toContainText('520us');
+ await expect(row.locator('pre')).not.toBeVisible();
+ await row.getByText('Source details and raw record',{exact:true}).click();
+ await expect(row.locator('pre')).toBeVisible();
+ await row.getByText('Source details and raw record',{exact:true}).click();
  await page.getByText('Review records and export corrections',{exact:true}).click();
  await expect(page.getByRole('combobox',{name:'Source record',exact:true})).toContainText('Record 25');
  await page.getByRole('textbox',{name:'Search extracted content',exact:true}).scrollIntoViewIfNeeded();
