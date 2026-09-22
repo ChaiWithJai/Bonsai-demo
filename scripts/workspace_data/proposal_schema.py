@@ -15,7 +15,7 @@ STRUCTURE=obj({'rationale':TEXT,'records':array(obj({
     'evidence':array(EVIDENCE,1,5)
 }))})
 VIEW={'anyOf':[
-    obj({'component':{'const':'RecordTable'},'columns':array(FIELD,1,6)}),
+    obj({'component':{'const':'RecordTable'},'columns':array(FIELD,1,20)}),
     obj({'component':{'const':'ForceDirectedGraph'},'groupBy':array(FIELD,1,3)}),
     *[obj({'component':{'const':name},'x':FIELD,'y':FIELD,'color':{'type':['string','null']}})
       for name in ('Scatterplot','LineChart')]

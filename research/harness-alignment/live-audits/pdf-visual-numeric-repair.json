@@ -1,0 +1,85 @@
+{
+  "case": "PDF page 25 numeric structuring after selected-page vision",
+  "baseline_job_id": "ba36085cdd9246e8b9cd1b881f3fb5b9",
+  "baseline_run_id": "5c9eb721b9a445c5ab920393afd0ad9d",
+  "replay_job_id": "9b8f3a0784c54934a14a2bbf63ccd5c5",
+  "replay_run_id": "4182d8cd1da94f8ba6f495ac36788e02",
+  "replay_status": "failed",
+  "offline_revalidation": {
+    "passed": true,
+    "intervention": "Allow up to 20 distinct source overview fields; default remains six. Saved model response unchanged.",
+    "columns": 8,
+    "browser_check": "Saved compiled data supplied to an existing preview through read-only Playwright interception; desktop and mobile values, units, horizontal keyboard scrolling and record selection passed. No confirmed project created."
+  },
+  "matched": {
+    "source-manifest.json": true,
+    "source-packet.json": true,
+    "model-info.json": true,
+    "first_response": true
+  },
+  "records_preserved_during_schema_repair": true,
+  "structured_values": [
+    {
+      "scope": "local_operation",
+      "operation": "metrics computation",
+      "before_value": 14,
+      "before_unit": "ms",
+      "after_value": 520,
+      "after_unit": "us",
+      "page": 25,
+      "source": "S82065.pdf",
+      "variant": null,
+      "value": null,
+      "unit": null
+    },
+    {
+      "scope": "whole_run",
+      "operation": null,
+      "before_value": null,
+      "before_unit": null,
+      "after_value": null,
+      "after_unit": null,
+      "page": 25,
+      "source": "S82065.pdf",
+      "variant": "Baseline",
+      "value": 402.1,
+      "unit": "ms"
+    },
+    {
+      "scope": "whole_run",
+      "operation": null,
+      "before_value": null,
+      "before_unit": null,
+      "after_value": null,
+      "after_unit": null,
+      "page": 25,
+      "source": "S82065.pdf",
+      "variant": "Vectorized",
+      "value": 389.1,
+      "unit": "ms"
+    },
+    {
+      "scope": "whole_run",
+      "operation": null,
+      "before_value": null,
+      "before_unit": null,
+      "after_value": null,
+      "after_unit": null,
+      "page": 25,
+      "source": "S82065.pdf",
+      "variant": "speedup_annotation",
+      "value": -3,
+      "unit": "%"
+    }
+  ],
+  "error": "Plan validation failed within the two-call budget: Choose one to six distinct source fields for table overview columns; all fields remain in record details\nplan.view.columns has 8 entries; choose one to six overview columns. All classified fields remain available in record details.",
+  "model_calls": 2,
+  "review": "No human acceptance. Baseline has a Codex reject judgment; neither proposal has been confirmed for building.",
+  "limitations": [
+    "Repeated development case, not held-out validation.",
+    "All 82 source records were supplied despite the page-25-only request; explicit scope selection is still needed.",
+    "The metrics computation label needs source context beyond the cited page.",
+    "Preserving values does not establish factual correctness, suitable visualization choice, or successful rendering.",
+    "Local MongoDB backup remains unavailable; no new verified archive."
+  ]
+}

@@ -263,8 +263,8 @@ def repair_diagnostics(manifest, value, aliases, first_error):
             errors.append(str(exc))
         view = plan.get('view')
         if isinstance(view, dict) and view.get('component') == 'RecordTable' and isinstance(view.get('columns'), list):
-            if not 1 <= len(view['columns']) <= 6:
-                errors.append(f'plan.view.columns has {len(view["columns"])} entries; choose one to six overview columns. All classified fields remain available in record details.')
+            if not 1 <= len(view['columns']) <= 20:
+                errors.append(f'plan.view.columns has {len(view["columns"])} entries; choose one to twenty overview columns. All classified fields remain available in record details.')
     return list(dict.fromkeys(errors))[:10]
 
 
