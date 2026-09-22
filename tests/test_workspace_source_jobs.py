@@ -40,13 +40,15 @@ class SourceJobsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);client=Client();provider=LocalProvider('http://127.0.0.1:1','test-model')
             worker=SimpleNamespace(store=WorkspaceStore(root/'workspace'),client=client,provider=provider,guard=threading.Lock(),running={},source_jobs=set(),tracking_uri='http://localhost:5210',model_info={})
-            sources=WorkspaceSources(root/'sources',client,worker.tracking_uri);source=sources.upload('data.json',b'[{"value":0}]');jobs=SourceJobs(worker,sources)
+            sources=WorkspaceSources(root/'sources',client,worker.tracking_uri);source=sources.upload('data.json',b'[{"value":0},{"value":1}]');jobs=SourceJobs(worker,sources)
             config={'profile':'bonsai2-instruct','seed':73}
             with patch.object(LocalProvider,'preflight',return_value={'fits':True}),patch.object(LocalProvider,'generate',generate):
-                job=jobs.start(source['source_id'],'Compare the measurements',generation_config=config)
+                job=jobs.start(source['source_id'],'Compare the measurements',generation_config=config,task_contract={'record_policy':'one_per_source_record'})
                 config['seed']=99
                 jobs.active[job['id']][1].join(10)
             self.assertEqual(len(seen),2)
+            self.assertTrue(all(payload['response_format']['json_schema']['schema']['properties']['structure']['anyOf'][0]['properties']['records']['minItems']==2 for payload in seen))
+            self.assertEqual(jobs.proposal_planner.response_schema['properties']['structure']['anyOf'][0]['properties']['records']['minItems'],1)
             self.assertTrue(all(payload['seed']==73 and payload['temperature']==0.7 for payload in seen))
             self.assertTrue(all(payload['response_format']['type']=='json_schema' for payload in seen))
             self.assertEqual(provider.profile,'legacy-greedy');self.assertEqual(provider.seed,42)
@@ -352,8 +354,9 @@ class ScopedPlanningTest(unittest.TestCase):
             saved=json.loads((jobs.root/job['id']/'source-manifest.json').read_text())
             self.assertEqual(saved,manifest)
             from unittest.mock import patch
-            pending={**jobs.get(job['id']),'status':'awaiting_confirmation','proposal':{},'proposal_sha256':'test-version','generation_config':{'profile':'bonsai2-medium','seed':81}}
+            pending={**jobs.get(job['id']),'status':'awaiting_confirmation','proposal':{},'proposal_sha256':'test-version','generation_config':{'profile':'bonsai2-medium','seed':81},'task_contract':{'record_policy':'one_per_source_record'}}
             with patch.object(jobs,'get',return_value=pending),patch.object(jobs,'start',return_value={'id':'new'}) as start:
                 jobs.revise(job['id'],'Inspect labels too')
                 self.assertEqual(start.call_args.kwargs['source_scope'],{'pages':[2]})
                 self.assertEqual(start.call_args.kwargs['generation_config'],pending['generation_config'])
+                self.assertEqual(start.call_args.kwargs['task_contract'],pending['task_contract'])
