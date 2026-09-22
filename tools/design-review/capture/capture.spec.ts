@@ -1907,3 +1907,22 @@ test('Chart preview is lazy, retryable, and does not confirm a build',async({pag
  await preview.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/70-proposed-chart-preview.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Generated view separates automated notes from discussion',async({page,request},info)=>{
+ const project=await (await request.get('/api/workspace/171bc98e7caf4aa48ef1a600cea1f028')).json();
+ const model=await (await request.get(project.preview.url+'api/desktop')).json();
+ const common={record_snapshot:model.rows[0],record_id:model.rows[0].id};
+ await page.route('**/api/annotations',route=>route.fulfill({json:[
+  {...common,id:'fixture-discussion',note:'Development discussion note fixture',review_origin:'fixture-reviewer'},
+  {...common,id:'fixture-automated',note:'Development automated verification fixture',review_origin:'workspace-automated-check'}
+ ]}));
+ await page.goto(project.preview.url);
+ await expect(page.getByText('Development discussion note fixture',{exact:true})).toBeVisible();
+ const automated=page.getByText('Development automated verification fixture',{exact:true});
+ await expect(automated).toBeHidden();
+ const disclosure=page.locator('summary').filter({hasText:'Automated verification notes (1)'});
+ await disclosure.click();await expect(automated).toBeVisible();
+ await disclosure.click();await expect(automated).toBeHidden();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/71-discussion-and-verification-notes.'+info.project.name+'.png'),fullPage:true});
+});

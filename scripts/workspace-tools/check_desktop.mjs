@@ -71,7 +71,10 @@ try {
  const [response]=await Promise.all([page.waitForResponse(r=>r.url().endsWith('/api/annotations')&&r.request().method()==='POST'),page.getByRole('button',{name:'Save note',exact:true}).click()]);
  expect(response.status()).toBe(201);const saved=await response.json();
  expect(saved.record_snapshot).toEqual(record);expect(saved.review_origin).toBe('workspace-automated-check');
- await page.reload();await expect(page.getByText(note,{exact:true})).toBeVisible();
+ await page.reload();
+ const verificationNotes=page.locator('summary').filter({hasText:'Automated verification notes'});
+ if(await verificationNotes.count())await verificationNotes.click();
+ await expect(page.getByText(note,{exact:true})).toBeVisible();
  await page.screenshot({path:path.join(output,'desktop.png'),fullPage:true});
  await page.setViewportSize({width:390,height:844});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
