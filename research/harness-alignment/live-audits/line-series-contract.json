@@ -1,0 +1,12 @@
+{
+  "scope": "Replay of saved development render evidence; no new model inference",
+  "historical_failure": "Line series mismatch: expected 2 separate lines from group, rendered 1",
+  "corrected_contract": {
+    "status": "passed",
+    "scope": "Rendered line count matches compiled series count; not semantic accuracy",
+    "expected_series": 2,
+    "rendered_series": 2
+  },
+  "original_scene_hash": "a4acd3d89caa4e6cc537e303838ab1832745e69241f0acd5a7c939e6e369f063",
+  "corrected_scene_hash": "0e5e565f9dbcfe312bbd7150c256b1c3a525e737943423609fff4a12b81b0895"
+}
