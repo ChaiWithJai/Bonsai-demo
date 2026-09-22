@@ -51,9 +51,9 @@
   <label for="review-record">Source record</label>
   <select id="review-record" value={recordId} onchange={chooseRecord}>
     <option value="">Choose a record on this page</option>
-    {#each source.records as row, index (row.id)}<option value={row.id}>Record {(source.record_offset ?? 0) + index + 1} · {['image','audio'].includes(source.kind) ? (source.kind==='audio' ? String(row.locator.start_seconds)+'s' : 'Passage '+row.locator.region) : JSON.stringify(row.locator)}</option>{/each}
+    {#each source.records as row, index (row.id)}<option value={row.id}>Record {(source.record_indices?.[row.id] ?? (source.record_offset ?? 0) + index) + 1} · {['image','audio'].includes(source.kind) ? (source.kind==='audio' ? String(row.locator.start_seconds)+'s' : 'Passage '+row.locator.region) : JSON.stringify(row.locator)}</option>{/each}
   </select>
-  <p class="fine">Showing {source.records.length} records starting at {(source.record_offset ?? 0)+1}. {Object.keys(source.review.latest).length} records reviewed in this extraction version.</p>
+  <p class="fine">Showing {source.records.length} records on this results page. {Object.keys(source.review.latest).length} records reviewed in this extraction version.</p>
   {#if record}
     {#if ['image','audio'].includes(source.kind)}<blockquote>{String(record.data.text)}</blockquote>{:else}<pre>{JSON.stringify(record.data, null, 2)}</pre>{/if}
     {#if previous}<p>Latest review: {previous.action} by {previous.author} ({previous.reviewer_kind}). {previous.note}</p>{/if}

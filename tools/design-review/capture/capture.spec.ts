@@ -1593,7 +1593,7 @@ test('Source inspection reaches records beyond the initial page',async({page},in
   const url=new URL(route.request().url());
   if(url.pathname!='/api/workspace/sources/'+sid)return route.fallback();
   const offset=Number(url.searchParams.get('offset') ?? 0);
-  await route.fulfill({json:{...original,filename:'Development pagination fixture.json',kind:'table',record_count:205,records:records.slice(offset,offset+100),record_offset:offset,next_record_offset:offset+100<205?offset+100:null,review:{...original.review,latest:{}}}});
+  await route.fulfill({json:{...original,filename:'Development pagination fixture.json',kind:'table',record_count:205,matching_record_count:205,record_query:'',record_indices:{},records:records.slice(offset,offset+100),record_offset:offset,next_record_offset:offset+100<205?offset+100:null,review:{...original.review,latest:{}}}});
  });
  await page.route('**/api/workspace/sources/'+sid+'/review',route=>route.fulfill({json:{ok:true}}));
  await page.goto('/#/workspace');
@@ -1624,4 +1624,24 @@ test('Source inspection reaches records beyond the initial page',async({page},in
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/59-source-pagination.'+info.project.name+'.png'),fullPage:true});
  await nav.getByRole('button',{name:'Previous records'}).click();
  await expect(page.getByText(/Showing records 101–200 of 205/)).toBeVisible();
+});
+
+test('PDF content search reaches a measurement beyond the first ten pages',async({page},info)=>{
+ const sid='02f32dd8bdd1d72b2e5293c89d06b739e19f789ad35820614bdcaec3f6ac3777';
+ await page.goto('/#/workspace');
+ await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);
+ await page.getByRole('textbox',{name:'Search extracted content',exact:true}).fill('520us');
+ await page.getByRole('button',{name:'Search records',exact:true}).click();
+ await expect(page.getByText(/Showing records .* matches/)).toBeVisible();
+ const row=page.locator('.records > details').filter({has:page.locator('summary',{hasText:/^Page 25$/})});
+ await expect(row).toHaveCount(1);
+ await row.locator('summary').click();
+ await expect(row).toContainText('520us');
+ await page.getByText('Review records and export corrections',{exact:true}).click();
+ await expect(page.getByRole('combobox',{name:'Source record',exact:true})).toContainText('Record 25');
+ await page.getByRole('textbox',{name:'Search extracted content',exact:true}).scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/60-source-content-search.'+info.project.name+'.png'),fullPage:true});
+ await page.getByRole('button',{name:'Clear content search',exact:true}).click();
+ await expect(page.locator('.records > details')).toHaveCount(79);
 });
