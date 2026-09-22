@@ -1,0 +1,45 @@
+{
+  "source_sha256": "2ab8e898b0f0208138af7e71629e05925b333afe8d13e49953bfad6dfbc1cb93",
+  "original_proposal_preserved": true,
+  "extraction_run_id": "a4e7c3e37ed44266a3adc5fce26edf93",
+  "preflight_failure_run_id": "252dcd2ae02c46f1a147c4f43c22a325",
+  "packed_replay_run_id": "4a8ae659cc314d8b8b71fc762f310205",
+  "packed_replay_status": "failed",
+  "model_calls": 1,
+  "validation_error": "Each finding must cite 1 to 5 record IDs. This finding has 6. Split a finding that needs more references into separate findings; do not invent or drop relevant source facts.",
+  "repair_preflight": {
+    "prompt_tokens": 13042,
+    "reserved_output_tokens": 4096,
+    "context_capacity": 16384,
+    "fits": false
+  },
+  "packing": [
+    {
+      "preflight": {
+        "prompt_tokens": 10745,
+        "reserved_output_tokens": 4096,
+        "context_capacity": 16384,
+        "fits": true
+      },
+      "records_shown": 51,
+      "records_total": 79
+    },
+    {
+      "preflight": {
+        "prompt_tokens": 13374,
+        "reserved_output_tokens": 4096,
+        "context_capacity": 16384,
+        "fits": false
+      },
+      "records_shown": 68,
+      "records_total": 79
+    }
+  ],
+  "finding": "Recovered text produced a structured response with explicit coverage limits, but no validated proposal: one finding exceeded the citation count and repair lacked context capacity.",
+  "next_change": "Initial packing now reserves 8448 tokens for first response, repair output and error overhead. Targeted tests pass; model replay remains to be run.",
+  "limitations": [
+    "No human review, no confirmed build, no factual-accuracy claim",
+    "The replay combines extraction and harness changes",
+    "MongoDB restore-verified backup remains unavailable"
+  ]
+}
