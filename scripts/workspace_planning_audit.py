@@ -35,6 +35,9 @@ def inspect_job(folder):
     validated = (status.get('proposal_contract') == 'source-proposal-v2-structured'
                  and isinstance(status.get('proposal'), dict))
     live = status.get('status') in ('queued', 'running')
+    interrupted = status.get('status') in ('interrupted', 'cancelled')
+    build_started = bool(status.get('planning_run_id'))
+    build_completed = bool(build_started and status.get('workspace_id') and status.get('status') == 'completed')
     errors = sorted(path.name for path in folder.glob('validation-*.json'))
     confirmation = read(folder / 'confirmation.json') if (folder / 'confirmation.json').exists() else {}
     sampling = ({key:value for key,value in payload.items()
@@ -51,14 +54,15 @@ def inspect_job(folder):
         'harness_sha256': digest(read(folder / 'harness-hashes.json')) if (folder / 'harness-hashes.json').exists() else None,
         'completed_responses': len(responses), 'request_attempts': len(responses) + int(bool(failed_request)),
         'validation_failures': len(errors), 'proposal_validated': validated,
-        'first_pass_valid': bool(validated and len(responses) == 1 and not errors),
+        'first_pass_valid': bool(validated and len(responses) == 1 and not errors and not live),
+        'build_started': build_started, 'build_completed': build_completed,
         'status': status.get('status'), 'in_progress': live,
         'planning_run_id': status.get('planning_run_id') or status.get('run_id'),
-        'build_run_id': status.get('run_id') if status.get('planning_run_id') else None,
+        'build_run_id': (status.get('run_id') if build_started and status.get('run_id') != status.get('planning_run_id') else None),
         'confirmation_actor': confirmation.get('actor'),
         'semantic_quality': 'not_assessed', 'human_review': 'not_assessed',
     }
-    record['comparison_eligible'] = not live and isinstance(status.get('request'),str) and bool(status['request'].strip()) and all(record[key] is not None for key in ('model_info_sha256','sampling_sha256'))
+    record['comparison_eligible'] = not live and not interrupted and isinstance(status.get('request'),str) and bool(status['request'].strip()) and all(record[key] is not None for key in ('model_info_sha256','sampling_sha256'))
     return record
 
 
@@ -83,12 +87,13 @@ def audit(root):
         'summary':{'indexed_jobs':len(records),'in_progress':sum(r['in_progress'] for r in records),
                    'validated_proposals':sum(r['proposal_validated'] for r in records),
                    'first_pass_valid':sum(r['first_pass_valid'] for r in records),
+                   'completed_builds':sum(r['build_completed'] for r in records),
                    'formats':dict(Counter(r['response_format'] or 'unknown' for r in records))},
         'matched_cohorts':[{'case_key':key[0],'model_info_sha256':key[1],'sampling_sha256':key[2],'job_ids':ids}
                            for key,ids in cohorts.items() if len(ids)>1],
         'limitations':['Matching does not establish a randomized or causal experiment',
                        'Confirmation actors do not establish human-reviewed training acceptance',
-                       'Unfinished jobs and missing configuration evidence are excluded from matched cohorts',
+                       'Active, interrupted, cancelled jobs and missing configuration evidence are excluded from matched cohorts',
                        'No prompts, filenames or source text are included'],
     }
 
