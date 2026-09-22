@@ -1,0 +1,35 @@
+{
+  "job_id": "ff8a7717ec3c4223b79b40a2e9b11ac4",
+  "planning_run_id": "461487d3f98841e99d5c93fb7acff7c0",
+  "experiment_run_id": "67a8f89fc50543d4b30cc801088ae5ea",
+  "context": 32768,
+  "records_shown": 79,
+  "records_total": 79,
+  "preflight": {
+    "preflight": {
+      "prompt_tokens": 15325,
+      "reserved_output_tokens": 8448,
+      "context_capacity": 32768,
+      "fits": true
+    },
+    "records_shown": 79,
+    "records_total": 79
+  },
+  "status": "failed",
+  "error": "Generation exceeded its wall-clock limit",
+  "completed_model_responses": 0,
+  "runtime_healthy": true,
+  "previews_restored": 8,
+  "preview_revisions_unchanged": true,
+  "source_snapshot_matches_16k": true,
+  "memory_sample": {
+    "metric": "process RSS sample in KiB, not peak memory or total GPU allocation",
+    "rss_kib": 10699280
+  },
+  "limitations": [
+    "No completed proposal, semantic accuracy or generated interface result",
+    "Single cold full-context attempt; not a throughput benchmark",
+    "No restore-verified MongoDB backup"
+  ],
+  "next_work": "Inspect partial generation and output length; compare compact structured output or staged extraction before simply extending the deadline."
+}
