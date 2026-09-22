@@ -35,6 +35,7 @@
   });
   const completedIntakeId = $derived(intakeJob?.status==='completed' ? intakeJob.id : intakeJob?.parent_job_id ?? '');
   let preserveRecords = $state(false);
+  let generationProfile = $state('');
   let pageScope = $state<{sourceId:string;page:number;filename:string} | null>(null);
   async function discussPage(page:number) {
     if(!source)return;
@@ -47,7 +48,7 @@
   let draftStorageKey = '';
   $effect(() => {
     if (!draftReady) return;
-    const draft = {version:1, intent, intakeJobId, attached, sourceId:source?.source_id ?? '', applyReviews, pageScope, preserveRecords};
+    const draft = {version:1, intent, intakeJobId, attached, sourceId:source?.source_id ?? '', applyReviews, pageScope, preserveRecords, generationProfile};
     try {
       localStorage.setItem(draftStorageKey, JSON.stringify(draft));
       draftNotice = intent || attached.length ? 'Draft saved in this browser.' : '';
@@ -56,7 +57,7 @@
     }
   });
   function clearDraft() {
-    intent=''; intakeJobId=''; attached=[]; source=null; pageScope=null; preserveRecords=false; applyReviews=false; error='';
+    intent=''; intakeJobId=''; attached=[]; source=null; pageScope=null; preserveRecords=false; generationProfile=''; applyReviews=false; error='';
   }
   let fileSearch = $state('');
   let recordSearch = $state('');
@@ -173,7 +174,7 @@
       if(pageScope)source=await request('/'+pageScope.sourceId);
       if(!pageScope && attached.length>1) { source=await request('/collection',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_ids:attached,apply_reviews:applyReviews})});await refresh(); }
       if(!source)return;
-      await request('/'+source.source_id+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:'Role: '+role+'\n\n'+effectiveIntent,apply_reviews:applyReviews,intake_job_id:completedIntakeId || null,source_scope:pageScope ? {pages:[pageScope.page]} : null,task_contract:preserveRecords ? {record_policy:'one_per_source_record'} : null})});
+      await request('/'+source.source_id+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:'Role: '+role+'\n\n'+effectiveIntent,apply_reviews:applyReviews,intake_job_id:completedIntakeId || null,source_scope:pageScope ? {pages:[pageScope.page]} : null,task_contract:preserveRecords ? {record_policy:'one_per_source_record'} : null,...(generationProfile ? {generation_config:{profile:generationProfile,seed:42}} : {})})});
       jobs=(await jobRequest()).jobs;
     } catch(e) { error=String(e); } finally { busy=false; }
   }
@@ -211,6 +212,7 @@
           attached=saved.attached.filter((id:unknown)=>typeof id==='string' && /^[a-f0-9]{64}$/.test(id)).slice(0,20);
           applyReviews=saved.applyReviews===true;
           preserveRecords=saved.preserveRecords===true;
+          generationProfile=['legacy-greedy','bonsai2-instruct','bonsai2-bounded','bonsai2-medium'].includes(saved.generationProfile) ? saved.generationProfile : '';
           if(saved.pageScope && typeof saved.pageScope.sourceId==='string' && attached.includes(saved.pageScope.sourceId) && Number.isInteger(saved.pageScope.page) && saved.pageScope.page>0 && saved.pageScope.page<=250 && typeof saved.pageScope.filename==='string')pageScope=saved.pageScope;
           if(typeof saved.sourceId==='string' && /^[a-f0-9]{64}$/.test(saved.sourceId)) {
             try { source=await request('/'+saved.sourceId); }
@@ -284,6 +286,7 @@
     {#if pageScope}<div class="page-scope" aria-label="Selected source scope"><p>Only page {pageScope.page} of {pageScope.filename} will be used. Other pages and attachments are outside this request.</p><button type="button" onclick={()=>pageScope=null} disabled={busy}>Use all attached files</button></div>{/if}
     {#if attached.length}<div class="composer-files">{#each attached as id (id)}{@const file=sources.find(item=>item.source_id===id)}<span>{file?.filename ?? 'Attached file'}{#if file}<small>{file.status==='extracted' ? file.record_count+' records' : file.status.replaceAll('_',' ')}</small>{/if}<button type="button" aria-label={'Remove '+(file?.filename ?? 'file')} onclick={()=>removeAttachment(id)} disabled={busy}>×</button></span>{/each}<button type="button" onclick={()=>panel='files'}>Inspect files</button></div>{/if}
     {#if attached.length}<details class="data-requirements"><summary>Data requirements{preserveRecords ? ' · Preserve every record' : ''}</summary><label class="review-option"><input type="checkbox" bind:checked={preserveRecords} disabled={busy || Boolean(runningJob)}/> Keep one output row per source record</label><p class="fine">Preserve each extracted message or data row separately. Check the records in Files before choosing this requirement. Supports up to 30 records within the selected source scope.</p></details>{/if}
+    {#if attached.length || pageScope}<details class="model-settings"><summary>Model settings{generationProfile ? ' · Custom profile' : ''}</summary><label>Proposal generation profile<select bind:value={generationProfile} disabled={busy || Boolean(runningJob)}><option value="">Server default</option><option value="legacy-greedy">Greedy · thinking off</option><option value="bonsai2-instruct">Instruct sampling · thinking off</option><option value="bonsai2-bounded">Reasoning · 512-token allowance</option><option value="bonsai2-medium">Reasoning · medium effort</option></select></label><p class="fine">Applies to a new proposal from these files. Custom profiles use seed 42 and are recorded in MLflow. Revisions keep their proposal's saved configuration. Reasoning uses part of the response budget.</p></details>{/if}
     <label class="message-label" for="visualization-intent">Message {role}</label><textarea id="visualization-intent" bind:this={messageInput} onkeydown={composeKey} bind:value={intent} maxlength="4000" placeholder="Tell me what you want to understand…" disabled={busy}></textarea>
     <div class="composer-actions"><label class="attach-button">＋ Attach files<input type="file" multiple accept=".xlsx,.docx,.eml,.mbox,.csv,.tsv,.json,.jsonl,.txt,.md,.png,.jpg,.jpeg,.webp,.pdf,.wav,.mp3,.m4a,.mp4,.mov,.webm" onchange={upload} disabled={busy}/></label><button type="submit" class="send-message" disabled={Boolean(runningJob) || busy || (!source && !pageScope ? !intent.trim() : !generationReady || effectiveIntent.length<10)}>Send ↑</button></div>
     <p class="composer-hint">{!draftReady ? 'Restoring draft…' : busy ? source ? 'Reading your files…' : 'Sending your message…' : !source ? 'Ask a question, attach files, or drop them here.' : !generationReady ? 'Some files need extraction. Open Files to inspect or retry.' : effectiveIntent.length<10 ? 'Describe what you want to understand (at least 10 characters).' : 'Bonsai will propose a view for your review.'}</p>
@@ -293,6 +296,7 @@
 </section>
 
 <style>
+  .model-settings{margin:8px 0;font-size:12px}.model-settings summary{cursor:pointer;padding:8px 0}.model-settings label{display:grid;gap:6px;margin:8px 0}.model-settings select{width:100%;max-width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;background:var(--background);color:inherit}
   .draft-status{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted-foreground);margin-top:8px}.draft-status button{background:none;color:inherit;border:0;padding:4px;font-size:11px}
   video{display:block;width:100%;max-height:420px;background:#111;border-radius:8px}audio{width:100%;margin:12px 0}.transcript{display:grid;gap:8px;margin-bottom:18px}.transcript button{text-align:left;background:var(--background);color:inherit;line-height:1.6}.transcript button[aria-pressed=true]{border-color:#94702e;background:#94702e12}
   .attachments{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.attachments>div{display:flex;max-width:100%;border:1px solid var(--border);border-radius:8px;overflow:hidden}.attachments button{background:var(--background);color:inherit;border:0;border-radius:0}.attachment{overflow-wrap:anywhere;text-align:left}.remove{font-size:18px;padding:8px}.error{white-space:pre-wrap}
