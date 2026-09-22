@@ -27,7 +27,7 @@ The final output adapted a Codex-authored reference. A separate Codex correction
 1. Preserve uploaded bytes, source hashes and extraction locations. Tables, text and supported media retain original bytes and extraction provenance. Format-specific extraction coverage remains explicit.
 2. Extract media through verified adapters. Record which model or library performed OCR or transcription. An audio transcript passed to a text model is not native audio reasoning.
 3. Have Bonsai propose a typed schema and classifications using bounded source context. Keep the proposal, validation errors and user corrections separately.
-4. Have Bonsai select a versioned visualization specification with source field references. Verify Semiotic's actual integration contract before choosing the adapter. The current documentation navigation alone is insufficient evidence for a schema or Svelte compatibility claim.
+4. Have Bonsai select a versioned visualization specification with source field references. The current adapter renders Semiotic 3.10.3 charts to SVG and exposes source-linked controls in Svelte. Render checks must compare the actual marks with the compiled data. A successful library call alone does not establish correct visualization.
 5. Render the specification with maintained components. Test selection, filtering, missing values, source links and annotations against the supplied data.
 6. Preserve requests, responses, stage results and correction authors in MLflow. Export examples for a training loop with source provenance and review status. Do not turn provisional Codex review into human labels.
 
@@ -43,3 +43,26 @@ The replay corrected the claim that missing arm-position detail constituted disa
 This is where the two approaches meet in this implementation: the interpretation and plan provide a place to review assumptions before generation, while execution traces identify which contracts and checks need repair. The useful next measurement is whether a specific correction survives revision without losing supported evidence. Repeatedly adjusting a prompt until one example passes would not establish generalization. The audit artifacts distinguish engineering feedback from human-reviewed training examples.
 
 The three-stage video study adds a concrete repair comparison. The failed and successful replays had identical source packets, model metadata and first responses. The original validator reported only that values and evidence were required; the revised message identified an unwanted id field and explained that the harness assigns IDs. The second response then removed that field while preserving the values and citations. Planning run e20aefa9a55a4432b6b7b6fea9ff65b6 and build run d6c60cce5ce849d8b98928bdff756e4a retain the evidence. This supports precise execution feedback as a harness intervention on this development case. It does not remove the need for source review, prove first-pass reliability, or establish performance on unseen desktop files.
+
+
+## Separate interpretation errors from rendering errors
+
+The email experiment provides a concrete example of the proposal review stage. Bonsai extracted two dated messages with issue counts of five and two. It retained the distinction between "Ready for review" and approval. Its initial plan grouped the line by review status, leaving each message in a separate series. An automated reviewer supplied a specific correction to group by project. The revised proposal preserved every structured record and citation while changing the grouping field. A file comparison also confirmed identical source packets and model metadata. The original and corrected planning runs remain separate from the build run in the [email evidence](live-audits/email-thread-correction.json).
+
+The dated table experiment exposed a different cause. Bonsai requested separate team series correctly. The adapter supplied colors and produced two legend entries, but Semiotic drew one line because the adapter omitted lineBy. Correcting the adapter produced two lines from the same saved specification without another model call. The [render comparison](live-audits/dated-series-rendering.json) and [series check](live-audits/line-series-contract.json) preserve the baseline and correction. The series check establishes a count, not point-level accuracy or factual support.
+
+Horthy's staged review approach suggests keeping the source interpretation and visualization choice reviewable before building. The email correction demonstrates that pattern on one synthetic case. Trivedy's trace-driven approach suggests turning observed execution failures into specific feedback and checks. The line adapter defect demonstrates why the renderer needs its own checks. These are applications of the authors' ideas to our observations, not experiments comparing the authors' systems. The source articles above were checked again on September 21, 2026.
+
+## What must be measured next
+
+| Stage | Evidence currently available | Evidence still needed |
+| --- | --- | --- |
+| Extraction | Synthetic PDF, email and media cases retain source bytes and locations | A fixed set of unseen desktop files with independently reviewed extraction coverage |
+| Structuring and classification | The email correction preserves values and citations | Field-level judgments of omissions, unsupported values and useful classifications across files |
+| Visualization choice | The status-grouping failure is recorded and a compiler check now rejects isolated line series | Reviewed judgments of whether a valid chart answers the user's actual question |
+| Rendering and interaction | Tests cover line counts, dated values, point selection, source links and note drafts | Broader component coverage, dense overlap handling and independent point-position checks |
+| Review and comparison | MLflow stores model attempts, authored fixes and automated review origins separately | Real reviewer decisions and a held-out comparison of frozen configurations |
+
+The first configuration comparison should freeze source bytes, tasks, expected fields, model/runtime hashes and review criteria before inference. Compare the previous harness with the revised contracts on the same cases. Report extraction coverage, unsupported claims, correction retention, completed builds and interaction failures separately. Record latency and model calls as costs. Do not collapse a valid proposal, a completed build and an accepted interpretation into one success score.
+
+The current experiments support specific repairs. They do not establish native multimodal accuracy, reliable handling of arbitrary desktop files, a trained model, or a deployed team product. Human review and the unresolved backup recovery remain explicit parts of the remaining work.
