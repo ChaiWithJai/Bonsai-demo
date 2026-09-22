@@ -31,14 +31,20 @@ class WorkspaceSources:
     def list(self):
         return {'sources': [self.summary(json.loads(p.read_text())) for p in sorted(self.root.glob('*/manifest.json'))]}
 
-    def get(self, source_id, offset=0, limit=100):
+    def get(self, source_id, offset=0, limit=100, query=""):
         if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 100:
             raise ValueError('Record pagination requires a nonnegative offset and a limit from 1 to 100')
+        if not isinstance(query, str) or len(query) > 200:
+            raise ValueError('Source content search requires up to 200 characters')
+        query = query.strip()
         with self.lock:
             m = self.manifest(source_id)
+            matches = [(index, row) for index, row in enumerate(m['records']) if not query or query.casefold() in json.dumps(row['data'], ensure_ascii=False).casefold()]
             end = offset + limit
-            return self.summary(m) | {'records': m['records'][offset:end], 'sample_limit': limit,
-                'record_offset':offset,'next_record_offset':end if end < len(m['records']) else None, 'review': state(self.root, m)}
+            selected = matches[offset:end]
+            return self.summary(m) | {'records': [row for _, row in selected], 'sample_limit': limit,
+                'record_query':query, 'matching_record_count':len(matches), 'record_indices':{row['id']:index for index,row in selected},
+                'record_offset':offset,'next_record_offset':end if end < len(matches) else None, 'review': state(self.root, m)}
 
     def upload(self, filename, content):
         with self.lock:

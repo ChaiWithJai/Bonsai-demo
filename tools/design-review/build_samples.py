@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    '60-source-content-search': ('workspace', 'Read-only PDF content search finds a later-page measurement with its original record position'),
     '59-source-pagination': ('workspace', 'Development fixture: source inspection reaches the final records and returns to earlier pages'),
     '58-pdf-refresh': ('workspace', 'Development failure fixture: explicit PDF refresh keeps previous extraction available'),
     '57-requested-page-coverage': ('workspace', 'Development fixture: requested pages shown, omitted and not found; follow-up remains a draft'),

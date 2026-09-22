@@ -68,3 +68,18 @@ class SourcesTest(unittest.TestCase):
             self.assertEqual(len({p['review']['snapshot_id'] for p in pages}),1)
             for offset,limit in [(-1,100),(False,100),(0,101),(0,0)]:
                 with self.assertRaises(ValueError):service.get(sid,offset,limit)
+
+    def test_content_search_spans_all_records_and_keeps_source_positions(self):
+        with tempfile.TemporaryDirectory() as root:
+            service=WorkspaceSources(root,Client(),'http://localhost:5210')
+            rows=[{'text':'Routine'} for _ in range(205)]
+            rows[150]['text']='LATENCY 42ms';rows[204]['text']='Latency 37ms'
+            original=service.upload('search.json',json.dumps(rows).encode());sid=original['source_id']
+            first=service.get(sid,query='latency',limit=1);second=service.get(sid,offset=1,query='latency',limit=1)
+            self.assertEqual(first['matching_record_count'],2)
+            self.assertEqual(first['next_record_offset'],1)
+            self.assertEqual(list(first['record_indices'].values()),[150])
+            self.assertEqual(list(second['record_indices'].values()),[204])
+            self.assertEqual(first['review']['snapshot_id'],original['review']['snapshot_id'])
+            self.assertEqual(service.get(sid,query='absent')['records'],[])
+            self.assertEqual(service.get(sid)['record_count'],205)
