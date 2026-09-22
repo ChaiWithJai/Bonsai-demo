@@ -1328,7 +1328,8 @@ test('Scanned PDF becomes a source-linked review record',async({page},info)=>{
  await row.getByText('Supporting source passages',{exact:true}).click();
  await expect(row).toContainText('Status: Ready for review');
  await expect(row).toContainText('Open issues: 3');
- const links=row.getByRole('link');expect(await links.count()).toBeGreaterThan(0);
+ const links=row.getByRole('link');await expect(links).toHaveCount(1);
+ await expect(row.locator('.source-citation blockquote')).toHaveCount(5);
  for(const link of await links.all()){
    const href=await link.getAttribute('href');expect(href).toContain(source.source_id+'/file#page=1');
  }
@@ -1339,4 +1340,25 @@ test('Scanned PDF becomes a source-linked review record',async({page},info)=>{
  await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/51-scanned-pdf-record.'+info.project.name+'.png'),fullPage:true});
+});
+
+
+test('Citation groups retain separate source locations',async({page},info)=>{
+ const preview=JSON.parse(await fs.readFile(path.resolve('.cache/citation-group-verification/preview.json'),'utf8'));
+ await page.route('**/api/desktop',async route=>{
+   const response=await route.fetch();const model=await response.json();
+   const row=model.rows[0];const passage=row.locator.source_evidence[0];
+   // Browser-only location fixture. No file, review, or source record is changed.
+   const id='browser-only-second-location';
+   row.locator.source_evidence.push({...passage,record_id:id,locator:{...passage.locator,page:2},quote:'Browser-only page two quote'});
+   model.evidence_links[id]={...model.evidence_links[passage.record_id],url:model.evidence_links[passage.record_id].url.replace('#page=1','#page=2'),label:'Browser-only page 2'};
+   await route.fulfill({json:model});
+ });
+ await page.goto(preview.url);
+ const row=page.getByTestId('record-row');await expect(row).toHaveCount(1);
+ await row.getByText('Supporting source passages',{exact:true}).click();
+ await expect(row.locator('.source-citation')).toHaveCount(2);
+ await expect(row.locator('.source-citation').first().locator('blockquote')).toHaveCount(5);
+ await expect(row.locator('.source-citation').nth(1)).toContainText('Browser-only page two quote');
+ await expect(row.getByRole('link')).toHaveCount(2);
 });
