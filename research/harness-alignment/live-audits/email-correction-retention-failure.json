@@ -1,0 +1,95 @@
+{
+  "case": "Recover omitted email through correction loop",
+  "results": [
+    {
+      "job_id": "76541b9cca084c8fba6a84bf5d55e12c",
+      "run_id": "2e3eef3aa81c44ada15a80b592cc1a0a",
+      "intervention": "Generic UI coverage draft",
+      "contract_check": {
+        "case_id": "email-thread",
+        "scope": "Exact development regression contract, not semantic accuracy",
+        "checks": {
+          "source_identity": true,
+          "record_values": false,
+          "view_mapping": false,
+          "no_excluded_records": true
+        },
+        "passed": false,
+        "not_assessed": [
+          "Rendered geometry",
+          "Citation support",
+          "Human acceptance",
+          "Interpretation completeness"
+        ],
+        "field_policy": "Exact expected field names; equivalent renamed fields require review"
+      },
+      "actual_view": {
+        "component": "RecordTable",
+        "columns": [
+          "sent_date",
+          "open_issue_count",
+          "review_status"
+        ]
+      },
+      "actual_rows": 1,
+      "review": null,
+      "review_limitation": "Superseded proposal cannot receive a new review; failure recorded in this development audit",
+      "training_examples": 0
+    },
+    {
+      "job_id": "280772df33ec4dfb9658fb1a79d7772e",
+      "run_id": "b89e3f47fc9b4d1f947dd92aafbfbb6a",
+      "intervention": "Targeted source-record and array correction",
+      "contract_check": {
+        "case_id": "email-thread",
+        "scope": "Exact development regression contract, not semantic accuracy",
+        "checks": {
+          "source_identity": true,
+          "record_values": true,
+          "view_mapping": false,
+          "no_excluded_records": true
+        },
+        "passed": false,
+        "not_assessed": [
+          "Rendered geometry",
+          "Citation support",
+          "Human acceptance",
+          "Interpretation completeness"
+        ],
+        "field_policy": "Exact expected field names; equivalent renamed fields require review"
+      },
+      "actual_view": {
+        "component": "Scatterplot",
+        "x": "sent_date",
+        "y": "open_issue_count",
+        "color": "project"
+      },
+      "actual_rows": 2,
+      "review": {
+        "proposal_sha256": "55bd463fc70cfdff0de65e52d53b5d35db9dde1ba056c38bb2b600d93594cdcf",
+        "source_snapshot_sha256": "89c5021272622bec7108388aaa3a3241254b8394dc9e1e629af73f50572480fe",
+        "input_sha256": "018f82e8146eb8447d7729a47d8335f6113fb4ecb9e6402d8da7098ef5ea7d45",
+        "schema_version": 1,
+        "event_id": "e8e74f30e50949258779791587c75c78",
+        "sequence": 1,
+        "created_at": "2026-09-22T04:51:58.942007+00:00",
+        "job_id": "280772df33ec4dfb9658fb1a79d7772e",
+        "author": "Codex development regression audit",
+        "reviewer_kind": "codex",
+        "action": "reject",
+        "note": "The correction did not recover the second email. The proposed data still contains only the first observation and fails the frozen two-message time-comparison contract. Schema validity is not task completion.",
+        "identity_basis": "self_declared_local_reviewer",
+        "previous_event_id": null
+      },
+      "review_limitation": null,
+      "training_examples": 0
+    }
+  ],
+  "conclusion": "Neither generic coverage reminder nor targeted correction recovered the omitted record. The targeted attempt changed LineChart to Scatterplot after one-point validation failed, satisfying the chart contract while missing the user task.",
+  "next_intervention": "Represent an explicit one-record-per-message requirement as a task contract and validate retention separately from chart validity. Do not infer all-record coverage for summaries or filtered questions.",
+  "limits": [
+    "Synthetic development case, not held-out evaluation",
+    "No human acceptance or confirmed build",
+    "No new verified MongoDB archive"
+  ]
+}
