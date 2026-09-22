@@ -1,0 +1,33 @@
+{
+  "job_id": "1ae35e2748d14db3b318125e35d05ba9",
+  "run_id": "2e8ead5b35d54361b7fb994df5e782b9",
+  "status": "awaiting_confirmation",
+  "model_calls": 2,
+  "same_source_snapshot": true,
+  "same_model_configuration": true,
+  "records_shown": 27,
+  "records_total": 79,
+  "repair_preflight": {
+    "prompt_tokens": 9038,
+    "reserved_output_tokens": 4096,
+    "context_capacity": 16384,
+    "fits": true
+  },
+  "structured_records": 5,
+  "view": "RecordTable",
+  "confirmed": false,
+  "analyst_findings": [
+    {
+      "status": "needs_human_review",
+      "issue": "The same performance note is attributed to both bottleneck 1 and bottleneck 2.",
+      "evidence": "Both structured records cite page 41; page 25 contains a different timing measurement in the first section and was absent from the selected packet.",
+      "interpretation": "Citation presence and valid schema do not establish correct section-to-measurement attribution."
+    }
+  ],
+  "limitations": [
+    "Only 27 of 79 page records were provided.",
+    "No human acceptance or generated interface was recorded.",
+    "No restore-verified MongoDB backup is available."
+  ],
+  "next_work": "Evaluate larger context and section-aware evidence selection instead of treating a small sample as a complete reading."
+}
