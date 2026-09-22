@@ -1,0 +1,84 @@
+{
+  "reviewer_kind": "codex",
+  "human_acceptance": false,
+  "training_eligible": false,
+  "post_generation_field_review": {
+    "job_id": "c4eac071533c46138cff2ef2050fcbad",
+    "mapping": {
+      "date": "date",
+      "project": "project",
+      "owner": "reporter",
+      "count": "open_issue_count",
+      "status": "review_status"
+    },
+    "expected_values_match": true,
+    "note": "Model chose date instead of the frozen review_date name. Values match; original automatic result remains unresolved rather than rewritten."
+  },
+  "citation_checks": [
+    {
+      "job_id": "709a6f938f854b8ab80b9db0a8472309",
+      "case": "dated-series",
+      "profile": "bonsai2-instruct",
+      "structured_quotes_are_verbatim": null,
+      "scope": "Quote presence only, not semantic support"
+    },
+    {
+      "job_id": "21b6d2a7613e4557ab08d5ab7ef7eb98",
+      "case": "dated-series",
+      "profile": "bonsai2-bounded",
+      "structured_quotes_are_verbatim": null,
+      "scope": "Quote presence only, not semantic support"
+    },
+    {
+      "job_id": "9e7e5ff6004043479e2581a61a71e2e9",
+      "case": "email-thread",
+      "profile": "bonsai2-bounded",
+      "structured_quotes_are_verbatim": true,
+      "scope": "Quote presence only, not semantic support"
+    },
+    {
+      "job_id": "1e614cbcf8fc4aa38f443548df527a6c",
+      "case": "email-thread",
+      "profile": "bonsai2-instruct",
+      "structured_quotes_are_verbatim": true,
+      "scope": "Quote presence only, not semantic support"
+    },
+    {
+      "job_id": "c4eac071533c46138cff2ef2050fcbad",
+      "case": "presentation",
+      "profile": "bonsai2-instruct",
+      "structured_quotes_are_verbatim": true,
+      "scope": "Quote presence only, not semantic support"
+    },
+    {
+      "job_id": "333b4b24769e4b61be226d770eeba6d7",
+      "case": "presentation",
+      "profile": "bonsai2-bounded",
+      "structured_quotes_are_verbatim": true,
+      "scope": "Quote presence only, not semantic support"
+    }
+  ],
+  "observed_issues": [
+    {
+      "case": "email-thread",
+      "profile": "bonsai2-bounded",
+      "issue": "Retained one of two requested messages, despite discussing both in findings."
+    },
+    {
+      "case": "presentation",
+      "profile": "bonsai2-instruct",
+      "issue": "Uncertainty says two dated observation rows although four records were emitted."
+    },
+    {
+      "case": "presentation",
+      "profile": "bonsai2-bounded",
+      "issue": "Uncertainty says six observations although four records were emitted."
+    },
+    {
+      "case": "dated-series",
+      "profile": "bonsai2-bounded",
+      "issue": "Claim that both teams have three observations cites five of the six source records. The claim is true in the full source, but its citation subset is incomplete."
+    }
+  ],
+  "decision": "Do not promote a default from these reused synthetic tasks. Preserve outcome dimensions separately. Neither profile establishes reliable generative UI choice."
+}
