@@ -1,0 +1,22 @@
+{
+  "scope": "CPU frame extraction, no model inference or motion accuracy claim",
+  "source_sha256": "f7e7554ee03106fc5633d7a4901dfd8ccf6627a5554de6fa299f4b7fa8b73307",
+  "frames": [
+    {
+      "time": 0.0,
+      "sha256": "b5914c2f6bd728cbe8fcfb0b523ae2bf783baad3e619c41a02a6d46b6f85ef0e",
+      "bytes": 833186
+    },
+    {
+      "time": 7.375,
+      "sha256": "50cc06d2e09a16f373728b902cbc742d32a8f8895e86ddf1a71267f9d640ca45",
+      "bytes": 739036
+    },
+    {
+      "time": 14.75,
+      "sha256": "85f7355c3fdd0c73563455cbcb99528377864b09c4422096f9d2b688e8c5f5ac",
+      "bytes": 743892
+    }
+  ],
+  "maximum_frames": 20
+}

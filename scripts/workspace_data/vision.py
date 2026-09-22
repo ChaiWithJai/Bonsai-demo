@@ -1,9 +1,20 @@
 """Source-located extraction units and strict validation of OCR responses."""
+from fractions import Fraction
 import hashlib
 import json
 import math
 from pathlib import Path
 import subprocess
+
+
+def sample_times(duration, frame_interval=0):
+    if not math.isfinite(duration) or not 0 < duration <= 300:
+        raise ValueError('Video examples must be at most five minutes')
+    if duration < .5:
+        return [0.0]
+    count=min(20,max(3,math.ceil(duration/15)+1))
+    end=max(0,duration-max(.25,frame_interval))
+    return sorted({round(end*i/(count-1),4) for i in range(count)})
 
 
 def image_units(manifest, source, output):
@@ -16,15 +27,20 @@ def image_units(manifest, source, output):
     probe=subprocess.run(['ffprobe','-v','error','-show_format','-show_streams','-of','json',str(source)],capture_output=True,text=True,check=True,timeout=30)
     metadata=json.loads(probe.stdout)
     if not any(stream['codec_type']=='video' for stream in metadata['streams']):raise ValueError('File has no video stream')
-    duration=float(metadata['format']['duration'])
+    video=next(stream for stream in metadata['streams'] if stream['codec_type']=='video')
+    duration=float(video.get('duration') or metadata['format']['duration'])
     if not math.isfinite(duration) or not 0<duration<=300:raise ValueError('Video examples must be at most five minutes')
     (output/'media-probe.json').write_text(json.dumps(metadata,indent=2))
+    try:
+        fps=float(Fraction(video.get('avg_frame_rate','0')))
+    except (ValueError,ZeroDivisionError):
+        fps=0
     units=[]
-    for index,second in enumerate(range(0,math.ceil(duration),15)):
+    for index,second in enumerate(sample_times(duration, 1/fps if fps>0 else 0)):
         frame=output/f'frame-{index:03}.png'
         subprocess.run(['ffmpeg','-nostdin','-v','error','-ss',str(second),'-i',str(source),'-frames:v','1','-vf','scale=1280:1280:force_original_aspect_ratio=decrease',str(frame)],capture_output=True,check=True,timeout=60)
         if not frame.is_file():raise ValueError(f'No decoded frame at {second} seconds')
-        units.append({'path':str(frame),'mime':'image/png','locator':{'time_seconds':second,'frame_sample':index},'coverage':'one frame every 15 seconds; audio not extracted'})
+        units.append({'path':str(frame),'mime':'image/png','locator':{'time_seconds':second,'frame_sample':index},'coverage':'up to 20 frames distributed across the video; audio not extracted'})
     return units
 
 

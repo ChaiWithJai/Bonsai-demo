@@ -205,3 +205,9 @@ Desktop/mobile browser checks passed against development project 76adc869e2bf473
 Interface review exports now include record notes in a separate annotation_evidence object with a content hash. Each note retains its record snapshot and original review_origin. Notes do not change the training dataset hash or qualify an example for training; only the existing latest-human-acceptance policy does that.
 
 The development project's four automated notes were exported to MLflow run 983527879fc1489b827fd98f197c884b and downloaded. The bundle matched exactly and contained zero training candidates. The full 241-test suite passed, including cross-project note isolation and independence from acceptance. The export implementation is live after an idle proxy reload. Existing previews were restored. This does not resolve the previously recorded MongoDB backup fault.
+
+### Video sampling across short clips
+
+Video extraction now distributes up to 20 samples across the video stream. Clips of at least half a second normally receive beginning, middle, and near-end samples, with duplicates removed when sparse frames make positions coincide. The sampler uses video-stream duration and a frame-rate margin rather than the audio/container duration. A first extraction attempt exposed a one-frame-per-second fixture whose last decodable frame preceded its nominal end; the margin resolves that case.
+
+CPU extraction verified the narrated fixture at 0, 2, and 4 seconds and the real 15-second clip at 0, 7.375, and 14.75 seconds. Hashes are in live-audits/video-sampling.json. All 245 tests, Svelte check, and UI build passed. The idle harness was reloaded and active previews restored. Existing extraction artifacts were not replaced. This establishes frame extraction coverage, not multi-frame reasoning or motion understanding; those require a new model run.
