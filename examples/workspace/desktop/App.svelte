@@ -71,7 +71,7 @@
     }
     return Array.from(groups.values());
   }
-  function recordTitle(row) {
+  function baseRecordTitle(row) {
     for(const key of ['title','name','model','project','stage','subject','id']) {
       const value=row.data[key];
       if(typeof value==='string' && value.trim())return value.length>120 ? value.slice(0,117)+'…' : value;
@@ -79,6 +79,20 @@
     }
     return locationLabel(row.locator);
   }
+  const recordTitles=$derived.by(()=>{
+    const rows=model?.rows ?? [];
+    const bases=new Map();
+    for(const row of rows){const title=baseRecordTitle(row);bases.set(title,(bases.get(title) ?? 0)+1);}
+    const candidates=rows.map(row=>{
+      const title=baseRecordTitle(row);
+      if(bases.get(title)===1)return title;
+      const date=(model.plan.fields ?? []).filter(field=>field.type==='date').map(field=>row.data[field.name]).find(value=>typeof value==='string' && value);
+      return title+' · '+(date || locationLabel(row.locator));
+    });
+    const counts=new Map();for(const title of candidates)counts.set(title,(counts.get(title) ?? 0)+1);
+    return new Map(rows.map((row,index)=>[row.id,candidates[index]+(counts.get(candidates[index])>1 ? ' · Record '+(index+1) : '')]));
+  });
+  function recordTitle(row) {return recordTitles.get(row.id) ?? baseRecordTitle(row);}
   function fieldLabel(name) {
     const words = name.replaceAll('_', ' ').replace(/([a-z])([A-Z])/g, '$1 $2');
     return words.charAt(0).toUpperCase() + words.slice(1);

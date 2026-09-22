@@ -1436,6 +1436,8 @@ test('Email thread correction preserves messages and review states',async({page}
  expect(model.chart.props.data.map((r:any)=>r.group)).toEqual(['Orchard','Orchard']);
  await expect(page.getByRole('button',{name:/^Inspect observation /})).toHaveCount(2);
  const rows=page.getByTestId('record-row');await expect(rows).toHaveCount(2);
+ await expect(rows.nth(0).getByRole('heading',{name:'Orchard · 2026-09-18',exact:true})).toBeVisible();
+ await expect(rows.nth(1).getByRole('heading',{name:'Orchard · 2026-09-20',exact:true})).toBeVisible();
  for(let i=0;i<2;i++){
   await rows.nth(i).locator('summary').filter({hasText:'Supporting source passages'}).click();
   await expect(rows.nth(i).getByRole('heading',{name:'development-review-thread.mbox · Message '+(i+1),exact:true})).toBeVisible();
@@ -1446,7 +1448,18 @@ test('Email thread correction preserves messages and review states',async({page}
  }
  await page.getByRole('button',{name:/^Inspect observation /}).last().click();
  await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toBeVisible();
+ await expect(page.locator('aside .selected-context')).toHaveText('Adding a note to Orchard · 2026-09-20');
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/55-email-thread.'+info.project.name+'.png'),fullPage:true});
+ // Browser-only collision fixture; no source or annotation is changed on the server.
+ await page.route('**/api/desktop',async route=>{
+  const response=await route.fetch();const data=await response.json();
+  data.rows[1].data.sent_date=data.rows[0].data.sent_date;
+  await route.fulfill({json:data});
+ });
+ await page.reload();
+ await expect(page.getByTestId('record-row').nth(0).getByRole('heading',{name:'Orchard · 2026-09-18 · Record 1',exact:true})).toBeVisible();
+ await expect(page.getByTestId('record-row').nth(1).getByRole('heading',{name:'Orchard · 2026-09-18 · Record 2',exact:true})).toBeVisible();
+
 });
 
 test('Alternative view choice drafts feedback before any revision request',async({page},info)=>{
