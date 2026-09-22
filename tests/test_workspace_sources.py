@@ -83,3 +83,39 @@ class SourcesTest(unittest.TestCase):
             self.assertEqual(first['review']['snapshot_id'],original['review']['snapshot_id'])
             self.assertEqual(service.get(sid,query='absent')['records'],[])
             self.assertEqual(service.get(sid)['record_count'],205)
+
+class PdfPagePreviewTest(unittest.TestCase):
+    def test_original_page_render_is_cached_without_changing_manifest(self):
+        import hashlib
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as folder:
+            service = WorkspaceSources(folder, Client(), 'http://localhost:5210')
+            raw = b'%PDF-test-original'
+            sid = hashlib.sha256(raw).hexdigest()
+            directory = Path(folder)/sid
+            directory.mkdir()
+            (directory/'source.bin').write_bytes(raw)
+            manifest = json.dumps({'filename':'example.pdf','sha256':sid,'records':[]})
+            (directory/'manifest.json').write_text(manifest)
+            png = b'\x89PNG\r\n\x1a\nexample'
+            def render(argv):
+                if argv[0] == 'pdfinfo': return b'Pages: 3\n'
+                self.assertEqual(argv[1:6], ['-f','2','-l','2','-singlefile'])
+                Path(argv[-1]+'.png').write_bytes(png)
+                return b''
+            with patch('workspace_data.pdf.command', side_effect=render) as command:
+                self.assertEqual(service.pdf_page(sid, 2), (png,'image/png'))
+                self.assertEqual(service.pdf_page(sid, 2), (png,'image/png'))
+                self.assertEqual(command.call_count, 2)
+                with self.assertRaisesRegex(ValueError, 'not present'):
+                    service.pdf_page(sid, 4)
+            self.assertEqual((directory/'manifest.json').read_text(), manifest)
+            self.assertEqual((directory/'source.bin').read_bytes(), raw)
+            for page in (0,251,True,'2'):
+                with self.assertRaises(ValueError): service.pdf_page(sid,page)
+            (directory/'source.bin').write_bytes(b'changed')
+            with self.assertRaisesRegex(ValueError, 'hash mismatch'):
+                service.pdf_page(sid,2)
+            (directory/'manifest.json').write_text(json.dumps({'filename':'example.csv','sha256':sid}))
+            with self.assertRaisesRegex(ValueError, 'PDF source'):
+                service.pdf_page(sid,2)

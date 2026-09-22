@@ -217,6 +217,38 @@ class WorkspaceSources:
                 raise
             return {'url': f'/api/workspace/sources/{source_id}/exports/{eid}', 'run_url': f'{self.tracking_uri}/#/experiments/{experiment_id}/runs/{run.info.run_id}', 'training_candidates': len(bundle['training_candidates']), 'dataset_sha256': bundle['dataset_sha256'], 'dataset_task': bundle['dataset_task']}
 
+    def pdf_page(self, source_id, page):
+        """Render an original page for human review; never change extracted records."""
+        from workspace_data.pdf import command
+        import tempfile
+        if type(page) is not int or not 1 <= page <= 250:
+            raise ValueError('Choose a PDF page between 1 and 250')
+        with self.lock:
+            manifest = self.manifest(source_id)
+            if Path(manifest['filename']).suffix.lower() != '.pdf':
+                raise ValueError('Page preview requires a PDF source')
+            original = self.root / source_id / 'source.bin'
+            if hashlib.sha256(original.read_bytes()).hexdigest() != manifest['sha256']:
+                raise ValueError('Source hash mismatch')
+            cache = self.root / source_id / 'page-previews-v1'
+            cached = cache / f'{page}.png'
+            if cached.is_file():
+                return cached.read_bytes(), 'image/png'
+            info = command(['pdfinfo', str(original)]).decode(errors='replace')
+            count = re.search(r'^Pages:\s+(\d+)', info, re.M)
+            if not count or page > int(count.group(1)):
+                raise ValueError('Page is not present in this PDF')
+            with tempfile.TemporaryDirectory(prefix='bonsai-page-review-') as temp:
+                prefix = Path(temp) / 'page'
+                command(['pdftoppm', '-f', str(page), '-l', str(page), '-singlefile',
+                         '-scale-to', '2000', '-png', str(original), str(prefix)])
+                raw = prefix.with_suffix('.png').read_bytes()
+            if not raw.startswith(b'\x89PNG\r\n\x1a\n'):
+                raise ValueError('PDF renderer did not return a PNG image')
+            cache.mkdir(exist_ok=True)
+            cached.write_bytes(raw)
+            return raw, 'image/png'
+
     def download(self, source_id, export_id=None):
         manifest=self.manifest(source_id)
         if export_id is None:

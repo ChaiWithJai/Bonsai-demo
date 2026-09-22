@@ -1,4 +1,5 @@
 <script lang="ts">
+  import WorkspacePdfPage from '$lib/WorkspacePdfPage.svelte';
   import {onMount} from 'svelte';
   type Proposal = {structure?: {rationale:string;records:{values:Record<string,unknown>;evidence:{record_id:string;field:string;quote:string}[]}[]} | null;interpretation:{findings:{text:string;record_ids:string[]}[];rationale:string;uncertainties:string[];questions:string[]};plan:{title:string;summary:string;fields:{name:string;type:string}[];view:{component:string;groupBy?:string[];x?:string;y?:string;color?:string}}};
   let {proposal, draftKey = '', coverage, evidence = [], busy = false, readOnly = false, onConfirm, onRevise} = $props<{proposal:Proposal;draftKey?:string;coverage?:{records_shown:number;records_total:number;coverage:string;requested_page_coverage?:{requested:number[];shown:number[];omitted:number[];not_found:number[]};member_coverage?:{source_id:string;filename:string;records_shown:number;records_total?:number;represented:boolean}[]};evidence?:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>}[];busy?:boolean;readOnly?:boolean;onConfirm:()=>void;onRevise:(feedback:string)=>void}>();
@@ -76,7 +77,7 @@
         <div class="source-comparison">{#each finding.record_ids as id (id)}
           {@const row=evidence.find((r:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>})=>r.id===id)}{@const link=sourceLink(id)}
           <article aria-label={'Supporting source '+(row?.locator.source_filename ?? id)}>
-            <strong>{row?.locator.source_filename ?? 'Source record'}</strong>
+            <strong>{row?.locator.source_filename ?? 'Source record'}</strong>{#if row && link && Number.isInteger(Number(row.locator.page)) && Number(row.locator.page)>0}<WorkspacePdfPage sourceId={id.split(':')[0]} page={Number(row.locator.page)}/>{/if}
             {#if row}<dl>{#each Object.entries(row.data) as [field,value] (field)}<dt>{field}</dt><dd>{value===null ? 'Missing value' : typeof value==='object' ? JSON.stringify(value) : String(value)}</dd>{/each}</dl>{:else}<p>Record is not available in this preview.</p>{/if}
             {#if link}<a href={link.url} target="_blank" rel="noreferrer">{link.label}</a>{/if}
             <details><summary>Record provenance</summary><pre>{JSON.stringify({id,locator:row?.locator},null,2)}</pre></details>
