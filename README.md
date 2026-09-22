@@ -1,5 +1,7 @@
 # Bonsai Demo
 
+Backend and model format compatibility: [BACKEND-SUPPORT.md](BACKEND-SUPPORT.md).
+
 <p align="center">
   <img src="./assets/bonsai-logo.svg" width="280" alt="Bonsai">
 </p>
