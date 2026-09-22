@@ -1267,3 +1267,31 @@ test('Generated video stage view preserves values and cited playback',async({pag
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/48-three-stage-video.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Constrained model family graph preserves node membership and source links',async({page},info)=>{
+ const original=JSON.parse(await fs.readFile(path.resolve('.cache/constrained-model-family-graph/source.json'),'utf8'));
+ const preview=JSON.parse(await fs.readFile(path.resolve('.cache/constrained-model-family-graph/preview.json'),'utf8'));
+ const response=await page.request.get(preview.url+'api/desktop');const model=await response.json();
+ expect(model.plan.view).toEqual({component:'ForceDirectedGraph',groupBy:['parameter_size','runtime']});
+ expect(model.rows).toHaveLength(14);
+ for(const row of model.rows)expect(row.data).toEqual(original.records.find((r:any)=>r.id===row.id).data);
+ await page.goto(preview.url);
+ await expect(page.getByRole('heading',{name:'Bonsai Model Family Exploration',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Explore parameter_size: 8B',exact:true}).click();
+ const expected=original.records.filter((r:any)=>r.data.parameter_size==='8B');
+ await expect(page.getByTestId('record-row')).toHaveCount(expected.length);
+ for(const node of model.chart.props.nodes){
+   await page.getByRole('combobox',{name:'Group',exact:true}).selectOption(node.id);
+   const memberIds=model.node_membership[node.id];
+   await expect(page.getByTestId('record-row')).toHaveCount(memberIds.length);
+   for(const row of await page.getByTestId('record-row').all()){
+     const data=JSON.parse((await row.getByTestId('record-data').textContent())!);
+     expect(memberIds.some((id:string)=>model.rows.find((r:any)=>r.id===id).data.id===data.id)).toBe(true);
+     await expect(row.getByRole('link',{name:data.source_url,exact:true})).toHaveAttribute('href',data.source_url);
+   }
+ }
+ await page.getByRole('button',{name:'Clear filters',exact:true}).click();
+ await expect(page.getByTestId('record-row')).toHaveCount(14);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/49-model-family-graph.'+info.project.name+'.png'),fullPage:true});
+});
