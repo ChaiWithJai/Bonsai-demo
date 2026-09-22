@@ -308,7 +308,7 @@ class SourceJobs:
                     'job_id':status['id'], 'scope':'development', 'model':w.provider.model, 'model_call_timeout_seconds':str(getattr(self.planner,'timeout','test')),
                     'sampling_profile':planner.profile, 'sampling_seed':str(planner.seed),
                     'prompt_sha256':hashlib.sha256(PROPOSAL_INSTRUCTIONS.encode()).hexdigest(),
-                    'initial_ui_origin':'authored scaffold with model-authored typed visualization plan'}
+                    'initial_ui_origin':('authored scaffold with explicitly selected view and retained data' if status.get('kind')=='view_revision' else 'authored scaffold with model-authored typed visualization plan')}
             if status.get('intake_job_id'):
                 tags['intake_job_id']=status['intake_job_id']
             if status.get('retry_of_run_id'):tags['retry_of_run_id']=status['retry_of_run_id']
