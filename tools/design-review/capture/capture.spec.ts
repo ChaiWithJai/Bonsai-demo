@@ -970,3 +970,257 @@ test('Video evidence keeps speech and frame navigation separate',async({page},in
  await expect.poll(async()=>page.locator('video').evaluate((el:HTMLVideoElement)=>el.seeking)).toBe(false);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/40-video-speech.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Narrated video graph separates evidence groups and preserves source values',async({page},info)=>{
+ test.skip(!process.env.VIDEO_REVISION_PREVIEW_URL,'Requires corrected development video preview');
+ const base=process.env.VIDEO_REVISION_PREVIEW_URL!;
+ const original=JSON.parse(await fs.readFile(path.resolve('.cache/video-speech-development/live/merged.json'),'utf8'));
+ const model=await (await page.request.get(base+'api/desktop')).json();
+ expect(model.chart.component).toBe('ForceDirectedGraph');expect(model.plan.view.groupBy).toEqual(['evidence_channel']);
+ expect(model.rows).toHaveLength(5);expect(model.chart.props.nodes).toHaveLength(3);expect(model.chart.props.edges).toHaveLength(2);
+ expect(model.node_membership[model.grouping_root.id]).toHaveLength(5);
+ await page.goto(base);
+ await expect(page.getByRole('heading',{name:'Video evidence: observations and requirements',exact:true})).toBeVisible();
+ for(const channel of ['speech','visual']){
+  const expected=original.records.filter((r:any)=>r.locator.evidence_channel===channel);
+  const node=model.chart.props.nodes.find((n:any)=>n.label==='evidence_channel: '+channel);
+  await page.getByRole('button',{name:'Explore '+node.label,exact:true}).click();
+  await expect(page.getByTestId('record-row')).toHaveCount(expected.length);
+  const visible=[];for(const row of await page.getByTestId('record-data').all())visible.push(JSON.parse((await row.textContent())!));
+  for(const record of expected)expect(visible.some(data=>Object.entries(record.data).every(([key,value])=>data[key]===value))).toBe(true);
+  if(channel==='speech'){
+   await expect(page.getByRole('region',{name:'Source records'})).toContainText('The team needs to inspect model releases by size');
+   const row=page.getByTestId('record-row').first();await row.getByText('Supporting source passages',{exact:true}).click();
+   await expect(row.getByRole('link')).not.toHaveCount(0);
+   for(const link of await row.getByRole('link').all())expect(await link.getAttribute('href')).toContain(original.source_id);
+  }
+ }
+ await page.getByRole('button',{name:'Clear filters',exact:true}).click();await expect(page.getByTestId('record-row')).toHaveCount(5);
+ const target=model.rows[0];await page.getByRole('button',{name:'Inspect '+target.id,exact:true}).click();
+ const note='Development video evidence check '+info.project.name+' '+Date.now();
+ await page.getByRole('textbox',{name:'Evidence note',exact:true}).fill(note);await page.getByRole('button',{name:'Save note',exact:true}).click();
+ await expect(page.getByText(note,{exact:true})).toBeVisible();await page.reload();await expect(page.getByText(note,{exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/41-video-evidence-graph.'+info.project.name+'.png'),fullPage:true});
+});
+
+test('Confirmed development video build can retry its recorded render failure',async({page},info)=>{
+ test.skip(process.env.VIDEO_BUILD_RETRY_LIVE!=='1' || info.project.name!=='desktop','Explicit development build retry only');
+ test.setTimeout(180000);
+ const jid='8bec94ab1ed34e7e8e0c4e28e1c06854';
+ const prior=await (await page.request.get('/api/workspace/source-jobs/'+jid)).json();expect(prior.status).toBe('failed');expect(prior.workspace_id).toBeUndefined();
+ await page.setExtraHTTPHeaders({'X-Eval-Actor':'codex-development-retry-browser'});
+ await page.goto('/#/workspace');
+ await page.locator('.stream-row').filter({has:page.locator('strong',{hasText:'development-narrated-observations.mp4'})}).click();
+ const response=page.waitForResponse(r=>r.url().endsWith('/'+jid+'/retry-build') && r.request().method()==='POST');
+ await page.getByRole('button',{name:'Retry confirmed build',exact:true}).click();expect((await response).ok()).toBe(true);
+ await expect.poll(async()=>{const job=await (await page.request.get('/api/workspace/source-jobs/'+jid)).json();await fs.writeFile(path.resolve('.cache/video-speech-revision/retry-latest.json'),JSON.stringify(job,null,2));return job.status;},{timeout:150000,intervals:[1500]}).toBe('completed');
+ await expect(page.getByRole('button',{name:'Open editable project',exact:true})).toBeVisible();
+});
+
+test('First message stays together with tabs and role tools',async({page},info)=>{
+ await page.route('**/api/workspace/source-jobs',async route=>{const response=await route.fetch();const body=await response.json();await route.fulfill({json:{...body,jobs:body.jobs.filter((job:any)=>!['queued','running'].includes(job.status))}});});
+ await page.goto('/#/workspace');
+ const sections=page.getByRole('navigation',{name:'Workstream sections'});
+ await expect(sections.getByRole('button',{name:'Conversation',exact:true})).toBeVisible();
+ const message=page.getByRole('textbox',{name:'Message Research analyst',exact:true});
+ await expect(message).toBeVisible();
+ await page.getByRole('button',{name:'Find patterns',exact:true}).click();
+ await expect(message).toBeFocused();
+ await expect(message).toHaveValue(/Group related records/);
+ const intro=await page.locator('.conversation-intro').boundingBox();
+ const composer=await page.locator('.message-compose').boundingBox();
+ expect(composer!.y-(intro!.y+intro!.height)).toBeLessThan(50);
+ await sections.getByRole('button',{name:'Files',exact:true}).click();
+ await expect(message).toBeHidden();
+ await expect(page.getByRole('heading',{name:'Files for this workstream'})).toBeVisible();
+ await sections.getByRole('button',{name:'Activity',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Runtime activity'})).toBeVisible();
+ await sections.getByRole('button',{name:'Conversation',exact:true}).click();
+ await expect(message).toHaveValue(/Group related records/);
+ if(info.project.name==='mobile')await page.locator('.mobile-stream-toggle').click();
+ await page.getByRole('button',{name:'Data analyst',exact:true}).click();
+ await expect(page.getByRole('textbox',{name:'Message Data analyst',exact:true})).toBeVisible();
+ if(info.project.name==='mobile')await page.locator('.mobile-stream-toggle').click();
+ await page.locator('.shared-tools summary').click();
+ await page.getByRole('button',{name:'Search attached files',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Files for this workstream'})).toBeVisible();
+ if(info.project.name==='mobile')await page.locator('.mobile-stream-toggle').click();
+ await sections.getByRole('button',{name:'Conversation',exact:true}).click();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/42-first-message.'+info.project.name+'.png'),fullPage:true});
+ // Exercise the first-message transport without spending an inference or fabricating a reply.
+ let submitted:any;
+ await page.route('**/api/workspace/source-jobs/intake',async route=>{
+   submitted=route.request().postDataJSON();
+   await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Development check: model unavailable'})});
+ });
+ const roleMessage=page.getByRole('textbox',{name:'Message Data analyst',exact:true});
+ await roleMessage.fill('Help me compare the evidence in my documents.');
+ await roleMessage.press('Control+Enter');
+ await expect(page.getByText('Error: Development check: model unavailable', {exact:true})).toBeVisible();
+ expect(submitted.role).toBe('Data analyst');
+ expect(submitted.message).toBe('Help me compare the evidence in my documents.');
+ await expect(roleMessage).toHaveValue(submitted.message);
+
+});
+
+test('Drop desktop data into the first message without losing the request',async({page},info)=>{
+ await page.route('**/api/workspace/source-jobs',async route=>{const response=await route.fetch();const body=await response.json();await route.fulfill({json:{...body,jobs:body.jobs.filter((job:any)=>!['queued','running'].includes(job.status))}});});
+ await page.setExtraHTTPHeaders({'X-Eval-Actor':'codex-development-file-drop'});
+ await page.goto('/#/workspace');
+ const message=page.getByRole('textbox',{name:'Message Research analyst',exact:true});
+ await expect(message).toBeVisible();
+ await message.fill('Compare these development records with their original sources.');
+ const transfer=await page.evaluateHandle(()=>{
+   const data=new DataTransfer();
+   data.items.add(new File(['team,count\nResearch,0\nDesign,12\n'],'development-dropped-records.csv',{type:'text/csv'}));
+   return data;
+ });
+ await page.locator('body').dispatchEvent('dragenter',{dataTransfer:transfer});
+ await expect(page.getByText('Drop files into this workstream',{exact:true})).toBeVisible();
+ await page.locator('body').dispatchEvent('drop',{dataTransfer:transfer});
+ await expect(page.locator('.composer-files')).toContainText('development-dropped-records.csv');
+ await expect(page.locator('.composer-files')).toContainText('2 records');
+ await expect(message).toHaveValue('Compare these development records with their original sources.');
+ await expect(message).toBeFocused();
+ await expect(page.getByRole('button',{name:'Send ↑',exact:true})).toBeEnabled();
+ await page.getByRole('button',{name:'Inspect files',exact:true}).click();
+ await expect(page.locator('.source-summary')).toContainText('2 records');
+ await page.getByText('Record 1',{exact:true}).click();
+ await expect(page.locator('.records')).toContainText('"count": "0"');
+ await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:'Conversation',exact:true}).click();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/43-dropped-files.'+info.project.name+'.png'),fullPage:true});
+ await transfer.dispose();
+});
+
+test('Mixed attachment readiness blocks a partial source set',async({page})=>{
+ await page.route('**/api/workspace/source-jobs',async route=>{const response=await route.fetch();const body=await response.json();await route.fulfill({json:{...body,jobs:body.jobs.filter((job:any)=>!['queued','running'].includes(job.status))}});});
+ const sources:any[]=[];
+ await page.route('**/api/workspace/sources',async route=>{
+   if(route.request().method()==='POST'){
+     const name=decodeURIComponent(route.request().headers()['x-source-filename']);
+     const failed=name==='needs-extraction.pdf';
+     const value={source_id:failed?'development-pending':'development-ready',filename:name,sha256:'development',kind:failed?'document':'table',status:failed?'extraction_failed':'extracted',record_count:failed?0:2,records:[],review:{latest:{}}};
+     sources.push(value);await route.fulfill({json:value});
+   }else await route.fulfill({json:{sources}});
+ });
+ await page.goto('/#/workspace');
+ const message=page.getByRole('textbox',{name:'Message Research analyst',exact:true});
+ await expect(message).toBeVisible();await message.fill('Compare all of the attached source evidence.');
+ await page.locator('input[type=file]').setInputFiles([{name:'needs-extraction.pdf',mimeType:'application/pdf',buffer:Buffer.from('development failure fixture')},{name:'ready.csv',mimeType:'text/csv',buffer:Buffer.from('a\n1\n2\n')}]);
+ await expect(page.getByRole('region',{name:'File intake summary'})).toContainText('Some files need attention');
+ await expect(page.getByRole('button',{name:'Send ↑',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'Remove needs-extraction.pdf',exact:true}).last().click();
+ await expect(page.getByRole('region',{name:'File intake summary'})).toContainText('Your files are ready to discuss');
+ await expect(page.getByRole('button',{name:'Send ↑',exact:true})).toBeEnabled();
+});
+
+test('Proposal findings expose readable sources and draft a targeted correction',async({page},info)=>{
+ const job=JSON.parse(await fs.readFile(path.resolve('.cache/workspace-live-v3-20260921/workspace/source-jobs/2c74cd345eaf42e2a5ce399b4e4f195a/status.json'),'utf8'));
+ // Pin the reviewed development proposal in this browser; never confirm or mutate its server state.
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[{...job,status:'awaiting_confirmation'}]}}));
+ await page.goto('/#/workspace');
+ const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:'Files',exact:true}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);
+ await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const finding=page.locator('.proposal .finding').first();
+ await finding.locator('summary').first().click();
+ await expect(finding.locator('.source-comparison article')).toHaveCount(2);
+ await expect(finding.locator('.source-comparison')).toContainText('annotated (2).mp4');
+ await expect(finding.locator('.source-comparison')).toContainText('annotated (3).mp4');
+ await expect(finding.locator('.source-comparison')).toContainText('UNREVIEWED BONSAI');
+ await expect(finding.locator('a').first()).toHaveAttribute('href',/#t=0$/);
+ await finding.scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/44-finding-evidence.'+info.project.name+'.png'),fullPage:true});
+ await finding.getByRole('button',{name:'Question this finding'}).click();
+ const feedback=page.getByRole('textbox',{name:'Clarify or change this proposal'});
+ await expect(feedback).toBeFocused();
+ await expect(feedback).toHaveValue('Please recheck this finding against each cited source: “'+job.proposal.interpretation.findings[0].text+'”');
+ await expect(page.getByRole('button',{name:'Discuss this change',exact:true})).toBeEnabled();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test('Generated view plays the selected cited video beside notes',async({page},info)=>{
+ const preview=JSON.parse(await fs.readFile(path.resolve('.cache/inline-media-inspection/preview.json'),'utf8'));
+ await page.goto(preview.url);
+ await expect(page.getByTestId('record-row')).toHaveCount(3);
+ const first=page.getByTestId('record-row').first();await first.getByRole('button',{name:/Inspect /}).click();
+ const media=page.getByRole('region',{name:'Selected source media'});
+ await expect(media.locator('video')).toHaveCount(1);
+ await expect.poll(()=>media.locator('video').evaluate((video:HTMLVideoElement)=>video.readyState)).toBeGreaterThanOrEqual(1);
+ await expect.poll(()=>media.locator('video').evaluate((video:HTMLVideoElement)=>video.videoWidth)).toBeGreaterThan(0);
+ expect(await media.locator('video').evaluate((video:HTMLVideoElement)=>video.paused)).toBe(true);
+ await expect(media.locator('video')).toHaveAttribute('src',/53b4e713.*#t=0/);
+ await media.locator('video').evaluate((video:HTMLVideoElement)=>video.play());
+ await expect.poll(()=>media.locator('video').evaluate((video:HTMLVideoElement)=>video.currentTime)).toBeGreaterThan(.1);
+ await media.locator('video').evaluate((video:HTMLVideoElement)=>video.pause());
+ await page.getByTestId('record-row').nth(1).getByRole('button',{name:/Inspect /}).click();
+ await expect(media.locator('video')).toHaveAttribute('src',/ffc683c5.*#t=0/);
+ await expect.poll(()=>media.locator('video').evaluate((video:HTMLVideoElement)=>video.videoWidth)).toBeGreaterThan(0);
+ await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toBeVisible();
+ await media.scrollIntoViewIfNeeded();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/45-inline-source-media.'+info.project.name+'.png'),fullPage:true});
+});
+
+test('Source type and nonzero timestamps survive structured media evidence',async({page},info)=>{
+ for(const kind of ['video','audio']){
+  const preview=JSON.parse(await fs.readFile(path.resolve('.cache/media-timestamp-verification/'+kind+'-preview.json'),'utf8'));
+  await page.goto(preview.url);
+  const data=await (await page.request.get(preview.url+'api/desktop')).json();
+  const row=data.rows.find((row:any)=>row.locator.source_evidence.some((p:any)=>p.locator.start_seconds>0));
+  expect(row).toBeTruthy();
+  const time=row.locator.source_evidence.find((p:any)=>p.locator.start_seconds>0).locator.start_seconds;
+  await page.getByRole('button',{name:'Inspect '+row.id,exact:true}).click();
+  const media=page.getByRole('region',{name:'Selected source media'}).locator(kind);
+  await expect(media).toHaveCount(1);
+  await expect.poll(()=>media.evaluate((v:HTMLMediaElement)=>v.readyState)).toBeGreaterThanOrEqual(1);
+  await expect.poll(()=>media.evaluate((v:HTMLMediaElement)=>v.currentTime)).toBeCloseTo(time,1);
+  if(kind==='video')await expect.poll(()=>media.evaluate((v:HTMLVideoElement)=>v.videoWidth)).toBeGreaterThan(0);
+  await media.evaluate((v:HTMLMediaElement)=>v.play());
+  await expect.poll(()=>media.evaluate((v:HTMLMediaElement)=>v.currentTime)).toBeGreaterThan(time+.1);
+  await media.evaluate((v:HTMLMediaElement)=>v.pause());
+  await expect(page.getByRole('textbox',{name:'Evidence note',exact:true})).toBeVisible();
+  await media.scrollIntoViewIfNeeded();
+  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/46-'+kind+'-timestamp.'+info.project.name+'.png'),fullPage:true});
+ }
+});
+
+test('Evidence note drafts remain bound to their record during a save',async({page},info)=>{
+ await page.setExtraHTTPHeaders({'X-Eval-Actor':'codex-development-note-draft-check'});
+ const preview=JSON.parse(await fs.readFile(path.resolve('.cache/note-draft-verification/preview.json'),'utf8'));
+ await page.goto(preview.url);
+ const data=await (await page.request.get(preview.url+'api/desktop')).json();
+ const a=data.rows[0],b=data.rows[1];
+ const select=(row:any)=>page.getByRole('button',{name:'Inspect '+row.id,exact:true}).click();
+ const note=page.getByRole('textbox',{name:'Evidence note',exact:true});
+ const textA='Development A '+info.project.name+' '+Date.now();const textB='Development B retained draft';
+ await select(a);await note.fill(textA);
+ await select(b);await expect(note).toHaveValue('');await note.fill(textB);
+ await select(a);await expect(note).toHaveValue(textA);
+ let release:()=>void=()=>{};const gate=new Promise<void>(resolve=>release=resolve);
+ let sent:any;
+ await page.route('**/api/annotations',async route=>{
+  if(route.request().method()!=='POST')return route.continue();
+  sent=route.request().postDataJSON();await gate;
+  const response=await route.fetch();await route.fulfill({response});
+ });
+ await page.getByRole('button',{name:'Save note',exact:true}).click();
+ await expect.poll(()=>sent?.record_id).toBe(a.id);
+ await select(b);await expect(note).toHaveValue(textB);
+ release();await expect(page.getByRole('button',{name:'Save note',exact:true})).toBeEnabled();
+ await expect(note).toHaveValue(textB);
+ await select(a);await expect(note).toHaveValue('');
+ const saved=await (await page.request.get(preview.url+'api/annotations')).json();
+ const entry=saved.find((n:any)=>n.note===textA);
+ expect(entry.record_id).toBe(a.id);expect(entry.record_snapshot.data).toEqual(a.data);
+ expect(entry.review_origin).toBe('codex-development-note-draft-check');
+ await select(b);await expect(note).toHaveValue(textB);
+ await page.route('**/api/annotations',route=>route.request().method()==='POST' ? route.fulfill({status:503,json:{error:'Development save failure'}}) : route.continue());
+ await page.getByRole('button',{name:'Save note',exact:true}).click();
+ await expect(page.getByRole('alert')).toContainText('Development save failure');
+ await expect(note).toHaveValue(textB);
+ await expect(page.getByRole('button',{name:'Save note',exact:true})).toBeEnabled();
+});

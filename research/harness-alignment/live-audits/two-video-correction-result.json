@@ -1,0 +1,33 @@
+{
+  "scope": "single development targeted correction; no human labels",
+  "parent_job_id": "2c74cd345eaf42e2a5ce399b4e4f195a",
+  "job_id": "eb7ac778fe0d41cfb685ee4d00e5b39f",
+  "run_id": "185136789bdb42d08a7f7830c8ed1de9",
+  "trace_id": "tr-504a9caf5cc7da04cb82ecd846999d93",
+  "proposal_sha256": "ac8f88382c47786d1d9867dfa4958227371c4aaf1741d74b63fb25f3bc392016",
+  "model_calls": 1,
+  "status": "awaiting_confirmation",
+  "targeted_correction_passed": true,
+  "reviewer": "Codex engineering audit",
+  "evidence": {
+    "identity_disclaimer": "The second file explicitly states that person identity is unverified, while the first file only states that the visual content is model-extracted and unreviewed.",
+    "arm_detail_finding_preserved": true,
+    "plan_preserved": true,
+    "record_evidence_preserved": true,
+    "value_changes": [
+      {
+        "record": 0,
+        "field": "identity_status",
+        "before": "unverified",
+        "after": "unreviewed"
+      }
+    ],
+    "identity_uncertainty": "The label 'BONSAI / JOHNSON-JEFFRIES' in the second file is a source label, not verified participant identity."
+  },
+  "limitations": [
+    "Checks apply to supplied sampled-frame records, not full-video truth.",
+    "The label unreviewed is a model classification, not verified identity status.",
+    "No proposal confirmation or generated-UI evaluation occurred in this correction step."
+  ],
+  "backup_status": "failed_unverified: MongoDB localhost:27028 refused connection"
+}

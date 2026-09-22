@@ -212,3 +212,35 @@ class SourceJobsTest(unittest.TestCase):
         structure['records'][0]['evidence'][0]['quote']='Invented speedup 100x'
         with self.assertRaisesRegex(ValueError,'not present'):structured_manifest(manifest,structure,{'r1':'original:page:2'})
         with self.assertRaisesRegex(ValueError,'explicit source-grounded'):structured_manifest(manifest,None,{'r1':'original:page:2'})
+
+    def test_retry_keeps_confirmation_and_failure_archive_without_inference(self):
+        class Tools:
+            node='node'
+            def command(self,argv,folder,cancel):
+                folder.mkdir(parents=True,exist_ok=True)
+                spec=json.loads(Path(argv[2]).read_text());assert spec['props']['edges']
+                (folder/'render-evidence.json').write_text('{}');(folder/'chart.svg').write_text('<svg/>');return {'ok':True}
+            def build(self,*args):return {'ok':True}
+            def preview(self,project,*args):return {'url':'http://test/','revision':project['head']}
+            def check_browser(self,*args):return {'ok':True}
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);provider=BadPlanner();client=Client()
+            worker=SimpleNamespace(store=WorkspaceStore(root/'workspace'),provider=provider,client=client,tools=Tools(),latest={},guard=threading.Lock(),running={},source_jobs=set(),tracking_uri='http://localhost:5210',model_info={})
+            sources=WorkspaceSources(root/'sources',client,worker.tracking_uri);source=sources.upload('data.json',b'[{"value":0}]');jobs=SourceJobs(worker,sources)
+            jid='a'*32;folder=jobs.root/jid;folder.mkdir()
+            from workspace_data.desktop_plan import profile
+            manifest=sources.manifest(source['source_id']);plan={'title':'Groups','summary':'Source groups','fields':[{'name':'value','type':'number'}],'view':{'component':'ForceDirectedGraph','groupBy':['value']}}
+            compiled=compile_plan(manifest,plan)
+            # Simulate an older compiled artifact with disconnected groups.
+            compiled['chart']['props']['nodes']=compiled['chart']['props']['nodes'][1:];compiled['chart']['props']['edges']=[];compiled['node_membership'].pop('all-records')
+            status={'id':jid,'source_id':source['source_id'],'filename':'data.json','request':'Group source values','status':'failed','stage':'Stopped','planning_run_id':'plan','run_id':'failed-build','proposal_sha256':'exact','error':'No edges'}
+            for name,value in [('status.json',status),('confirmation.json',{'proposal_sha256':'exact','actor':'test-original'}),('source-manifest.json',manifest),('profile.json',profile(manifest)),('compiled.json',compiled)]:jobs.save(folder,name,value)
+            with self.assertRaises(RevisionConflict):jobs.retry_build(jid,'wrong')
+            jobs.retry_build(jid,'exact','test-retry');active=jobs.active.get(jid)
+            if active:active[1].join(10)
+            self.assertEqual(jobs.get(jid)['status'],'completed');self.assertEqual(provider.calls,0)
+            self.assertEqual(json.loads((folder/'confirmation.json').read_text())['actor'],'test-original')
+            archives=list((folder/'build-retries').glob('*/status.json'));self.assertEqual(len(archives),1)
+            self.assertEqual(json.loads(archives[0].read_text()),status)
+            self.assertEqual(jobs.get(jid)['retry_of_run_id'],'failed-build')
+            with self.assertRaises(RevisionConflict):jobs.retry_build(jid,'exact')

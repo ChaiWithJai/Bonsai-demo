@@ -1,0 +1,23 @@
+{
+  "baseline_run_id": "ba94fd5b3358436d973cb0ed37524de1",
+  "candidate_run_id": "214d9e4a6eb344efab7912b8a10d6fc2",
+  "candidate_job_id": "2c74cd345eaf42e2a5ce399b4e4f195a",
+  "candidate_trace_id": "tr-5dc67f270c6cc7c70f9914e782e62295",
+  "scope": "single development replay with combined prompt/profile change; not held-out",
+  "source_packet_identical": true,
+  "model_metadata_identical": true,
+  "generation_config_identical": true,
+  "baseline_model_calls": 2,
+  "candidate_model_calls": 1,
+  "candidate_status": "awaiting_confirmation",
+  "candidate_proposal_sha256": "bfebeca02d1a12dde7697a5949a23657f26b41c9f90cccab7ad60bc26557c1fb",
+  "semantic_audit": {
+    "reviewer": "Codex; not a human training label",
+    "arm_posture_contradiction": "Resolved in this replay: additional detail is distinguished from disagreement.",
+    "new_failure": "Finding 3 claims both files explicitly state identity is unverified, but the first cited text only marks its observation UNREVIEWED BONSAI. The explicit identity disclaimer occurs in the second file.",
+    "overall_semantic_pass": false
+  },
+  "confirmation_performed": false,
+  "model_training_executed": false,
+  "backup_status": "failed_unverified: MongoDB localhost:27028 refused connection"
+}

@@ -1,0 +1,25 @@
+{
+  "job_id": "fc13c99468914a25b4ca8fc49c1f5757",
+  "run_id": "ba94fd5b3358436d973cb0ed37524de1",
+  "trace_id": "tr-01d3e306a0c9734efc7ef7d50ff98e28",
+  "proposal_sha256": "6572f95cb85f1d113832eedb19831d910e91d329830786c5a47186c2527e1fc0",
+  "status_observed": "awaiting_confirmation",
+  "reviewer": "Codex",
+  "review_type": "engineering audit; not human acceptance or training label",
+  "observations": [
+    {
+      "type": "contract_mismatch",
+      "evidence_file": "validation-0.json",
+      "finding": "Document and text sources require explicit source-grounded structured records for this view",
+      "change": "Expose requires_structuring in source_profile using the same predicate as validation. State its mandatory behavior for media collections and RecordTable."
+    },
+    {
+      "type": "semantic_overclaim",
+      "finding": "The finding claims the sources differ on the right figure arm posture, but the cited first observation describes standing position without specifying arm posture. Absence of a statement does not establish contradiction.",
+      "change": "Prompt now distinguishes contradiction from omission and different detail levels. No efficacy claim until a matched replay is evaluated."
+    }
+  ],
+  "original_proposal_preserved": true,
+  "confirmation_performed": false,
+  "next_evaluation": "Replay frozen source packet under old/new contract and compare schema repair counts plus source-supported comparison findings; do not count prompt changes as demonstrated semantic improvement."
+}

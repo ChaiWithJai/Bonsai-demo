@@ -1,6 +1,6 @@
 # Harness choices for desktop data interfaces
 
-The next harness should produce a recorded data interpretation and visualization specification before rendering an interface. This is an engineering hypothesis informed by the current failures, not a measured improvement yet.
+The harness now records a data interpretation and visualization specification before rendering an interface. Development runs show that explicit source contracts can avoid a repair, while valid structured output can still contain unsupported claims. Human review remains a separate stage. These observations do not establish broad model reliability.
 
 ## Two complementary approaches
 
@@ -24,7 +24,7 @@ The final output adapted a Codex-authored reference. A separate Codex correction
 
 ## Implementation sequence and acceptance
 
-1. Preserve uploaded bytes, source hashes and extraction locations. Tables and text now have this path. Media registration remains explicitly pending extraction.
+1. Preserve uploaded bytes, source hashes and extraction locations. Tables, text and supported media retain original bytes and extraction provenance. Format-specific extraction coverage remains explicit.
 2. Extract media through verified adapters. Record which model or library performed OCR or transcription. An audio transcript passed to a text model is not native audio reasoning.
 3. Have Bonsai propose a typed schema and classifications using bounded source context. Keep the proposal, validation errors and user corrections separately.
 4. Have Bonsai select a versioned visualization specification with source field references. Verify Semiotic's actual integration contract before choosing the adapter. The current documentation navigation alone is insufficient evidence for a schema or Svelte compatibility claim.
@@ -32,3 +32,12 @@ The final output adapted a Codex-authored reference. A separate Codex correction
 6. Preserve requests, responses, stage results and correction authors in MLflow. Export examples for a training loop with source provenance and review status. Do not turn provisional Codex review into human labels.
 
 A successful stage does not establish success of subsequent stages. The desktop workflow is complete only when the file-to-interface examples execute through the model, survive interaction checks and retain their evidence.
+
+
+## What the current runs add
+
+The [two-video baseline](http://127.0.0.1:5210/#/experiments/32/runs/ba94fd5b3358436d973cb0ed37524de1) required a schema repair because the validator required structured records but the model context did not expose that requirement. The [replay](http://127.0.0.1:5210/#/experiments/32/runs/214d9e4a6eb344efab7912b8a10d6fc2) used identical source evidence, checkpoint metadata, and generation settings. Exposing the contract and adding comparison guidance produced a valid proposal in one call rather than two. Because two instructions changed together, this is a combined harness intervention on one development case.
+
+The replay corrected the claim that missing arm-position detail constituted disagreement. It then attributed an identity disclaimer to both files when the explicit wording appeared in only one. Passing schema and citation-presence checks did not establish claim support. The review interface now places readable cited records beside each finding and lets a reviewer draft a targeted correction. It does not classify the claim as factual automatically.
+
+This is where the two approaches meet in this implementation: the interpretation and plan provide a place to review assumptions before generation, while execution traces identify which contracts and checks need repair. The useful next measurement is whether a specific correction survives revision without losing supported evidence. Repeatedly adjusting a prompt until one example passes would not establish generalization. The audit artifacts distinguish engineering feedback from human-reviewed training examples.
