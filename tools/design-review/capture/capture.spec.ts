@@ -1560,3 +1560,27 @@ test('Requested page gaps can be discussed without sending automatically',async(
  await coverage.scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/57-requested-page-coverage.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('PDF extraction refresh is explicit and preserves visible text on failure',async({page},info)=>{
+ const sid='91d10b75eb64a3635f8706ab6f7f90711f71e5c30474d55d5a004fa273b41072';
+ const response=await page.request.get('/api/workspace/sources/'+sid);
+ const source=await response.json();
+ let sent=0;
+ await page.route('**/api/workspace/sources/'+sid+'/extract',async route=>{
+  expect(route.request().postDataJSON()).toEqual({refresh_pdf:true});sent++;
+  await route.fulfill({json:{...source,refresh_error:'Development fixture: OCR unavailable'}});
+ });
+ await page.goto('/#/workspace');
+ await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);
+ const button=page.getByRole('button',{name:'Refresh PDF text and OCR',exact:true});
+ await expect(button).not.toBeVisible();
+ await page.getByText('Refresh PDF extraction',{exact:true}).click();
+ expect(sent).toBe(0);
+ await button.click();
+ await expect(page.getByRole('alert')).toContainText('The previous extracted text is still available');
+ expect(sent).toBe(1);
+ await expect(page.locator('.source-summary')).toContainText('extracted');
+ await page.getByText('Refresh PDF extraction',{exact:true}).scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/58-pdf-refresh.'+info.project.name+'.png'),fullPage:true});
+});

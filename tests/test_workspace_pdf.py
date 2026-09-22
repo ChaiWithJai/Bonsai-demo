@@ -68,3 +68,27 @@ class PDFTest(unittest.TestCase):
             self.assertEqual(result['records'][0]['data']['text'],'Page 1')
             self.assertEqual(result['records'][0]['data']['extraction_status'],'needs_review')
             self.assertEqual(result['extraction_coverage']['unresolved_pages'],[1])
+
+    def test_explicit_refresh_replaces_cached_pdf_and_failure_preserves_recovery(self):
+        with tempfile.TemporaryDirectory() as root:
+            sources=WorkspaceSources(root,PDFClient(),'http://localhost:5210')
+            def result(text):
+                return {'kind':'document','status':'extracted','extractor':'test','records':[{'locator':{'page':1},'data':{'text':text}}],'extraction_coverage':{'page_count':1,'pages_with_text':1,'unresolved_pages':[]}}
+            with patch('workspace_data.pdf.extract_pdf',return_value=result('Header')):
+                first=sources.upload('scan.pdf',b'%PDF-original')
+            sid=first['source_id']
+            with patch('workspace_data.pdf.extract_pdf',return_value=result('Header and recovered content')) as extract:
+                sources.extract_media(sid)
+                extract.assert_not_called()
+                recovered=sources.extract_media(sid,refresh_pdf=True)
+                self.assertEqual(recovered['records'][0]['data']['text'],'Header and recovered content')
+            with patch('workspace_data.pdf.extract_pdf',side_effect=ValueError('OCR unavailable')):
+                failed=sources.extract_media(sid,refresh_pdf=True)
+            self.assertEqual(failed['status'],'extracted')
+            self.assertEqual(failed['records'],recovered['records'])
+            self.assertEqual(failed['extraction_run_id'],recovered['extraction_run_id'])
+            self.assertIn('OCR unavailable',failed['refresh_error'])
+            self.assertEqual(sources.download(sid)[0],b'%PDF-original')
+            history=[json.loads(p.read_text()) for p in (Path(root)/sid/'extractions').glob('*/previous-manifest.json')]
+            self.assertTrue(any(m.get('records') and m['records'][0]['data']['text']=='Header' for m in history))
+            self.assertTrue(any(m.get('records') and m['records'][0]['data']['text']=='Header and recovered content' for m in history))

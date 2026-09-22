@@ -5,6 +5,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    '58-pdf-refresh': ('workspace', 'Development failure fixture: explicit PDF refresh keeps previous extraction available'),
     '57-requested-page-coverage': ('workspace', 'Development fixture: requested pages shown, omitted and not found; follow-up remains a draft'),
     "56-proposal-view-choice": ("workstreams", "Draft a different visualization choice before submitting a revision"),
     "55-email-thread": ("workstreams", "Corrected email timeline with per-message citations and original mailbox download"),

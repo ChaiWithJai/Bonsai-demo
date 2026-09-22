@@ -347,7 +347,7 @@ class Handler(BaseHTTPRequestHandler):
                 elif len(parts) == 4 and self.command == 'GET':
                     result = sources.get(parts[3])
                 elif len(parts) == 5 and parts[4] == 'extract' and self.command == 'POST':
-                    result = sources.extract_media(parts[3])
+                    result = sources.extract_media(parts[3], refresh_pdf=payload.get('refresh_pdf') is True)
                 elif len(parts) == 5 and parts[4] == 'vision' and self.command == 'POST':
                     result = self.server.workspace_source_jobs.start_vision(parts[3])
                 elif len(parts) == 5 and parts[4] == 'generate' and self.command == 'POST':
