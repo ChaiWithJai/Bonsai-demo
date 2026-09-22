@@ -41,6 +41,23 @@ class SourcePacketTest(unittest.TestCase):
         self.assertFalse(any(m['represented'] for m in tiny['member_coverage']))
         self.assertIn('partial',tiny['coverage'])
 
+    def test_requested_page_beats_keyword_matches_under_budget(self):
+        rows=[{'id':str(i),'locator':{'page':i},'data':{'text':'latency regression '*20}} for i in range(1, 21)]
+        rows[18]['data']['text']='Previously omitted profiler labels'
+        packet=source_packet({'records':rows},max_chars=200,request='latency regression; inspect page 19')
+        self.assertEqual(packet['record_id_map'],{'r19':'19'})
+        self.assertEqual(packet['requested_page_coverage']['shown'],[19])
+
+    def test_page_ranges_disclose_missing_and_over_budget_pages(self):
+        rows=[{'id':str(i),'locator':{'page':i},'data':{'text':'content '*20}} for i in range(1, 5)]
+        packet=source_packet({'records':rows},max_chars=250,request='Inspect pages 3-5')
+        coverage=packet['requested_page_coverage']
+        self.assertEqual(coverage['requested'],[3,4,5])
+        self.assertEqual(coverage['shown'],[3])
+        self.assertEqual(coverage['omitted'],[4])
+        self.assertEqual(coverage['not_found'],[5])
+        self.assertIn('partial',packet['coverage'])
+
     def test_excess_citations_have_actionable_feedback(self):
         from workspace_data.proposal import validate_proposal
         proposal={'interpretation':{'findings':[{'text':'Both frames repeat three records','record_ids':['r'+str(i) for i in range(1,7)]}],'rationale':'Compare duplicates','questions':['Group these records?'],'uncertainties':[]},'structure':None,'plan':{}}

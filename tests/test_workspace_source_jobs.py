@@ -48,6 +48,28 @@ class SourceJobsTest(unittest.TestCase):
             self.assertTrue((jobs.root/result['id']/'validation-1.json').exists())
             self.assertEqual(store.list(),[])
 
+    def test_revision_feedback_reaches_source_selection(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);store=WorkspaceStore(root/'workspace');client=Client();provider=BadPlanner()
+            provider.release.set()
+            worker=SimpleNamespace(store=store,client=client,provider=provider,guard=threading.Lock(),running={},source_jobs=set(),tracking_uri='http://localhost:5210',model_info={})
+            sources=WorkspaceSources(root/'sources',client,worker.tracking_uri)
+            source=sources.upload('data.json',b'[{"value":0}]');jobs=SourceJobs(worker,sources)
+            parent=jobs.start(source['source_id'],'Inspect values')
+            jobs.active[parent['id']][1].join(10)
+            path=jobs.root/parent['id']
+            status=json.loads((path/'status.json').read_text())
+            proposal={'interpretation':{'findings':[]},'structure':None,'plan':{}}
+            jobs.save(path,'proposal.json',proposal)
+            status.update(status='awaiting_confirmation',proposal_contract='source-proposal-v2-structured',proposal_sha256='test-sha',proposal=proposal)
+            jobs.save(path,'status.json',status)
+            child=jobs.revise(parent['id'],'Inspect pages 10-12', 'test')
+            jobs.active[child['id']][1].join(10)
+            packet=json.loads((jobs.root/child['id']/'source-packet.json').read_text())
+            self.assertEqual(packet['requested_page_coverage']['requested'],[10,11,12])
+            self.assertEqual(packet['requested_page_coverage']['not_found'],[10,11,12])
+            self.assertEqual(json.loads((path/'status.json').read_text()),status)
+
     def test_collection_job_archives_each_original_before_planning(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);store=WorkspaceStore(root/'workspace');client=Client();provider=BadPlanner()
