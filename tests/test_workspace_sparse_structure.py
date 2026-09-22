@@ -37,3 +37,19 @@ class SparseStructureTest(unittest.TestCase):
         self.structure['records'][1]['evidence']=[{**self.citation,'quote':'invented'}]
         with self.assertRaisesRegex(ValueError,'not present'):
             structured_manifest(self.source,self.structure,{'r1':'r'})
+
+class StructuredUsageTest(unittest.TestCase):
+    def test_findings_do_not_hide_data_omissions_and_aliases_resolve(self):
+        from workspace_data.proposal import structured_source_usage
+        packet={'record_id_map':{'r1':'source:1','r2':'source:2'}}
+        proposal={'interpretation':{'findings':[{'record_ids':['source:1','source:2']}]},'structure':{'records':[{'evidence':[{'record_id':'r1'},{'record_id':'source:1'}]}]}}
+        before=copy.deepcopy(proposal)
+        result=structured_source_usage(proposal,packet)
+        self.assertEqual(result['supplied_records'],2);self.assertEqual(result['cited_records'],1)
+        self.assertEqual(result['uncited_record_ids'],['source:2']);self.assertEqual(proposal,before)
+        proposal['structure']['records'][0]['evidence'].append({'record_id':'source:2'})
+        self.assertEqual(structured_source_usage(proposal,packet)['uncited_record_ids'],[])
+
+    def test_unstructured_views_do_not_claim_citation_coverage(self):
+        from workspace_data.proposal import structured_source_usage
+        self.assertIsNone(structured_source_usage({'structure':None},{'record_id_map':{'r1':'a'}}))

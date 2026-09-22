@@ -1,0 +1,22 @@
+{
+  "case": "Expose omitted email evidence separately from explanatory citations",
+  "job_id": "285132378cda464384902eebb8d9ac16",
+  "run_id": "1732f8237ff74e01a121f5a9b28ccf47",
+  "structured_usage": {
+    "supplied_records": 2,
+    "cited_records": 1,
+    "uncited_record_ids": [
+      "60040aca3ec11924026f5a2d6cd10b7e61a11a05cdbc33d43d5bf982a753fb8c:1"
+    ],
+    "scope": "Citation coverage only; not proof of complete or accurate extraction"
+  },
+  "saved_status_unchanged": true,
+  "model_calls": 0,
+  "limits": [
+    "Citation coverage does not establish all facts were extracted or supported",
+    "Unused records can be intentional for summaries or filtered questions; no blanket rejection",
+    "Historical coverage is computed from frozen evidence on read",
+    "No human annotation or acceptance",
+    "No new verified MongoDB archive"
+  ]
+}

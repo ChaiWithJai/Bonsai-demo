@@ -2,7 +2,7 @@
   import WorkspacePdfPage from '$lib/WorkspacePdfPage.svelte';
   import {onMount} from 'svelte';
   type Proposal = {structure?: {rationale:string;records:{values:Record<string,unknown>;evidence:{record_id:string;field:string;quote:string}[]}[]} | null;interpretation:{findings:{text:string;record_ids:string[]}[];rationale:string;uncertainties:string[];questions:string[]};plan:{title:string;summary:string;fields:{name:string;type:string}[];view:{component:string;groupBy?:string[];x?:string;y?:string;color?:string}}};
-  let {proposal, sourceFilename = '', draftKey = '', coverage, evidence = [], busy = false, readOnly = false, onConfirm, onRevise} = $props<{proposal:Proposal;sourceFilename?:string;draftKey?:string;coverage?:{source_scope?:{pages:number[];records_in_scope:number;records_outside_scope:number};records_shown:number;records_total:number;coverage:string;requested_page_coverage?:{requested:number[];shown:number[];omitted:number[];not_found:number[]};member_coverage?:{source_id:string;filename:string;records_shown:number;records_total?:number;represented:boolean}[]};evidence?:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>}[];busy?:boolean;readOnly?:boolean;onConfirm:()=>void;onRevise:(feedback:string)=>void}>();
+  let {proposal, sourceFilename = '', draftKey = '', coverage, evidence = [], busy = false, readOnly = false, onConfirm, onRevise} = $props<{proposal:Proposal;sourceFilename?:string;draftKey?:string;coverage?:{structured_usage?:{supplied_records:number;cited_records:number;uncited_record_ids:string[];scope:string} | null;source_scope?:{pages:number[];records_in_scope:number;records_outside_scope:number};records_shown:number;records_total:number;coverage:string;requested_page_coverage?:{requested:number[];shown:number[];omitted:number[];not_found:number[]};member_coverage?:{source_id:string;filename:string;records_shown:number;records_total?:number;represented:boolean}[]};evidence?:{id:string;locator:Record<string,unknown>;data:Record<string,unknown>}[];busy?:boolean;readOnly?:boolean;onConfirm:()=>void;onRevise:(feedback:string)=>void}>();
   let feedback=$state('');
   let draftReady=$state(false);
   let draftNotice=$state('');
@@ -32,6 +32,13 @@
   function questionFinding(text:string) {
     const question='Please recheck this finding against each cited source: “'+text+'”';
     feedback=(feedback ? feedback+'\n\n' : '')+question;
+    feedbackInput?.focus();
+  }
+  function draftUncitedSources() {
+    const ids=coverage?.structured_usage?.uncited_record_ids ?? [];
+    if(!ids.length)return;
+    const request='The proposed data cites '+coverage?.structured_usage?.cited_records+' of '+coverage?.structured_usage?.supplied_records+' supplied source records. Recheck whether the unused sources contain observations needed for my request. Include supported missing observations or explain why they are outside the requested view. Preserve existing supported values and citations.';
+    feedback=(feedback ? feedback+'\n\n' : '')+request;
     feedbackInput?.focus();
   }
   function draftMissingPages() {
@@ -68,6 +75,17 @@
       <p class="coverage">Included: {coverage.requested_page_coverage.shown.join(', ') || 'None'}. Included text may be excerpted; diagrams are not verified.</p>
       {#if coverage.requested_page_coverage.omitted.length}<p class="omitted">{coverage.source_scope ? 'Not supplied under the selected scope or evidence limit' : 'Not read because of the evidence limit'}: {coverage.requested_page_coverage.omitted.join(', ')}.</p>{#if !readOnly}<button onclick={draftMissingPages} disabled={busy}>Draft a follow-up for these pages</button>{/if}{/if}
       {#if coverage.requested_page_coverage.not_found.length}<p class="omitted">Not found in the supplied records: {coverage.requested_page_coverage.not_found.join(', ')}. Check the page numbers or attach the missing source.</p>{/if}
+    </section>
+  {/if}
+  {#if coverage?.structured_usage}
+    <section class="file-coverage" aria-label="Structured data source coverage">
+      <h4>Sources used in the proposed data</h4>
+      <p class="coverage">{coverage.structured_usage.cited_records} of {coverage.structured_usage.supplied_records} supplied source records are cited by the proposed data. This counts data citations, not mentions in the explanation.</p>
+      {#if coverage.structured_usage.uncited_record_ids.length}
+        <p class="omitted">Source records without data citations: {coverage.structured_usage.uncited_record_ids.length}. Check whether relevant observations were left out; some sources may be outside your question.</p>
+        {#if !readOnly}<button onclick={draftUncitedSources} disabled={busy}>Ask Bonsai to check unused sources</button>{/if}
+      {/if}
+      <p class="coverage">Citation coverage does not prove that every relevant fact was extracted correctly.</p>
     </section>
   {/if}
   {#each proposal.interpretation.findings as finding,i (i)}

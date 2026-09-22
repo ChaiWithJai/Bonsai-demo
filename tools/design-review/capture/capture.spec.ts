@@ -1838,3 +1838,27 @@ test('Proposal coverage distinguishes records outside explicit page scope',async
  await scope.scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/66-proposal-page-scope.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Structured coverage exposes a source mentioned only in findings',async({page,request},info)=>{
+ const response=await request.get('/api/workspace/source-jobs/285132378cda464384902eebb8d9ac16');
+ expect(response.ok()).toBe(true);const job=await response.json();
+ expect(job.source_coverage.structured_usage.cited_records).toBe(1);
+ expect(job.source_coverage.structured_usage.supplied_records).toBe(2);
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ let revisions=0;await page.route('**/api/workspace/source-jobs/*/revise',route=>{revisions++;return route.fulfill({json:{}});});
+ await page.goto('/#/workspace');
+ const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);
+ await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const coverage=page.getByRole('region',{name:'Structured data source coverage'});
+ await expect(coverage).toContainText('1 of 2 supplied source records');
+ await expect(coverage).toContainText('Source records without data citations: 1');
+ await coverage.getByRole('button',{name:'Ask Bonsai to check unused sources'}).click();
+ await expect(page.getByText('Draft saved in this browser.',{exact:true}).first()).toBeVisible();
+ expect(await page.locator('textarea').evaluateAll(elements=>elements.some(element=>(element as HTMLTextAreaElement).value.includes('Recheck whether the unused sources contain observations needed for my request')))).toBe(true);
+ expect(revisions).toBe(0);
+ await coverage.scrollIntoViewIfNeeded();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/67-structured-source-coverage.'+info.project.name+'.png'),fullPage:true});
+});

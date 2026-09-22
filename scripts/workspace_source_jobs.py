@@ -7,7 +7,7 @@ import threading
 import time
 import uuid
 from workspace_data.desktop_plan import profile, compile_plan, PLAN_INSTRUCTIONS, ensure_group_root
-from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal, revision_messages, planning_profile, repair_diagnostics, validate_schema_repair_preservation, validate_source_scope
+from workspace_data.proposal import PROPOSAL_INSTRUCTIONS, source_packet, validate_proposal, revision_messages, planning_profile, repair_diagnostics, validate_schema_repair_preservation, validate_source_scope, structured_source_usage
 from workspace_data.record_review import apply_human_reviews
 from workspace_provider import GenerationCancelled, LocalProvider
 from workspace_store import RevisionConflict
@@ -60,7 +60,9 @@ class SourceJobs:
         status['can_revalidate'] = status['status']=='failed' and not status.get('planning_run_id') and status.get('kind')!='source_revalidation' and any((path.parent/f'model-{i}.json').is_file() for i in range(2))
         packet_path = path.parent / 'source-packet.json'
         if status.get('proposal') and packet_path.is_file():
-            status['source_examples'] = self.proposal_examples(status['proposal'], json.loads(packet_path.read_text()))
+            packet=json.loads(packet_path.read_text())
+            status['source_examples'] = self.proposal_examples(status['proposal'],packet)
+            status['source_coverage']={**status.get('source_coverage',{}),'structured_usage':structured_source_usage(status['proposal'],packet)}
         if status['status'] in ('awaiting_confirmation', 'needs_revision'):
             for child_path in self.root.glob('*/status.json'):
                 child = json.loads(child_path.read_text())
@@ -382,7 +384,7 @@ class SourceJobs:
                 self.save(folder,'proposal.json',proposal)
                 digest=hashlib.sha256(json.dumps(proposal,sort_keys=True).encode()).hexdigest()
                 update(status='awaiting_confirmation',proposal_contract='source-proposal-v2-structured',stage='Does this interpretation fit your question?',proposal=proposal,
-                       proposal_sha256=digest,source_coverage={k:v for k,v in packet.items() if k not in ('records','record_id_map')},
+                       proposal_sha256=digest,source_coverage={**{k:v for k,v in packet.items() if k not in ('records','record_id_map')},'structured_usage':structured_source_usage(proposal,packet)},
                        source_examples=self.proposal_examples(proposal, packet))
                 return
             compiled=ensure_group_root(json.loads((folder/'compiled.json').read_text()))

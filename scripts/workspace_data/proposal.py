@@ -60,6 +60,20 @@ def revision_messages(revision, aliases):
     ]
 
 
+def structured_source_usage(proposal, packet):
+    """Measure citation coverage of output data, not explanatory findings."""
+    supplied=list(dict.fromkeys(packet['record_id_map'].values()))
+    structure=proposal.get('structure')
+    if structure is None:
+        return None
+    mapping=packet['record_id_map']
+    cited={mapping.get(item['record_id'],item['record_id'])
+           for row in structure['records'] for item in row['evidence']}
+    uncited=[rid for rid in supplied if rid not in cited]
+    return {'supplied_records':len(supplied),'cited_records':len(set(supplied)&cited),
+            'uncited_record_ids':uncited,'scope':'Citation coverage only; not proof of complete or accurate extraction'}
+
+
 def validate_source_scope(manifest, scope):
     if scope is None:
         return None
