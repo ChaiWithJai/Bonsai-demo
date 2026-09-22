@@ -18,6 +18,31 @@ export function checkLineSeries(props, evidence) {
   return {status:'passed', scope:'Rendered line count matches compiled series count; not semantic accuracy', expected_series:expected, rendered_series:observed};
 }
 
+// Inspect the simple circle scene emitted by the pinned static scatter renderer.
+// Other glyphs are not certified by this check.
+function circleMarks(svg) {
+  const group=svg.match(/<g clip-path="url\([^" ]+\)">([\s\S]*?)<\/g>/);
+  if(!group)return [];
+  return [...group[1].matchAll(/<circle\b([^>]*)>/g)].map(match=>Object.fromEntries(
+    [...match[1].matchAll(/(cx|cy|r)="([^"]+)"/g)].map(([,key,value])=>[key,Number(value)])));
+}
+
+export function checkScatterGeometry(svg, plot, points) {
+  const circles=circleMarks(svg);
+  if(circles.length!==points.length)throw new Error('Rendered scatter circle count does not match interaction targets');
+  const tolerance=1e-5;
+  for(const {cx,cy,r} of circles) {
+    if(![cx,cy,r].every(Number.isFinite)||r<0)throw new Error('Rendered scatter geometry is invalid');
+    if(cx-r < -tolerance || cy-r < -tolerance || cx+r > plot.width+tolerance || cy+r > plot.height+tolerance)
+      throw new Error('A rendered scatter point is clipped by the plot boundary');
+  }
+  const key=(x,y)=>`${x.toFixed(4)},${y.toFixed(4)}`;
+  const rendered=circles.map(p=>key(p.cx+plot.x,p.cy+plot.y)).sort();
+  const targets=points.map(p=>key(p.x,p.y)).sort();
+  if(JSON.stringify(rendered)!==JSON.stringify(targets))throw new Error('Rendered scatter positions do not match interaction targets');
+  return {status:'passed',scope:'Circle bounds and target coordinates in the pinned SVG scene; not collision or semantic accuracy',circle_count:circles.length};
+}
+
 export function renderChart(spec) {
   if (!['Scatterplot','LineChart','ForceDirectedGraph'].includes(spec.component)) throw new Error('Unsupported desktop component');
   const validation = validateProps(spec.component, spec.props);
@@ -46,7 +71,23 @@ export function renderChart(spec) {
       },
       nodeStyle: node => ({fill: palette[nodes.get(node.id)?.field] ?? colors[0]})};
   }
-  const result = renderChartWithEvidence(spec.component, props);
+  let result = renderChartWithEvidence(spec.component, props);
+  const rendering_adjustments=[];
+  if(['LineChart','Scatterplot'].includes(spec.component) && props.xExtent===undefined &&
+     ['linear','time'].includes(props.xScaleType ?? 'linear') && result.evidence.plot?.width>0) {
+    const [min,max]=result.evidence.xDomain ?? [];
+    const width=result.evidence.plot.width;
+    const radii=spec.component==='Scatterplot' ? circleMarks(result.svg).map(point=>point.r).filter(Number.isFinite) : [];
+    const padding=Math.max(10,...radii.map(radius=>radius+3));
+    if(Number.isFinite(min)&&Number.isFinite(max)&&width>2*padding) {
+      const span=max-min;
+      const extra=span>0 ? span*padding/(width-2*padding) : (props.xScaleType==='time' ? 86400000 : Math.max(Math.abs(min)*.05,1));
+      const extent=[min-extra,max+extra];
+      props={...props,xExtent:extent};
+      result=renderChartWithEvidence(spec.component,props);
+      rendering_adjustments.push({axis:'x',reason:'Keep boundary marks inside the plot',previous_extent:[min,max],extent,padding_pixels:padding,source_values_changed:false});
+    }
+  }
   if (result.evidence.empty) throw new Error('Semiotic rendered no data marks');
   const source_contract = spec.component === 'LineChart' ? checkLineSeries(props,result.evidence) : {status:'not_assessed',scope:'Line series only'};
   const plot=result.evidence.plot;
@@ -66,7 +107,8 @@ export function renderChart(spec) {
     }
   }
   const interaction = {width:result.evidence.width,height:result.evidence.height,points,nodes:[...positions.values()].map(node=>({...node,x:node.x+(plot?.x??0),y:node.y+(plot?.y??0)}))};
-  return {...result, interaction, diagnostics, source_contract, renderer: 'semiotic@3.10.3'};
+  const geometry_contract = spec.component==='Scatterplot' && !props.symbolBy && points.length ? checkScatterGeometry(result.svg,plot,points) : {status:'not_assessed',scope:'Flat scatter circles with linear/time coordinates only'};
+  return {...result, interaction, diagnostics, source_contract, geometry_contract, rendering_adjustments, renderer: 'semiotic@3.10.3'};
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
