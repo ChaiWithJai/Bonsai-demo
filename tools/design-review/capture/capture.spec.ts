@@ -1628,6 +1628,7 @@ test('Source inspection reaches records beyond the initial page',async({page},in
 
 test('PDF content search reaches a measurement beyond the first ten pages',async({page},info)=>{
  const sid='02f32dd8bdd1d72b2e5293c89d06b739e19f789ad35820614bdcaec3f6ac3777';
+ const sourceBefore=await (await page.request.get('/api/workspace/sources/'+sid)).json();
  await page.goto('/#/workspace');
  await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
  await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);
@@ -1659,7 +1660,7 @@ test('PDF content search reaches a measurement beyond the first ten pages',async
  await row.getByRole('button',{name:'Hide original page 25',exact:true}).click();
  await expect(originalPage).toHaveCount(0);
  await page.getByRole('button',{name:'Clear content search',exact:true}).click();
- await expect(page.locator('.records > details')).toHaveCount(79);
+ await expect(page.locator('.records > details')).toHaveCount(Math.min(100,sourceBefore.record_count));
 });
 
 test('PDF proposal supporting sources show original page images without confirming',async({page})=>{
@@ -1682,4 +1683,41 @@ test('PDF proposal supporting sources show original page images without confirmi
  const unchanged=await (await page.request.get('/api/workspace/source-jobs/'+job.id)).json();
  expect(unchanged.status).toBe('awaiting_confirmation');
  expect(unchanged.proposal_sha256).toBe(job.proposal_sha256);
+});
+
+test('PDF visual reading requests the selected page explicitly',async({page})=>{
+ const sid='02f32dd8bdd1d72b2e5293c89d06b739e19f789ad35820614bdcaec3f6ac3777';
+ const sent:unknown[]=[];
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[]}}));
+ await page.route('**/api/workspace/sources/'+sid+'/vision',route=>{
+  sent.push(route.request().postDataJSON());return route.fulfill({json:{status:'queued'}});
+ });
+ await page.goto('/#/workspace');
+ await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);
+ const row=page.locator('.records > details').filter({has:page.locator('summary',{hasText:/^Page 25$/})});
+ await row.locator(':scope > summary').click();
+ expect(sent).toHaveLength(0);
+ await row.getByRole('button',{name:'Read page 25 with Bonsai',exact:true}).click();
+ await expect.poll(()=>sent.length).toBe(1);
+ expect(sent[0]).toEqual({page:25});
+});
+
+test('PDF visual observations remain separate and marked unreviewed',async({page},info)=>{
+ const sid='02f32dd8bdd1d72b2e5293c89d06b739e19f789ad35820614bdcaec3f6ac3777';
+ await page.goto('/#/workspace');
+ await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
+ await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);
+ await page.getByRole('textbox',{name:'Search extracted content',exact:true}).fill('389.1');
+ await page.getByRole('button',{name:'Search records',exact:true}).click();
+ const row=page.locator('.records > details').filter({has:page.locator('summary',{hasText:/^Page 25 · Bonsai observation$/})});
+ await expect(row).toHaveCount(1);
+ await row.locator(':scope > summary').click();
+ await expect(row).toContainText('Bonsai visual observation · unreviewed');
+ await expect(row.locator('.record-content')).toContainText('402.1ms, 389.1ms');
+ await row.getByRole('button',{name:'View original page 25',exact:true}).click();
+ const image=row.getByRole('img',{name:'Original PDF page 25',exact:true});
+ await expect.poll(()=>image.evaluate((img:HTMLImageElement)=>img.naturalWidth)).toBeGreaterThan(0);
+ await image.scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/62-pdf-visual-observation.'+info.project.name+'.png'),fullPage:true});
 });

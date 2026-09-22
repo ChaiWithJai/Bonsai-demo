@@ -164,6 +164,12 @@ class WorkspaceSources:
                 result = extract_pdf(raw,evidence) if is_pdf else (extract_audio(raw,evidence) if is_audio else extract_image(raw,evidence))
                 for i,row in enumerate(result['records']):
                     row.update(id=f'{source_id}:'+('page' if is_pdf else ('segment' if is_audio else 'region'))+f':{i+1}',source_id=source_id)
+                if is_pdf and previous.get('pdf_visual_runs'):
+                    visual=[row for row in previous['records'] if row.get('locator',{}).get('evidence_channel')=='visual']
+                    result['records'].extend(visual)
+                    result['extractor']+=' + Bonsai page observations'
+                    result['requires_structuring']=True
+                    result['review_status']='model_extracted_unreviewed'
                 manifest.update(result,extraction_run_id=run_id)
                 manifest.pop('extraction_error',None)
                 manifest.pop('refresh_error',None)

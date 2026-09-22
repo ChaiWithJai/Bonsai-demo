@@ -265,7 +265,7 @@
             {@const interpretation=planningHistory.at(-1)!}
             <details class="saved-interpretation"><summary>Review source interpretation</summary>
               <p>Check the source-backed structure used to build this workstream. This judgment is separate from reviewing the interface below.</p>
-              <WorkspaceProposal proposal={interpretation.proposal} coverage={interpretation.source_coverage} evidence={interpretation.source_examples ?? []} readOnly={true} onConfirm={()=>{}} onRevise={()=>{}}/>
+              <WorkspaceProposal sourceFilename={interpretation.filename} proposal={interpretation.proposal} coverage={interpretation.source_coverage} evidence={interpretation.source_examples ?? []} readOnly={true} onConfirm={()=>{}} onRevise={()=>{}}/>
               {#key interpretation.id}<WorkspaceProposalReview jobId={interpretation.id}/>{/key}
             </details>
           {/if}
