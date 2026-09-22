@@ -3,6 +3,21 @@ import { fileURLToPath } from 'node:url';
 import { validateProps, diagnoseConfig } from 'semiotic/ai/core';
 import { renderChartWithEvidence } from 'semiotic/server';
 
+// This checks the compiled flat-data contract, not factual interpretation or
+// the geometry of each line. Keep the limited scope in the persisted evidence.
+export function checkLineSeries(props, evidence) {
+  if (!Array.isArray(props.data) || typeof props.lineBy !== 'string') {
+    return {status:'not_assessed', scope:'Flat data grouped by a named field only'};
+  }
+  const groups=new Set(props.data.map(row=>row[props.lineBy]));
+  const expected=groups.size;
+  const observed=evidence.markCountByType?.line;
+  if (!Number.isInteger(observed) || observed !== expected) {
+    throw new Error(`Line series mismatch: expected ${expected} separate lines from ${props.lineBy}, rendered ${observed ?? 'unknown'}`);
+  }
+  return {status:'passed', scope:'Rendered line count matches compiled series count; not semantic accuracy', expected_series:expected, rendered_series:observed};
+}
+
 export function renderChart(spec) {
   if (!['Scatterplot','LineChart','ForceDirectedGraph'].includes(spec.component)) throw new Error('Unsupported desktop component');
   const validation = validateProps(spec.component, spec.props);
@@ -33,9 +48,10 @@ export function renderChart(spec) {
   }
   const result = renderChartWithEvidence(spec.component, props);
   if (result.evidence.empty) throw new Error('Semiotic rendered no data marks');
+  const source_contract = spec.component === 'LineChart' ? checkLineSeries(props,result.evidence) : {status:'not_assessed',scope:'Line series only'};
   const plot=result.evidence.plot;
   const interaction = {width:result.evidence.width,height:result.evidence.height,nodes:[...positions.values()].map(node=>({...node,x:node.x+(plot?.x??0),y:node.y+(plot?.y??0)}))};
-  return {...result, interaction, diagnostics, renderer: 'semiotic@3.10.3'};
+  return {...result, interaction, diagnostics, source_contract, renderer: 'semiotic@3.10.3'};
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
