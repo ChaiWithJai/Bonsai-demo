@@ -207,8 +207,8 @@ class SourceJobs:
         import shutil
         with self.worker.guard:
             status=self.get(jid);folder=self.root/jid
-            if status['status']!='failed' or status.get('workspace_id') or not status.get('planning_run_id'):
-                raise RevisionConflict('Only a failed confirmed build without a saved project can be retried')
+            if status['status']!='failed' or not status.get('planning_run_id'):
+                raise RevisionConflict('Only a failed confirmed build can be retried')
             confirmation=json.loads((folder/'confirmation.json').read_text())
             if proposal_sha256!=status.get('proposal_sha256') or proposal_sha256!=confirmation.get('proposal_sha256'):
                 raise RevisionConflict('Retry must use the exact confirmed proposal')
@@ -374,7 +374,8 @@ class SourceJobs:
             fixture = {'kind':'desktop','compiled':compiled,'render_evidence':evidence,
                        'chart_svg':chart_svg,'source_job':status.copy()}
             check()
-            project = w.store.create(title=plan['title'][:150], files={'App.svelte':(ROOT/'examples/workspace/desktop/App.svelte').read_text()}, fixture=fixture)
+            project = (w.store.get(status['workspace_id']) if status.get('workspace_id') else
+                       w.store.create(title=plan['title'][:150], files={'App.svelte':(ROOT/'examples/workspace/desktop/App.svelte').read_text()}, fixture=fixture))
             update(workspace_id=project['id'], stage='Building editable project')
             build = span('project.build', {'revision':project['head']},lambda:w.tools.build(project,folder/'build',cancel))
             if not build['ok']:
