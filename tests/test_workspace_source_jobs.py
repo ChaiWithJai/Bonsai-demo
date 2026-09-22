@@ -70,6 +70,29 @@ class SourceJobsTest(unittest.TestCase):
             self.assertEqual(packet['requested_page_coverage']['not_found'],[10,11,12])
             self.assertEqual(json.loads((path/'status.json').read_text()),status)
 
+    def test_context_packing_reduces_evidence_before_any_model_call(self):
+        class TightPlanner(BadPlanner):
+            def __init__(self):super().__init__();self.preflights=0;self.release.set()
+            def preflight(self,*args):
+                self.preflights+=1
+                if self.preflights<=2:assert self.calls==0
+                return {'fits':self.preflights>1}
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);store=WorkspaceStore(root/'workspace');client=Client();provider=TightPlanner()
+            worker=SimpleNamespace(store=store,client=client,provider=provider,guard=threading.Lock(),running={},source_jobs=set(),tracking_uri='http://localhost:5210',model_info={})
+            sources=WorkspaceSources(root/'sources',client,worker.tracking_uri)
+            source=sources.upload('large.json',json.dumps([{'text':'source '*100} for _ in range(70)]).encode());jobs=SourceJobs(worker,sources)
+            result=jobs.start(source['source_id'],'Inspect the source records')
+            jobs.active[result['id']][1].join(10)
+            path=jobs.root/result['id']
+            first=json.loads((path/'packing-32000.json').read_text())
+            second=json.loads((path/'packing-24000.json').read_text())
+            self.assertGreater(first['records_shown'],second['records_shown'])
+            self.assertFalse(first['preflight']['fits']);self.assertTrue(second['preflight']['fits'])
+            self.assertEqual(provider.calls,2)
+            packet=json.loads((path/'source-packet.json').read_text())
+            self.assertIn('partial',packet['coverage'])
+
     def test_collection_job_archives_each_original_before_planning(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);store=WorkspaceStore(root/'workspace');client=Client();provider=BadPlanner()
