@@ -217,3 +217,9 @@ CPU extraction verified the narrated fixture at 0, 2, and 4 seconds and the real
 Bonsai read three synthetic cards at 0, 2.875 and 5.75 seconds, preserving Intake 12, Review 7 and Approved 3. Vision run b098a0dcc614467fba299aa3d6c03104 retains the source, frame hashes and exact-text audit. The checked-in fixture generator reproduced the original video bytes locally.
 
 Planning run ca63cc323c1e480ea7e42802518da1ed preserved the three structured values after one repair: the first response incorrectly cited locator time_seconds as a content field. The proposal remains awaiting confirmation, without a generated project. Its uncertainty wording conflates twelve extracted text rows with records, so this is not an overall semantic pass. This is a synthetic development check, not held-out validation or human acceptance. Local MongoDB backup still fails on port 27028; GB10's separate imagine-memory-local container uses port 27019 and is not this backup target.
+
+### Explicit timestamp citations
+
+The structure contract now accepts locator.time_seconds, locator.start_seconds and locator.end_seconds as explicit provenance evidence. Values must match a present, finite, nonnegative numeric locator exactly. Bare timestamp keys remain invalid content fields. This separates source positions from words visible in the source and preserves zero-second evidence.
+
+All 248 tests pass. The frozen first response from planning run ca63cc323c1e480ea7e42802518da1ed validates when only its three time_seconds citation fields are changed to locator.time_seconds. This is a deterministic contract check, not a new model run or proof of first-pass model adherence. The original model output remains unchanged. No proposal was confirmed.
