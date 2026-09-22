@@ -1,0 +1,27 @@
+{
+  "job_id": "20ba0fbeed3b453b9a63a62751883606",
+  "run_id": "837f19999d4f4adf9c50ee047e39af0a",
+  "baseline_job_id": "22d37ef82dc74b388fb67075546b8eb1",
+  "first_attempt_setup_failure": "Local inference returned HTTP 400",
+  "setup_failure_reason": "Bounded nested schema exceeded native grammar repetition complexity; max lengths and counts remain in post-generation validator instead",
+  "comparison": {
+    "same_source_packet": true,
+    "same_model_metadata": true,
+    "same_request_except_response_format": true,
+    "baseline_model_calls": 2,
+    "constrained_model_calls": 1,
+    "exact_values_preserved": true
+  },
+  "response_format_type": "json_schema",
+  "generation_schema_sha256": "dc2da04b7eb706840979796f8350138cc68380b081cbb6e1dd873ff62f6959f9",
+  "status": "awaiting_confirmation",
+  "tests_passed": 252,
+  "review_origin": "Codex development audit",
+  "limitations": [
+    "One synthetic case, not held-out validation",
+    "No confirmation, project, or human acceptance for this proposal",
+    "Shape constraints do not establish factual correctness",
+    "Native grammar omits repetition bounds; validator and token limit retain bounds",
+    "MongoDB backup remains unverified"
+  ]
+}

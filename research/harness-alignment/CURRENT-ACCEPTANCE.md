@@ -235,3 +235,11 @@ The record-shape validator now names unexpected and missing keys and explicitly 
 Replay 22d37ef82dc74b388fb67075546b8eb1 used identical source evidence, model metadata and first model response to the failed namespace replay. Naming the unexpected id keys allowed the second response to repair the shape while retaining the structured values and all evidence citations. Planning run e20aefa9a55a4432b6b7b6fea9ff65b6 records the two calls. This demonstrates a specific repair improvement, not first-pass success or generalization.
 
 The synthetic proposal was confirmed with actor codex-development-explicit-repair. Build run d6c60cce5ce849d8b98928bdff756e4a completed the authored RecordTable and baseline interaction checks. Project aa0eebed03a7444f9db0ab3934431a8b has three stage records: Intake 12 at 0 seconds, Review 7 at 2.875 seconds, Approved 3 at 5.75 seconds. Additional desktop/mobile browser checks passed for exact values, correct source-video seeking, decoded media and visible note entry. Screenshots and protocol are attached to MLflow. No human acceptance or training labels were created; MongoDB backup remains unverified.
+
+### Proposal-specific constrained generation
+
+The proposal planner now uses a JSON Schema grammar for interpretation, structured records, citations and four supported view shapes. Vision OCR and conversational intake retain their separate JSON contracts. Tool calls retain their existing contract. Source-aware validation still enforces values, citations, lengths and counts.
+
+The first live bounded schema failed before generation because native grammar repetition complexity exceeded the runtime limit. Its request and failure remain in job 624b2b8e27b546beb365bbbde7485957. The generation schema omits repetition upper bounds while the validator and output token cap retain limits.
+
+Replay 20ba0fbeed3b453b9a63a62751883606 produced a valid proposal in one call, preserving exact stage/count/timestamp values. Baseline 22d37ef82dc74b388fb67075546b8eb1 required two calls. Source packet, model metadata and request payload apart from response_format were identical. All 252 tests pass. This is a single synthetic development comparison, not general accuracy or latency evidence. The proposal remains unconfirmed. Broader view/media coverage and a restored MongoDB backup remain open.
