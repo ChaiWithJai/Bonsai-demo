@@ -1,0 +1,53 @@
+{
+  "case": "Retained email observations revised into the requested project timeline",
+  "job_id": "7faa024b1bc043b0b01ebe3dd78a417d",
+  "run_id": "94758d0ca3094785849fdb4461c60d6c",
+  "parent_job_id": "589fedcd1527418a8865cfd6babe3906",
+  "model_calls": 1,
+  "frozen_regression": {
+    "case_id": "email-thread",
+    "scope": "Exact development regression contract, not semantic accuracy",
+    "checks": {
+      "source_identity": true,
+      "record_values": true,
+      "view_mapping": true,
+      "no_excluded_records": true
+    },
+    "passed": true,
+    "not_assessed": [
+      "Rendered geometry",
+      "Citation support",
+      "Human acceptance",
+      "Interpretation completeness"
+    ],
+    "field_policy": "Exact expected field names; equivalent renamed fields require review"
+  },
+  "retention": {
+    "required_source_records": 2,
+    "retained_rows": 2,
+    "checked_targets": "point_targets",
+    "status": "passed",
+    "scope": "Source identities and interaction targets; not geometry, factual accuracy or human acceptance"
+  },
+  "rendered_series": 1,
+  "rendered_interaction_points": 2,
+  "source_snapshot_unchanged": true,
+  "task_contract_inherited": {
+    "record_policy": "one_per_source_record"
+  },
+  "view": {
+    "component": "LineChart",
+    "x": "sent_date",
+    "y": "open_issue_count",
+    "color": "project"
+  },
+  "status": "awaiting_confirmation",
+  "human_acceptance": false,
+  "build_confirmed": false,
+  "limits": [
+    "Explicit development correction supplied the expected chart mapping",
+    "Previously used synthetic emails, not held-out performance",
+    "Static Semiotic rendering and target identity checks; browser interactions not retested here",
+    "No new verified MongoDB archive"
+  ]
+}
