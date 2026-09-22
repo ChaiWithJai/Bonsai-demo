@@ -230,7 +230,7 @@ class SourceJobsTest(unittest.TestCase):
             self.assertEqual(json.loads((parent/'status.json').read_text()),original)
             self.assertFalse((parent/'confirmation.json').exists())
 
-    def test_preview_includes_structure_only_citations_without_uncited_records(self):
+    def test_preview_includes_cited_and_unused_records_for_structured_data(self):
         packet = {'records':[{'id':'r1','data':{'value':0}},
                              {'id':'r2','data':{'value':False}},
                              {'id':'r3','data':{'value':'uncited'}}],
@@ -239,7 +239,7 @@ class SourceJobsTest(unittest.TestCase):
                     'structure':{'records':[{'evidence':[{'record_id':'original:2'},
                                                         {'record_id':'original:1'}]}]}}
         examples = SourceJobs.proposal_examples(proposal, packet)
-        self.assertEqual([row['id'] for row in examples], ['original:1','original:2'])
+        self.assertEqual([row['id'] for row in examples], ['original:1','original:2','original:3'])
         self.assertIs(examples[1]['data']['value'], False)
         self.assertEqual(packet['records'][1]['id'], 'r2')
         proposal['structure'] = None

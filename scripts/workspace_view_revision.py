@@ -43,7 +43,7 @@ def revise_view(jobs,jid,body,actor='interactive-unattributed'):
         selection={'actor':actor,'parent_job_id':jid,'parent_run_id':parent.get('planning_run_id') or parent.get('run_id'),
                    'previous_view':parent['proposal']['plan']['view'],'selected_view':body['view'],'model_calls':0,
                    'identity_basis':'Local interaction; not an acceptance or training label'}
-        status={key:parent[key] for key in ('source_id','source_ids','filename','request','intake_job_id','apply_reviews','source_scope','generation_config','task_contract','task_record_ids','source_coverage') if key in parent}
+        status={key:parent[key] for key in ('source_id','source_ids','filename','request','intake_job_id','apply_reviews','source_scope','generation_config','task_contract','task_record_ids','source_review_record_ids','source_coverage') if key in parent}
         status.update(id=ident,parent_job_id=jid,parent_proposal_sha256=parent['proposal_sha256'],
                       parent_planning_run_id=selection['parent_run_id'],parent_source_snapshot_sha256=hashlib.sha256((source/'source-manifest.json').read_bytes()).hexdigest(),
                       kind='view_revision',view_selection=selection,model_calls=0,created_at=time.time(),

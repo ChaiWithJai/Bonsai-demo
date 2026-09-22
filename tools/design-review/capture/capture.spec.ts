@@ -2121,3 +2121,34 @@ test('Unused source evidence can be inspected before requesting a correction',as
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/80-unused-source-evidence.'+info.project.name+'.png'),fullPage:true});
  expect(mutations).toEqual([]);
 });
+
+test('Request explicit accounting for unused sources through the conversation',async({page,request})=>{
+ const jid='b68d916b137b4030ac30d3a573d3c413';const job=await (await request.get('/api/workspace/source-jobs/'+jid)).json();
+ expect(job.status).toBe('awaiting_confirmation');
+ await page.setExtraHTTPHeaders({'X-Eval-Actor':'codex-development-source-accounting'});
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ let child:any;await page.route('**/api/workspace/source-jobs/'+jid+'/revise',async route=>{
+   expect(route.request().postDataJSON().review_unused_sources).toBe(true);
+   const response=await route.fetch();expect(response.ok()).toBe(true);child=await response.json();await route.fulfill({response});
+ });
+ await page.goto('/#/workspace');const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ await page.getByRole('button',{name:'Ask Bonsai to check unused sources',exact:true}).click();
+ const check=page.getByRole('checkbox',{name:'Require an observation or a quoted exclusion explanation for each unused source',exact:true});await expect(check).toBeChecked();
+ await page.reload();await expect(check).toBeChecked();
+ await page.getByRole('button',{name:'Discuss this change',exact:true}).click();await expect.poll(()=>Boolean(child)).toBe(true);
+ expect(child.source_review_record_ids).toHaveLength(1);expect(child.status).toMatch(/queued|running/);
+ await fs.writeFile(path.resolve('.cache/source-accounting-browser-job.json'),JSON.stringify(child,null,2));
+});
+
+test('Source accounting revision exposes both recovered observations',async({page,request},info)=>{
+ const job=await (await request.get('/api/workspace/source-jobs/223169cf554e4ad89f66df243bfa1b67')).json();
+ expect(job.status).toBe('awaiting_confirmation');expect(job.source_coverage.structured_usage.cited_records).toBe(2);
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.goto('/#/workspace');const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ await expect(page.getByText('2 of 2 supplied source records are cited by the proposed data.',{exact:false})).toBeVisible();
+ await page.getByText('Review 2 proposed records',{exact:true}).click();const records=page.locator('.structured-records');await expect(records.locator('article')).toHaveCount(2);await expect(records).toContainText('2026-09-20');await expect(records).toContainText('Ready for review');
+ await records.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/81-source-accounting-revision.'+info.project.name+'.png'),fullPage:true});
+});
