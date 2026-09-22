@@ -1,0 +1,65 @@
+{
+  "scope": "Explicit view selection from saved data, separate from model revision and build confirmation",
+  "desktop_selection": {
+    "parent_job_id": "333b4b24769e4b61be226d770eeba6d7",
+    "job_id": "a8c197b4040b4935917ee51fa6314006",
+    "run_id": "8fbc0d4f63a94cbc9d5da6dd18613f84",
+    "model_calls": 0,
+    "records_unchanged": true,
+    "preview_loaded": true,
+    "no_build_confirmed": true
+  },
+  "mobile_selection": {
+    "parent_job_id": "c4eac071533c46138cff2ef2050fcbad",
+    "job_id": "d2bf4ae056d74a519cf57a9249a143b8",
+    "run_id": "73c3f5a7f3dd4ff0aac6a1fb86b7cd00",
+    "model_calls": 0,
+    "records_unchanged": true,
+    "preview_loaded": true,
+    "no_build_confirmed": true
+  },
+  "initial_failure": "Live structured-data requests were rejected before saving because recompiling with expanded citation IDs changed record identifiers. Fixed by validating the proposal and compiling the chart from the frozen compiled rows. Added a structured-record regression.",
+  "verification": {
+    "python_tests": 320,
+    "svelte_errors": 0,
+    "svelte_warnings": 0,
+    "production_build": "passed",
+    "desktop_selection_and_preview": "passed",
+    "mobile_selection_and_preview": "passed",
+    "explicit_choice_wording_desktop_and_mobile": "passed"
+  },
+  "development_build": {
+    "job_id": "a8c197b4040b4935917ee51fa6314006",
+    "planning_run_id": "8fbc0d4f63a94cbc9d5da6dd18613f84",
+    "build_run_id": "f4bf24dfa7004fcf9dec54e1b0ee9f2b",
+    "workspace_id": "d43d2eac227145d8bc5c9dc3772dfb58",
+    "status": "completed",
+    "actor": "codex-development-selected-view-build",
+    "browser_check": {
+      "passed": true,
+      "scope": "Source fidelity, chart loading, filtering and note persistence; not human design quality",
+      "chart_record_selection": [
+        "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:0:24571dbf0f01d2e91be2",
+        "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:1:c97cab79db6c6a39937f",
+        "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:2:466d7a953e51e247100d"
+      ],
+      "record_ids": [
+        "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:0:24571dbf0f01d2e91be2",
+        "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:1:c97cab79db6c6a39937f",
+        "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:2:466d7a953e51e247100d",
+        "a6aeec20affb44e38da14b05d256c80b898654cf829b42e0d787cf8c782e9811:structured:3:e8c45cd41a6bb549128c"
+      ],
+      "note_persistence": true,
+      "runtime_errors": []
+    }
+  },
+  "model_calls_for_view_selection": 0,
+  "data_and_citations_reconstructed": false,
+  "human_acceptance": false,
+  "limits": [
+    "Original model findings and uncertainties remain unreviewed; chart-specific wording is identified as belonging to the earlier interpretation.",
+    "Selections require a current unconfirmed proposal.",
+    "Chart previews show layout; interaction checks apply to the separately confirmed development build.",
+    "No new verified MongoDB backup."
+  ]
+}

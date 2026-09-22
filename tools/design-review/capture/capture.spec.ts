@@ -2068,3 +2068,41 @@ test('Proposal revision comparison preserves evidence and supports retry',async(
  fail=true;await page.reload();await page.locator('details.proposal-comparison > summary').click();await expect(page.getByRole('alert')).toContainText('Development comparison outage');
  fail=false;await page.getByRole('button',{name:'Retry comparison',exact:true}).click();await expect(comparison).toContainText('4 structured records keep the same values and citations');expect(mutations).toEqual([]);
 });
+
+test('Select chart from saved data without inference or confirmation',async({page,request},info)=>{
+ let jid=info.project.name==='desktop' ? '333b4b24769e4b61be226d770eeba6d7' : 'c4eac071533c46138cff2ef2050fcbad';
+ let job=await (await request.get('/api/workspace/source-jobs/'+jid)).json();
+ while(job.superseded_by){jid=job.superseded_by;job=await (await request.get('/api/workspace/source-jobs/'+jid)).json();}
+ expect(job.status).toBe('awaiting_confirmation');const original=job;const before=await (await request.get('/api/workspace')).json();
+ const date=info.project.name==='desktop' ? 'review_date' : 'date';const color=job.proposal.plan.view.component==='Scatterplot' && job.proposal.plan.view.color==='project' ? '' : 'project';
+ await page.setExtraHTTPHeaders({'X-Eval-Actor':'workspace-automated-view-check'});
+ const posts:string[]=[];page.on('request',r=>{if(r.method()==='POST' && r.url().includes('/api/workspace/'))posts.push(r.url());});
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.route('**/api/workspace/source-jobs/'+jid+'/view-revision',async route=>{const response=await route.fetch();expect(response.ok()).toBe(true);job=await response.json();await route.fulfill({response});});
+ await page.goto('/#/workspace');const nav=page.getByRole('navigation',{name:'Workstream sections'});
+ await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ const choice=page.locator('details.saved-view-choice');await choice.locator(':scope > summary').click();
+ const apply=choice.getByRole('button',{name:'Review selected view',exact:true});await expect(apply).toBeDisabled();
+ await choice.getByRole('combobox',{name:'Visualization',exact:true}).selectOption('Scatterplot');await choice.getByRole('combobox',{name:'Horizontal axis',exact:true}).selectOption(date);await expect(apply).toBeDisabled();
+ await choice.getByRole('combobox',{name:'Vertical axis',exact:true}).selectOption('open_issue_count');await choice.getByRole('combobox',{name:'Color groups',exact:true}).selectOption(color);
+ await apply.click();await expect.poll(()=>job.id!==original.id).toBe(true);
+ expect(job.model_calls).toBe(0);expect(job.status).toBe('awaiting_confirmation');expect(job.kind).toBe('view_revision');expect(job.proposal.structure).toEqual(original.proposal.structure);expect(job.proposal.interpretation).toEqual(original.proposal.interpretation);
+ await expect(page.getByText('View selected from saved data, with no model inference.',{exact:false})).toBeVisible();
+ await page.getByRole('button',{name:'Preview proposed chart',exact:true}).click();const img=page.getByRole('img',{name:'Proposed chart: '+job.proposal.plan.title,exact:true});await expect(img).toBeVisible();await expect.poll(()=>img.evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBe(true);
+ const comparison=await (await request.get('/api/workspace/source-jobs/'+job.id+'/comparison')).json();expect(comparison.records.unchanged).toBe(4);
+ const after=await (await request.get('/api/workspace')).json();expect(after.workspaces.length).toBe(before.workspaces.length);expect(after.running_source_jobs).toEqual([]);expect(posts).toHaveLength(1);expect(posts[0]).toContain('/view-revision');
+ await img.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/79-saved-data-view-selection.'+info.project.name+'.png'),fullPage:true});
+ await fs.writeFile(path.resolve('.cache/view-choice-'+info.project.name+'.json'),JSON.stringify({parent_job_id:original.id,job_id:job.id,run_id:job.run_id,model_calls:job.model_calls,records_unchanged:true,preview_loaded:true,no_build_confirmed:true},null,2));
+});
+
+test('Selected view preview is identified as an explicit choice',async({page,request},info)=>{
+ const job=await (await request.get('/api/workspace/source-jobs/d2bf4ae056d74a519cf57a9249a143b8')).json();
+ await page.route('**/api/workspace/source-jobs',route=>route.fulfill({json:{jobs:[job]}}));
+ await page.goto('/#/workspace');const nav=page.getByRole('navigation',{name:'Workstream sections'});await nav.getByRole('button',{name:/^Files(?: · \d+)?$/}).click();await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(job.source_id);await nav.getByRole('button',{name:'Conversation',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Selected view: '+job.proposal.plan.title,exact:true})).toBeVisible();await expect(page.getByText(job.proposal.plan.summary,{exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Uncertainties from the earlier interpretation',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Preview proposed chart',exact:true}).click();const img=page.getByRole('img',{name:'Proposed chart: '+job.proposal.plan.title,exact:true});await expect.poll(()=>img.evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBe(true);
+ await img.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/79-saved-data-view-selection.'+info.project.name+'.png'),fullPage:true});
+});

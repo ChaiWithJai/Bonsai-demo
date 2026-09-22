@@ -343,6 +343,9 @@ class Handler(BaseHTTPRequestHandler):
                     result = jobs.revalidate(parts[3])
                 elif len(parts) == 5 and parts[4] == 'retry-build' and self.command == 'POST':
                     result = jobs.retry_build(parts[3],payload.get('proposal_sha256'),self.headers.get('X-Eval-Actor','interactive-unattributed'))
+                elif len(parts) == 5 and parts[4] == 'view-revision' and self.command == 'POST':
+                    from workspace_view_revision import revise_view
+                    result = revise_view(jobs,parts[3],payload,self.headers.get('X-Eval-Actor','interactive-unattributed'))
                 elif len(parts) == 5 and parts[4] == 'revise' and self.command == 'POST':
                     result = jobs.revise(parts[3],payload.get('feedback'),self.headers.get('X-Eval-Actor','interactive-unattributed'))
                 else:

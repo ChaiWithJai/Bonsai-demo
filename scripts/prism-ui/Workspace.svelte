@@ -271,7 +271,8 @@
             {@const interpretation=planningHistory.at(-1)!}
             <details class="saved-interpretation"><summary>Review source interpretation</summary>
               <p>Check the source-backed structure used to build this workstream. This judgment is separate from reviewing the interface below.</p>
-              <WorkspaceProposal sourceFilename={interpretation.filename} proposal={interpretation.proposal} coverage={interpretation.source_coverage} evidence={interpretation.source_examples ?? []} readOnly={true} onConfirm={()=>{}} onRevise={()=>{}}/>
+              {#if interpretation.kind==='view_revision'}<p>View selected from saved data without model inference. The original model interpretation is retained and may describe the previous chart.</p>{/if}
+              <WorkspaceProposal viewSelected={interpretation.kind==='view_revision'} sourceFilename={interpretation.filename} proposal={interpretation.proposal} coverage={interpretation.source_coverage} evidence={interpretation.source_examples ?? []} readOnly={true} onConfirm={()=>{}} onRevise={()=>{}}/>
               {#key interpretation.id}{#if interpretation.parent_job_id}<WorkspaceProposalComparison jobId={interpretation.id}/>{/if}<WorkspaceProposalReview jobId={interpretation.id}/>{/key}
             </details>
           {/if}

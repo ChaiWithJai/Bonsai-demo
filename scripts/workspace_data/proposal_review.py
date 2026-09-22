@@ -76,7 +76,8 @@ def export(folder, job):
                            'input_sha256': review['input_sha256'],
                            'planning_run_id': planning.get('run_id', job.get('planning_run_id')),
                            'planning_trace_id': planning.get('trace_id'),
-                           'parent_job_id': job.get('parent_job_id')})
+                           'parent_job_id': job.get('parent_job_id'),
+                           'view_selection': job.get('view_selection')})
     dataset = {'task': 'source_interpretation', 'examples': candidates}
     return {'schema_version': 1, 'dataset_task': dataset['task'], 'dataset_sha256': digest(dataset),
             'example_count': len(candidates), 'training_candidates': candidates,
