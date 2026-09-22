@@ -1,0 +1,30 @@
+{
+  "scope": "Closed older development preview listeners; no projects deleted",
+  "closed": [
+    {
+      "project_id": "a0d4953982ee4442a2fa8ba51ab447a7",
+      "revision": "02950eded30c386bae58c1faf29c4915565c37e48cc1e1a148dca32cf761f239",
+      "port_released": true
+    },
+    {
+      "project_id": "aa0eebed03a7444f9db0ab3934431a8b",
+      "revision": "97c2a11a2c426da7c78236dcf5202fec7d1177daaf5e6f154c5ed3a84df571b6",
+      "port_released": true
+    },
+    {
+      "project_id": "1ccbb8e7f78746ed9ea27606e07eac38",
+      "revision": "e5fe56ee70ed0ea34d610e2036d429c9166fe2a03da88393887b7cbfb6e21f7d",
+      "port_released": true
+    },
+    {
+      "project_id": "58c6e6dfbd6342338401266b8d09497c",
+      "revision": "e5fe56ee70ed0ea34d610e2036d429c9166fe2a03da88393887b7cbfb6e21f7d",
+      "port_released": true
+    }
+  ],
+  "validation": {
+    "python_tests": 264,
+    "reopen_test": "passed",
+    "active_attempt_guard": "passed"
+  }
+}

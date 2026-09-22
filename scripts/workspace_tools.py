@@ -53,6 +53,14 @@ class WorkspaceTools:
         with store.connect() as db:
             db.execute('CREATE TABLE IF NOT EXISTS notes (workspace_id TEXT NOT NULL, id TEXT PRIMARY KEY, payload TEXT NOT NULL)')
 
+    def close_preview(self, key):
+        with self.lock:
+            server = self.servers.pop(key, None)
+        if server is None:return False
+        server.shutdown()
+        server.server_close()
+        return True
+
     def close(self):
         for server in self.servers.values():
             server.shutdown()

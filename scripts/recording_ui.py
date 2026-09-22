@@ -389,6 +389,8 @@ class Handler(BaseHTTPRequestHandler):
                     result = worker.store.export_interface_reviews(parts[2])
                 elif parts[3] == 'comparison' and self.command == 'GET':
                     result = worker.comparison(parts[2], parse_qs(parsed.query).get('attempt', []))
+                elif parts[3] == 'preview' and self.command == 'DELETE':
+                    result = worker.close_preview(parts[2])
                 elif parts[3] == 'preview' and self.command == 'POST':
                     result = worker.restore_preview(parts[2])
                 elif parts[3] == 'events' and self.command == 'GET':
