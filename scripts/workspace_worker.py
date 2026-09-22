@@ -202,6 +202,15 @@ class WorkspaceWorker:
                          'loop_detection': summary.get('loop_detection')})
         return compare(rows)
 
+    def close_preview(self, key):
+        with self.guard:
+            if self.running or self.source_jobs:
+                raise RevisionConflict('Wait for the active attempt before closing a preview')
+            self.store.get(key)
+            closed = self.tools.close_preview(key)
+            self.latest.pop(key, None)
+            return {'ok': True, 'closed': closed}
+
     def restore_preview(self, key):
         with self.guard:
             if self.running or self.source_jobs:
