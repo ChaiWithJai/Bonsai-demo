@@ -45,8 +45,6 @@ def validate_compiled_retention(compiled, required):
     """Check retained source identities and the chart's data before rendering."""
     if not required:
         return
-    if compiled.get('excluded_record_ids'):
-        raise ValueError('The task requires every source record, but the selected chart excludes records')
     rows=compiled['rows'];seen=Counter()
     for row in rows:
         if compiled.get('record_origin')=='model_structured_unreviewed':
@@ -62,8 +60,19 @@ def validate_compiled_retention(compiled, required):
     if len(ids)!=len(set(ids)):
         raise ValueError('Compiled task record IDs must be unique')
     chart=compiled['chart']
+    excluded=compiled.get('excluded_record_ids',[])
+    if excluded:
+        view=compiled.get('plan',{}).get('view',{})
+        coordinates=[view.get('x'),view.get('y')]
+        by_id={row['id']:row for row in rows}
+        if (chart['component']!='Scatterplot' or None in coordinates
+                or len(excluded)!=len(set(excluded)) or not set(excluded)<=set(ids)
+                or any(not all(field in by_id[rid].get('data',{}) for field in coordinates)
+                       or not any(by_id[rid]['data'][field] is None for field in coordinates)
+                       for rid in excluded)):
+            raise ValueError('Required records may be unplotted only when retained in the record list with an explicitly missing Scatterplot coordinate')
     if chart['component'] in ('LineChart','Scatterplot'):
-        if Counter(point['record_id'] for point in chart['props']['data'])!=Counter(ids):
+        if Counter(point['record_id'] for point in chart['props']['data'])+Counter(excluded)!=Counter(ids):
             raise ValueError('Chart data omits or duplicates required task records')
     elif chart['component']=='ForceDirectedGraph':
         represented={rid for members in compiled['node_membership'].values() for rid in members}
@@ -82,7 +91,7 @@ def validate_retained_interactions(compiled, evidence, required):
             raise ValueError('Table evidence does not retain the required record count')
         kind='table_rows'
     elif component in ('LineChart','Scatterplot'):
-        expected=Counter(row['id'] for row in compiled['rows'])
+        expected=Counter(point['record_id'] for point in compiled['chart']['props']['data'])
         actual=Counter(point['record_id'] for point in evidence.get('interaction',{}).get('points',[]))
         if actual!=expected:
             raise ValueError('Rendered chart interaction targets omit or duplicate required records')
@@ -94,5 +103,5 @@ def validate_retained_interactions(compiled, evidence, required):
             raise ValueError('Rendered graph is missing a required group interaction target')
         kind='group_targets'
     return {'required_source_records':len(required),'retained_rows':len(compiled['rows']),
-            'checked_targets':kind,'status':'passed',
+            'checked_targets':kind,'unplotted_retained_rows':len(compiled.get('excluded_record_ids',[])),'status':'passed',
             'scope':'Source identities and interaction targets; not geometry, factual accuracy or human acceptance'}
