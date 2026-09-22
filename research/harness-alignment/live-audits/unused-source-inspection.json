@@ -1,0 +1,21 @@
+{
+  "source_job": "9e7e5ff6004043479e2581a61a71e2e9",
+  "failure": "Model extracted one record from two supplied emails while mentioning both in prose.",
+  "change": "Unused source records are inspectable beside the coverage warning, with message text first, provenance and original links.",
+  "verification": {
+    "svelte_errors": 0,
+    "svelte_warnings": 0,
+    "production_build": "passed",
+    "browser_desktop": "passed",
+    "browser_mobile": "passed",
+    "source_link": "passed",
+    "no_mutating_requests": true
+  },
+  "model_calls": 0,
+  "human_acceptance": false,
+  "limitations": [
+    "This exposes omitted evidence; it does not automatically correct the model interpretation.",
+    "No new verified MongoDB backup."
+  ],
+  "mlflow_run_id": "4aa6ff6c8e7242fbb77cf5b3136d333c"
+}
