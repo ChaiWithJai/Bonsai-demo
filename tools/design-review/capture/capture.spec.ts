@@ -1595,6 +1595,7 @@ test('Source inspection reaches records beyond the initial page',async({page},in
   const offset=Number(url.searchParams.get('offset') ?? 0);
   await route.fulfill({json:{...original,filename:'Development pagination fixture.json',kind:'table',record_count:205,records:records.slice(offset,offset+100),record_offset:offset,next_record_offset:offset+100<205?offset+100:null,review:{...original.review,latest:{}}}});
  });
+ await page.route('**/api/workspace/sources/'+sid+'/review',route=>route.fulfill({json:{ok:true}}));
  await page.goto('/#/workspace');
  await page.getByRole('navigation',{name:'Workstream sections'}).getByRole('button',{name:/^Files(?: · \d+)?$/}).click();
  await page.getByRole('combobox',{name:'Saved source',exact:true}).selectOption(sid);
@@ -1609,6 +1610,16 @@ test('Source inspection reaches records beyond the initial page',async({page},in
  await rows.last().locator('summary').click();
  await expect(rows.last()).toContainText('204');
  await expect(nav.getByRole('button',{name:'Next records'})).toBeDisabled();
+ await page.getByText('Review records and export corrections',{exact:true}).click();
+ await page.getByRole('combobox',{name:'Source record',exact:true}).selectOption(sid+':row:204');
+ await page.getByRole('textbox',{name:'Reviewer name',exact:true}).fill('Development test');
+ await page.getByRole('combobox',{name:'Reviewer type',exact:true}).selectOption('test');
+ await page.getByRole('textbox',{name:'Evidence and reason',exact:true}).fill('Mocked review, no live label saved.');
+ await page.getByRole('button',{name:'Save record review',exact:true}).click();
+ await expect(page.getByRole('combobox',{name:'Source record',exact:true})).toHaveValue(sid+':row:204');
+ await expect(page.getByText(/Review saved. Original extraction/)).toBeVisible();
+ await expect(page.getByText(/Showing records 201–205 of 205/)).toBeVisible();
+
  await nav.scrollIntoViewIfNeeded();
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/59-source-pagination.'+info.project.name+'.png'),fullPage:true});
  await nav.getByRole('button',{name:'Previous records'}).click();
