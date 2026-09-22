@@ -1,0 +1,26 @@
+{
+  "scope": "Bonsai bounded-profile edit of an existing generated email timeline",
+  "attempt_id": "236dfbd658cc4c7b9735a8b0505561ec",
+  "run_id": "f8195dfdcdd144d19a17d1648182d762",
+  "base_revision": "e01d4597fb36fa005695095c66cfc55ae0d997a059d3b08948a9f801198f6657",
+  "result_revision": "e2a1dbb9c4dbda4411d96104989bea8c0a65126ec42eb3a803bf05e48f3cd9c9",
+  "request": "Add review-status filter buttons above the records: All statuses, Needs revision, and Ready for review. Default to All statuses. Clicking a status must filter the record list using the existing review_status field, and show aria-pressed on the active button. All statuses and Clear filters must reset this status filter. Preserve both underlying email records, the chart, source links, existing search/date filters, and notes. This is a Codex development edit experiment, not human acceptance.",
+  "generation_config": {
+    "profile": "bonsai2-bounded",
+    "seed": 42
+  },
+  "outcome": "failed_request_checks",
+  "observations": [
+    "Built unchanged source before adding requested controls",
+    "Two atomic patches rejected because a CSS match expected an absent newline",
+    "Rebuilt unchanged source and repeated missing-control failure",
+    "Later patch added working Needs revision and Ready for review filters",
+    "All statuses selected-state assertion failed: state is empty string but predicate compares to display label"
+  ],
+  "next_action": "Repair selected-state predicate using the same normalized value as the click handler; retain the saved revision and rerun all supplied checks",
+  "limits": [
+    "Partial implementation is not a completed task",
+    "Synthetic development example, no human acceptance or training label",
+    "No new verified MongoDB backup"
+  ]
+}
