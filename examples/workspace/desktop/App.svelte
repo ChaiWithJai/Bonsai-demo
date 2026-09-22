@@ -61,7 +61,7 @@
     return 'Source record';
   }
   function recordTitle(row) {
-    for(const key of ['title','name','model','stage','subject','id']) {
+    for(const key of ['title','name','model','project','stage','subject','id']) {
       const value=row.data[key];
       if(typeof value==='string' && value.trim())return value.length>120 ? value.slice(0,117)+'…' : value;
       if(key==='id' && typeof value==='number')return 'Record '+value;

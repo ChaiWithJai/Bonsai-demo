@@ -1,0 +1,33 @@
+{
+  "source_id": "91d10b75eb64a3635f8706ab6f7f90711f71e5c30474d55d5a004fa273b41072",
+  "job_id": "e8e62b89f3674a9887d31476a21ef286",
+  "planning_run_id": "04fcf240fc714cd4bd7833c74763ad33",
+  "build_run_id": "02b92d9278324266a5cfff0f4e26523a",
+  "project_id": "cecb54fb6b604fdd85c8230f7dabaa53",
+  "preview": {
+    "url": "http://127.0.0.1:53497/",
+    "revision": "0879aa5c4e38f9f3bb419bfa2bef27c810235d20e43c9162dce43672188771de"
+  },
+  "model_calls": 1,
+  "verified_values": {
+    "project": "Orchard",
+    "owner": "Maya",
+    "review_status": "Ready for review",
+    "open_issue_count": 3
+  },
+  "checks": {
+    "desktop": "passed",
+    "mobile": "passed",
+    "page_link": "Original source PDF at page 1; endpoint returned PDF bytes",
+    "note_context": "Orchard",
+    "approval_inferred": false
+  },
+  "confirmation_actor": "codex-development-scanned-pdf",
+  "limitations": [
+    "Synthetic scanned-page case, not held-out evaluation",
+    "Apple Vision OCR, followed by Bonsai structuring; not native Bonsai PDF vision",
+    "Generated table includes metadata columns that may need design refinement",
+    "No human acceptance or training labels",
+    "Backup storage decision remains pending"
+  ]
+}

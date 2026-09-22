@@ -267,3 +267,9 @@ GB10's separate imagine-memory-local Mongo service responds to ping on its exist
 A rendered development PDF with one embedded header and a scanned body reproduced a coverage gap: the previous extractor returned only the header and skipped OCR. PDF extraction now supplements pages with fewer than 120 non-whitespace embedded characters. It preserves embedded text, removes exact duplicate lines from OCR, records the OCR trigger, and marks a page needs_review if supplemental OCR fails.
 
 The actual upload path recovered Project: Orchard, Owner: Maya, Status: Ready for review and Open issues: 3. The unchanged baseline, source PDF, render and audit are attached to extraction run 6d3f06ca66d747b0bfc7dea2e9f0e942. All 254 tests passed, and the idle proxy reload retained eight active previews. This verifies Poppler/Apple Vision extraction, not Bonsai inference. The threshold is a heuristic; denser mixed pages and diagram semantics remain outside this claim. No original user PDF was re-extracted or confirmed.
+
+### Scanned PDF to a reviewable interface
+
+The sparse-header PDF passed through Bonsai structuring and generated project cecb54fb6b604fdd85c8230f7dabaa53. The record retains Orchard, Maya, Ready for review and three open issues, with verbatim page evidence. It does not infer approval or resolution. Confirmation used codex-development-scanned-pdf, not a human reviewer.
+
+Desktop/mobile checks passed for the exact values, page-1 source links returning PDF bytes, and the Orchard note context. The starter now recognizes a project field as a record title. Build and baseline checks passed; Svelte autofixer reported no issues. Planning run 04fcf240fc714cd4bd7833c74763ad33 and build run 02b92d9278324266a5cfff0f4e26523a contain the protocol and screenshots. This synthetic workflow combines Apple Vision OCR with Bonsai structuring; native PDF vision, broad accuracy and human training labels are not established.
