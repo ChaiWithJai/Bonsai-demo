@@ -1,0 +1,28 @@
+{
+  "job_id": "19bf9a57b0eb4125967ad79e7c820b78",
+  "project_id": "a0d4953982ee4442a2fa8ba51ab447a7",
+  "planning_run_id": "e0e8fad8797f4dc3a1a2f58e1744887c",
+  "build_run_id": "648c3a40cbd24231aa6a87147c1fbc5e",
+  "baseline_lines": 1,
+  "corrected_lines": 2,
+  "expected_lines": 2,
+  "source_records": 6,
+  "model_calls": 2,
+  "confirmation_actor": "codex-development-dated-series",
+  "checks": {
+    "source_values": "exact including zero",
+    "dates": "chronological chart coordinates",
+    "desktop_mobile": "passed",
+    "full_python_suite": 258,
+    "renderer_test": "passed"
+  },
+  "limitations": [
+    "Synthetic development case, not held-out accuracy",
+    "Automated confirmation and notes are not human training labels",
+    "Repair retained a six-record summary supported by only five cited records; semantic review remains open",
+    "Backup restore remains unavailable due to the previously diagnosed local MongoDB failure",
+    "Small mobile chart labels require zoom"
+  ],
+  "cause": "LineChart colorBy created a legend but did not separate lines; lineBy is required",
+  "authored_fit_revision": "02950eded30c386bae58c1faf29c4915565c37e48cc1e1a148dca32cf761f239"
+}

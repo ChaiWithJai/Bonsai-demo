@@ -10,6 +10,11 @@ export function renderChart(spec) {
   const diagnostics = diagnoseConfig(spec.component, spec.props);
   if (!diagnostics.ok) throw new Error(JSON.stringify(diagnostics));
   let props = spec.props;
+  // Older saved plans named the series through colorBy but omitted lineBy.
+  // Color alone creates a legend without separating the rendered lines.
+  if (spec.component === 'LineChart' && !props.lineBy && props.colorBy) {
+    props = {...props, lineBy: props.colorBy};
+  }
   const positions = new Map();
   // Semiotic 3.10.3's static force layout passes identity-only nodes to labels.
   // Resolve display metadata by the stable ID, keeping the saved JSON unchanged.
