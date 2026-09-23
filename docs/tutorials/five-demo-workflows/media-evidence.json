@@ -1,0 +1,85 @@
+{
+  "scope": "Existing edited cuts and recorded app screenshots. No new model inference or human review asserted. Videos are local companion files, not public downloads.",
+  "items": [
+    {
+      "id": "01-bond-pricing",
+      "cut": "01-bond-pricing-FINAL.mp4",
+      "duration_seconds": 70.6,
+      "cut_sha256": "67e9232a60af40713cb1bbc4133f6ceb1217f7fab47adad7750ba985a59f83d7",
+      "cut_frame": {
+        "path": "images/01-bond-pricing-cut.png",
+        "timestamp_seconds": 51,
+        "sha256": "4dee8680bc4720d517c6679fe65bc597b5146d261c0d78fd4f5e995c856826e2"
+      },
+      "app_screenshot": {
+        "path": "images/01-bond-pricing-app.png",
+        "source": "tools/design-review/shots/93-bond-image-workflow.desktop.png",
+        "sha256": "f448d2d1f765181d85974a322f7e015a171b1a080482c20e8a894bbea80749be"
+      }
+    },
+    {
+      "id": "02-financial-diligence",
+      "cut": "02-financial-diligence-FINAL.mp4",
+      "duration_seconds": 85.4,
+      "cut_sha256": "ae30df925fd335eef8ea25a57be8652c2e4282170389ac9f56ac00dfbf81b0a6",
+      "cut_frame": {
+        "path": "images/02-financial-diligence-cut.png",
+        "timestamp_seconds": 50,
+        "sha256": "b509aa8ee28b2b8f819d84da2ed037de24ee72226aaa7882c8e98d13f0803458"
+      },
+      "app_screenshot": {
+        "path": "images/02-financial-diligence-app.png",
+        "source": "tools/design-review/shots/91-native-diligence-financial.desktop.png",
+        "sha256": "6e714759c549145403e994429c186302d95dce9966edc460135215f61562439b"
+      }
+    },
+    {
+      "id": "03-legal-review",
+      "cut": "03-legal-review-FINAL.mp4",
+      "duration_seconds": 48.066666,
+      "cut_sha256": "eec316dd0a822f8e92e994a71d08e4e119d254472067ad52e2cb3b55b9e943a3",
+      "cut_frame": {
+        "path": "images/03-legal-review-cut.png",
+        "timestamp_seconds": 35,
+        "sha256": "d11d489dda5b18dbdd7eddeb5d93f7c05d6afc3e64a72776ec08b0330f0bbd23"
+      },
+      "app_screenshot": {
+        "path": "images/03-legal-review-app.png",
+        "source": "tools/design-review/shots/91-native-diligence-legal.desktop.png",
+        "sha256": "85abf7569ea1d83b8e8990621677f6cd8cd055d3cb2b3569fdb7cd9e6e3844d7"
+      }
+    },
+    {
+      "id": "04-financial-error",
+      "cut": "04-financial-error-FINAL.mp4",
+      "duration_seconds": 65.8,
+      "cut_sha256": "f11f659dcf62b0c6ffb3ab2a7d3f8006816f6cf35bf2558e2698837b1c0aeceb",
+      "cut_frame": {
+        "path": "images/04-financial-error-cut.png",
+        "timestamp_seconds": 39,
+        "sha256": "7244e4c32ec389aead1c9cde7222ea6d98e55bccf84c46c03c75ed468cff5db0"
+      },
+      "app_screenshot": {
+        "path": "images/04-financial-error-app.png",
+        "source": "tools/design-review/shots/92-financial-activation-window.desktop.png",
+        "sha256": "3343cb5ccdc0bae0a3b758aee48f359a69c6cf01e234049c9e31a615b05a4167"
+      }
+    },
+    {
+      "id": "05-legal-error",
+      "cut": "05-legal-error-FINAL.mp4",
+      "duration_seconds": 52.8,
+      "cut_sha256": "c6bef2e01c9547de6df060691b9249b91d9e41452f4e02d1adc142aacc77b49a",
+      "cut_frame": {
+        "path": "images/05-legal-error-cut.png",
+        "timestamp_seconds": 48,
+        "sha256": "9771dc87865ece9ccc1ba2fdc0ff689e4169e513c960acf457e9c52b3f8231f8"
+      },
+      "app_screenshot": {
+        "path": "images/05-legal-error-app.png",
+        "source": "tools/design-review/shots/92-legal-activation-window.desktop.png",
+        "sha256": "21c19debe66afccd8870bb428429e5f2744407976596190c2734823ebc53c3b7"
+      }
+    }
+  ]
+}
