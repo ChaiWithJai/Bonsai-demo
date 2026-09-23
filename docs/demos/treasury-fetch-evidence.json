@@ -1,0 +1,28 @@
+{
+  "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2026",
+  "fetched_at": "2026-09-23T18:16:23.381224+00:00",
+  "sha256": "fd9bcf2168a70ca6ff18154fd65062d8ed6d0f041b2373cfb7347fe064a8ae90",
+  "series": "daily_treasury_par_yield_curve",
+  "rate_unit": "percent",
+  "latest_observation": {
+    "observation_date": "2026-09-22",
+    "yields_percent": {
+      "BC_1MONTH": 3.97,
+      "BC_2MONTH": 4.09,
+      "BC_3MONTH": 4.16,
+      "BC_4MONTH": 4.26,
+      "BC_6MONTH": 4.26,
+      "BC_1YEAR": 4.43,
+      "BC_2YEAR": 4.71,
+      "BC_3YEAR": 4.81,
+      "BC_5YEAR": 4.83,
+      "BC_7YEAR": 4.89,
+      "BC_10YEAR": 4.96,
+      "BC_20YEAR": 5.33,
+      "BC_30YEAR": 5.29
+    }
+  },
+  "usage": "Daily par-yield context; not spot rates or an executable bond quote",
+  "observation_count": 182,
+  "verification_scope": "Live Treasury acquisition and parsing only; UI and Gateway not yet integrated"
+}
