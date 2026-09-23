@@ -1,0 +1,57 @@
+{
+  "id": "02-financial-diligence-fa",
+  "title": "Financial diligence \u00b7 Farsi Dolly narration",
+  "audio": ".cache/demos/narration/02-financial-diligence-fa/narration.mp3",
+  "audio_sha256": "0d370da3f215f6bb5b0cd5ddaf7f10f027230300240158940758ce3ae3ca88f0",
+  "timing_basis": "Farsi-hinted ASR word and sentence starts; captions and pronunciation unreviewed",
+  "scenes": [
+    {
+      "at": 0,
+      "source": ".cache/demos/visual-edits/cards/financial-source.png",
+      "source_sha256": "accd48fdb33062bed151e27280c62b7a40eb9989a9a16c4d1f1b7847fa8cb48b",
+      "start": 0,
+      "length": 10,
+      "label": "Synthetic lender evidence"
+    },
+    {
+      "at": 11.92,
+      "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+      "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+      "start": 0,
+      "length": 5,
+      "label": "Attach the synthetic documents"
+    },
+    {
+      "at": 19.32,
+      "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+      "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+      "start": 39,
+      "length": 17,
+      "label": "Inspect definitions and leverage calculation"
+    },
+    {
+      "at": 41.66,
+      "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+      "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+      "start": 58,
+      "length": 4,
+      "label": "Keep sources beside the answer"
+    },
+    {
+      "at": 45.34,
+      "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+      "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+      "start": 73,
+      "length": 5,
+      "label": "Original erroneous dollar claim retained"
+    },
+    {
+      "at": 53.82,
+      "source": ".cache/demos/visual-edits/cards/financial-proof.png",
+      "source_sha256": "693bd43dcc63dd87416f76f220aa4fc8a6bba46e0f927a29b33e40c37dfa3dd2",
+      "start": 0,
+      "length": 15,
+      "label": "Checked correction \u00b7 review required"
+    }
+  ]
+}

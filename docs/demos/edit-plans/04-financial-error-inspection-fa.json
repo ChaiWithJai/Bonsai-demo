@@ -1,0 +1,65 @@
+{
+  "id": "04-financial-error-inspection-fa",
+  "title": "Financial error inspection \u00b7 Farsi Dolly narration",
+  "audio": ".cache/demos/narration/04-financial-error-inspection-fa/narration.mp3",
+  "audio_sha256": "9c8064c545cca0ac35c799eb0c4ab24a5f6aaa84f5ce5226ec78890f58ce1aab",
+  "timing_basis": "Farsi-hinted ASR word and sentence starts; captions and pronunciation unreviewed",
+  "scenes": [
+    {
+      "at": 0,
+      "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+      "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+      "start": 73,
+      "length": 5,
+      "label": "Original erroneous claim"
+    },
+    {
+      "at": 6.2,
+      "source": ".cache/demos/visual-edits/cards/financial-proof.png",
+      "source_sha256": "693bd43dcc63dd87416f76f220aa4fc8a6bba46e0f927a29b33e40c37dfa3dd2",
+      "start": 0,
+      "length": 8,
+      "label": "Check against supplied evidence"
+    },
+    {
+      "at": 17.08,
+      "source": "tools/design-review/shots/92-financial-activation-window.desktop.png",
+      "source_sha256": "3343cb5ccdc0bae0a3b758aee48f359a69c6cf01e234049c9e31a615b05a4167",
+      "start": 0,
+      "length": 6,
+      "label": "Inspect the saved run"
+    },
+    {
+      "at": 23.18,
+      "source": ".cache/demos/financial-activation-inspection-20260923/raw-screen-v2.webm",
+      "source_sha256": "d4dfeee0ef8a2ae2604bfa16867c02d0760357e50c66143193ba1590e1625d15",
+      "start": 0,
+      "length": 3,
+      "label": "Measured diagnostic interaction"
+    },
+    {
+      "at": 32.1,
+      "source": "tools/design-review/shots/92-financial-activation-window.desktop.png",
+      "source_sha256": "3343cb5ccdc0bae0a3b758aee48f359a69c6cf01e234049c9e31a615b05a4167",
+      "start": 0,
+      "length": 6,
+      "label": "Inspect token positions and vectors"
+    },
+    {
+      "at": 37.68,
+      "source": ".cache/demos/visual-edits/cards/diagnostic.png",
+      "source_sha256": "95dc1a48adb7ce9de17360879344bda42fc892d86126b5fe9aaf09ed89062159",
+      "start": 0,
+      "length": 8,
+      "label": "New measurements \u00b7 not original activations"
+    },
+    {
+      "at": 44.86,
+      "source": ".cache/demos/visual-edits/cards/financial-proof.png",
+      "source_sha256": "693bd43dcc63dd87416f76f220aa4fc8a6bba46e0f927a29b33e40c37dfa3dd2",
+      "start": 0,
+      "length": 12,
+      "label": "Check the next answer against evidence"
+    }
+  ]
+}

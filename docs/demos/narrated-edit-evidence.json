@@ -1,13 +1,25 @@
 {
   "status": "narrated_review_drafts",
-  "count": 13,
+  "count": 17,
   "human_reviewed": false,
   "cuts": [
+    {
+      "id": "04-financial-error-inspection-fa",
+      "duration_seconds": 59.92,
+      "sha256": "1430bcec51782d730f69035b4ca7c938586be0f1c5b0f3c4d9f6de89357e4461",
+      "timing_basis": "Farsi-hinted ASR word and sentence starts; captions and pronunciation unreviewed"
+    },
     {
       "id": "04-financial-error-inspection-fr",
       "duration_seconds": 57.68,
       "sha256": "280f0dc64b8138e69fab825fc6885d95c7b308f5405c9de8ca08ed552e4ff9b3",
       "timing_basis": "French-hinted ASR sentence starts; analyst scene selection; review pending"
+    },
+    {
+      "id": "05-legal-error-inspection-fa",
+      "duration_seconds": 66.16,
+      "sha256": "5d25af4652c8b3e51d29912c58cacc1b34710122c30c75f2e7255dfe244327a7",
+      "timing_basis": "Farsi-hinted ASR word and sentence starts; captions and pronunciation unreviewed"
     },
     {
       "id": "01-bond-learning-fa",
@@ -76,10 +88,22 @@
       "timing_basis": "French-hinted ASR sentence starts; automatic captions contain errors and are not approved; analyst scene selection"
     },
     {
+      "id": "02-financial-diligence-fa",
+      "duration_seconds": 66.705193,
+      "sha256": "eeb34edb8d9c184c3ebb9c73a505ebe6720b83b2be5242efbb651d683f064e43",
+      "timing_basis": "Farsi-hinted ASR word and sentence starts; captions and pronunciation unreviewed"
+    },
+    {
       "id": "03-legal-diligence-fr",
       "duration_seconds": 64.36,
       "sha256": "d6957d9e6693ab6a94027ae61284ed3e66a68aa12e101fa2b430450cd5956112",
       "timing_basis": "French-hinted ASR sentence starts; automatic captions contain errors and are not approved; analyst scene selection"
+    },
+    {
+      "id": "03-legal-diligence-fa",
+      "duration_seconds": 67.227687,
+      "sha256": "fe73517ee8523d5b31ab806e47fb45d316a0b2fd3671a0bec1a3581bf9c222bd",
+      "timing_basis": "Farsi-hinted ASR word and sentence starts; captions and pronunciation unreviewed"
     }
   ]
 }
