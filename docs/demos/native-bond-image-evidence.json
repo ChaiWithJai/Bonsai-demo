@@ -1,0 +1,210 @@
+{
+  "url": "http://127.0.0.1:5257/#/chat/841ea2ac-598b-430f-956c-a89159c7691e",
+  "interpretation": "Reasoning\nToggle content\n\nYour first thought is off in both numbers:\n\nPayment count: 10 years \u00d7 2 payments/year = 20 periods, not 10.\nCoupon amount: 5% of 1,000 = 50 per year, so each semiannual payment is 25, not 50.\n\nMissing assumption: the yield to maturity (annual discount rate). Without it, we can't discount the 20 payments of 25 plus the final 1,000 face value to get a price.\n\nReply to confirm, and tell me the annual yield you'd like to use \u2014 e.g., 6% \u2014 and I'll calculate the bond price.\n\nbonsai-ui-public-ternary-bonsai2\n27B\n460 tokens\n19s\n23.37 t/s",
+  "result": {
+    "status": "completed",
+    "result": {
+      "price": 1000.0000000000014,
+      "macaulay_duration_years": 7.989445671393992,
+      "modified_duration_years": 7.794581142823407,
+      "dv01_approx": 0.7794581142823419,
+      "convention": "Regular coupon-date valuation; annual nominal yield compounded at payment frequency",
+      "rate_unit": "annual_decimal",
+      "price_unit": "same currency as face",
+      "calculation_version": "coupon-date-v1",
+      "payment_count": 20,
+      "payments_preview": [
+        {
+          "period": 1,
+          "years": 0.5,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.9756097560975611,
+          "present_value": 24.39024390243903
+        },
+        {
+          "period": 2,
+          "years": 1,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.9518143961927426,
+          "present_value": 23.795359904818564
+        },
+        {
+          "period": 3,
+          "years": 1.5,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.928599410919749,
+          "present_value": 23.214985272993722
+        },
+        {
+          "period": 4,
+          "years": 2,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.9059506447997552,
+          "present_value": 22.64876611999388
+        },
+        {
+          "period": 5,
+          "years": 2.5,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.8838542876095173,
+          "present_value": 22.096357190237935
+        },
+        {
+          "period": 6,
+          "years": 3,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.8622968659605047,
+          "present_value": 21.557421649012618
+        },
+        {
+          "period": 7,
+          "years": 3.5,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.8412652350834193,
+          "present_value": 21.031630877085483
+        },
+        {
+          "period": 8,
+          "years": 4,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.8207465708130921,
+          "present_value": 20.518664270327303
+        },
+        {
+          "period": 9,
+          "years": 4.5,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.8007283617688704,
+          "present_value": 20.01820904422176
+        },
+        {
+          "period": 10,
+          "years": 5,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.7811984017257273,
+          "present_value": 19.529960043143184
+        },
+        {
+          "period": 11,
+          "years": 5.5,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.7621447821714413,
+          "present_value": 19.053619554286033
+        },
+        {
+          "period": 12,
+          "years": 6,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.7435558850453087,
+          "present_value": 18.588897126132718
+        },
+        {
+          "period": 13,
+          "years": 6.5,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.7254203756539598,
+          "present_value": 18.135509391348993
+        },
+        {
+          "period": 14,
+          "years": 7,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.7077271957599608,
+          "present_value": 17.69317989399902
+        },
+        {
+          "period": 15,
+          "years": 7.5,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.6904655568389862,
+          "present_value": 17.261638920974658
+        },
+        {
+          "period": 16,
+          "years": 8,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.67362493350145,
+          "present_value": 16.84062333753625
+        },
+        {
+          "period": 17,
+          "years": 8.5,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.6571950570745855,
+          "present_value": 16.429876426864638
+        },
+        {
+          "period": 18,
+          "years": 9,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.641165909341059,
+          "present_value": 16.029147733526475
+        },
+        {
+          "period": 19,
+          "years": 9.5,
+          "coupon": 25,
+          "principal": 0,
+          "cash_flow": 25,
+          "discount_factor": 0.6255277164303016,
+          "present_value": 15.638192910757539
+        },
+        {
+          "period": 20,
+          "years": 10,
+          "coupon": 25,
+          "principal": 1000,
+          "cash_flow": 1025,
+          "discount_factor": 0.6102709428588308,
+          "present_value": 625.5277164303016
+        }
+      ],
+      "preview_truncated": false,
+      "full_schedule_location": "/api/workspace/learning/30918a721bee4a7aa01f99bd0a235d68"
+    },
+    "mlflow_url": "http://127.0.0.1:5210/#/experiments/35/runs/2b12b850dc104fe684c9d418fca878b0",
+    "saved_evidence_url": "/api/workspace/learning/30918a721bee4a7aa01f99bd0a235d68"
+  },
+  "scope": "Synthetic image followed by explicit automated confirmation; not a human review label",
+  "source_image_sha256": "f803df9c8c753f78b21efcd148f3e7527ddcf63519bad6d40184535bb7895e34",
+  "source_svg": "evals/demos/bond/worksheet.svg",
+  "recording": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+  "recording_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+  "verification_scope": "Native image attachment, proposed correction and missing yield, explicit automated confirmation, calculator call, inline yield scenario. Treasury tested separately."
+}

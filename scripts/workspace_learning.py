@@ -59,7 +59,7 @@ class LearningWorkstreams:
     def act(self, key, payload):
         folder = self.folder(key)
         operation = payload.get('operation')
-        if operation not in ('calculate_bond', 'fetch_treasury', 'evaluate_evidence', 'interpret_bond', 'review_diligence', 'revalidate_diligence'):
+        if operation not in ('calculate_bond', 'fetch_treasury', 'evaluate_evidence', 'interpret_bond', 'review_diligence', 'revalidate_diligence', 'mayor_exercise', 'grade_mayor_exercise'):
             raise ValueError('Unsupported learning action')
         if operation == 'revalidate_diligence':
             parent = payload.get('parent_action_id')
@@ -106,6 +106,12 @@ class LearningWorkstreams:
             try:
                 if operation == 'calculate_bond':
                     result = computed
+                elif operation == 'mayor_exercise':
+                    from mayor_bond_exercises import exercise
+                    result = exercise(payload.get('era'))
+                elif operation == 'grade_mayor_exercise':
+                    from mayor_bond_exercises import grade
+                    result = grade(payload.get('era'), payload.get('answer'), payload.get('unit'))
                 elif operation == 'fetch_treasury':
                     result = fetch_yields(payload.get('year'), target / 'treasury')
                 elif operation == 'interpret_bond':

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+<rect width="1200" height="760" fill="#fffdf7"/>
+<g font-family="Arial, sans-serif" fill="#24342b">
+<text x="70" y="75" font-size="22" fill="#73766b">SYNTHETIC DEMO WORKSHEET · NOT JAI'S HANDWRITING</text>
+<text x="70" y="155" font-size="48" font-weight="bold">Where does this bond's price come from?</text>
+<text x="70" y="240" font-size="34">Face value = 1,000</text>
+<text x="70" y="305" font-size="34">Annual coupon = 5%</text>
+<text x="70" y="370" font-size="34">10 years remaining · pays twice per year</text>
+<text x="70" y="435" font-size="34">Valuation date is a coupon date</text>
+<text x="70" y="520" font-size="34">My first thought: 10 payments of 50?</text>
+<text x="70" y="590" font-size="34" fill="#915746">Check my payment count. What else do we need?</text>
+<text x="70" y="680" font-size="24" fill="#73766b">Learning example only. No yield assumption has been supplied.</text>
+</g></svg>

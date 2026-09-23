@@ -26,15 +26,25 @@ def integrate_chat_features(original):
     greeting = '<ChatScreenGreeting {isEmpty} />'
     if greeting not in original:
         raise ValueError('Upstream greeting integration changed; review before building')
-    original = original.replace('<script lang="ts">', '<script lang="ts">\n\timport { mcpStore as bonsaiMcpStore } from "$lib/stores";', 1)
+    original = original.replace('<script lang="ts">', '<script lang="ts">\n\timport { mcpStore as bonsaiMcpStore } from "$lib/stores";\n\timport { ReasoningEffort as BonsaiReasoningEffort } from "$lib/enums";', 1)
     original = original.replace('</script>', '''
     async function chooseBonsaiFeature(prompt: string) {
-        const id = 'bonsai-chat-tools-' + window.location.port;
-        if (!bonsaiMcpStore.getServers().some(server => server.id === id)) {
-            bonsaiMcpStore.addServer({id, name: 'Bonsai chat tools', enabled: true,
-                url: window.location.origin + '/api/bonsai-tools', useProxy: false});
+        const tools = [{key: 'bonsai-chat-tools', name: 'Bonsai chat tools', path: '/api/bonsai-tools'}];
+        if (prompt.includes('bond math')) tools.push(
+            {key: 'treasury-insights', name: 'Treasury Insights', path: '/api/treasury-insights'},
+            {key: 'gb10-vision', name: 'GB10 Vision', path: '/api/gb10-vision'});
+        for (const tool of tools) {
+            const id = tool.key + '-' + window.location.port;
+            if (!bonsaiMcpStore.getServers().some(server => server.id === id)) {
+                bonsaiMcpStore.addServer({id, name: tool.name, enabled: true,
+                    url: window.location.origin + tool.path, useProxy: false});
+            }
+            await conversationsStore.preferences.setMcpServerOverride(id, true);
         }
-        await conversationsStore.preferences.setMcpServerOverride(id, true);
+        if (prompt.includes('bond math') && conversationsStore.preferences.getReasoningEffort() === BonsaiReasoningEffort.DEFAULT) {
+            // Set this pending chat, without persisting a global preference.
+            conversationsStore.preferences.pendingReasoningEffort = BonsaiReasoningEffort.LOW;
+        }
         initialMessage = prompt;
     }
 </script>''', 1)

@@ -76,6 +76,13 @@ class RecordingUITest(unittest.TestCase):
             response = conn.getresponse()
             return response.status, response.read()
 
+    def test_camera_and_treasury_routes_reject_cross_site(self):
+        for route in ('/api/gb10-vision', '/api/treasury-insights'):
+            status, _ = self.call('POST', route, '{}', {'Origin': 'https://example.invalid'})
+            self.assertEqual(status, 403)
+            status, _ = self.call('GET', route)
+            self.assertEqual(status, 405)
+
     def test_activation_replay_rejects_cross_site(self):
         status, _ = self.call("POST", "/api/activation-replay", '{}', {'Origin': 'https://example.invalid'})
         self.assertEqual(status, 403)

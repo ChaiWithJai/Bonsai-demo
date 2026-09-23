@@ -16,7 +16,7 @@ class ChatToolsTest(unittest.TestCase):
         value = self.request('initialize', {'protocolVersion': '2025-03-26'})
         self.assertEqual(value['result']['protocolVersion'], '2025-03-26')
         names = [x['name'] for x in self.request('tools/list')['result']['tools']]
-        self.assertEqual(names, ['calculate_bond', 'treasury_yields', 'jev_evidence_check'])
+        self.assertEqual(names, ['calculate_bond', 'treasury_yields', 'jev_evidence_check', 'mayor_exercise', 'grade_mayor_exercise', 'prepare_mayor_report'])
         self.assertIsNone(dispatch(self.service, {'jsonrpc': '2.0', 'method': 'notifications/initialized'}))
 
     def test_calculation_is_saved_and_not_a_human_label(self):

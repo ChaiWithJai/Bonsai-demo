@@ -34,11 +34,13 @@ def price_bond(face, coupon_rate, annual_yield, periods, frequency=2):
         macaulay=math.fsum(row['years']*row['present_value'] for row in payments)/price
         modified=macaulay/base
         dv01=price*modified*.0001
-        if not all(math.isfinite(v) for v in (macaulay,modified,dv01)):
+        convexity=math.fsum(row["period"]*(row["period"]+1)*row["present_value"] for row in payments)/(price*frequency**2*base**2)
+        if not all(math.isfinite(v) for v in (macaulay,modified,dv01,convexity)):
             raise ValueError('Inputs exceed the finite calculation range')
     except (OverflowError,ZeroDivisionError) as exc:
         raise ValueError('Inputs exceed the finite calculation range') from exc
     return {'price':price,'payments':payments,'macaulay_duration_years':macaulay,
             'modified_duration_years':modified,'dv01_approx':dv01,
+            'convexity_years_squared':convexity,
             'convention':'Regular coupon-date valuation; annual nominal yield compounded at payment frequency',
             'rate_unit':'annual_decimal','price_unit':'same currency as face','calculation_version':'coupon-date-v1'}

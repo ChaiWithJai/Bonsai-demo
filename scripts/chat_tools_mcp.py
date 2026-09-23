@@ -20,13 +20,34 @@ TOOLS = [
 ]
 
 
+for name, description, extra in [
+    ('mayor_exercise', 'Get a synthetic bond exercise for a mayoral era. Confirm assumptions in chat, fetch Treasury context separately, then quiz the user without revealing the solution.', {}),
+    ('grade_mayor_exercise', 'Check a USER-SUBMITTED numeric answer and its units for a mayor exercise. Do not call to reveal an answer before the user attempts it. Does not grade the reasoning.', {'answer': {'type': 'number'}, 'unit': {'type': 'string', 'enum': ['USD', 'years', 'USD/bp', 'years^2']}})
+]:
+    properties = {'era': {'type': 'string', 'enum': ['giuliani', 'bloomberg', 'de_blasio', 'adams', 'mamdani']}, **extra}
+    TOOLS.append({'name': name, 'description': description, 'inputSchema': {'type': 'object', 'properties': properties, 'required': list(properties), 'additionalProperties': False}})
+
+TOOLS.append({'name': 'prepare_mayor_report', 'description': 'Prepare the five-mayor bond learning report: fetch dated official Treasury context for Giuliani, Bloomberg, de Blasio, Adams and Mamdani and return explicit synthetic exercise assumptions. Explain the evidence, then ask one exercise at a time without revealing answers. This retrieves data but does not capture a camera frame.', 'inputSchema': {'type': 'object', 'properties': {}, 'required': [], 'additionalProperties': False}})
+
+
 def call_tool(service, name, args):
     schemas = {tool['name']: tool['inputSchema'] for tool in TOOLS}
     if name not in schemas or not isinstance(args, dict) or set(args) != set(schemas[name]['required']):
         raise ValueError('Unknown tool or invalid arguments')
+    if name == 'prepare_mayor_report':
+        from mayor_bond_exercises import ERAS, exercise
+        from treasury_insights_mcp import call as treasury_call
+        rows = []
+        for era in ERAS:
+            task = exercise(era)
+            rows.append({'exercise': task, 'treasury': treasury_call(service, 'get_curve', {'date': task['context_date']})})
+        return {'content': [{'type': 'text', 'text': json.dumps({'eras': rows, 'review_status': 'unreviewed',
+                'instructions': 'Create a concise report separating sourced Treasury observations from synthetic exercise inputs. Link sources. Ask only the first exercise and wait for the user answer.'}, allow_nan=False)}], 'isError': False}
     kind = 'financial_diligence' if name == 'jev_evidence_check' else 'bond_math'
     session = service.create(kind)
-    if name == 'calculate_bond':
+    if name in ('mayor_exercise', 'grade_mayor_exercise'):
+        payload = {'operation': name, **args, 'actor': 'native_chat_tool'}
+    elif name == 'calculate_bond':
         payload = {'operation': 'calculate_bond', 'inputs': args, 'confirmed': True,
                    'actor': 'native_chat_tool', 'confirmation_scope': 'model supplied inputs; not a human review label'}
     elif name == 'treasury_yields':

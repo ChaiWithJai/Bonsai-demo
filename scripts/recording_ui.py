@@ -196,7 +196,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlsplit(self.path).path
-        if path == '/api/bonsai-tools':
+        if path in ('/api/bonsai-tools', '/api/gb10-vision', '/api/treasury-insights'):
             return self.respond(405, b'Stateless MCP uses POST', 'text/plain')
         if path.startswith('/api/workspace'):
             return self.workspace_request()
@@ -273,7 +273,7 @@ class Handler(BaseHTTPRequestHandler):
     do_HEAD = do_GET
 
     def do_POST(self):
-        if urlsplit(self.path).path == '/api/bonsai-tools':
+        if urlsplit(self.path).path in ('/api/bonsai-tools', '/api/gb10-vision', '/api/treasury-insights'):
             return self.chat_tools_request()
         if urlsplit(self.path).path.startswith('/api/workspace'):
             return self.workspace_request()
@@ -302,7 +302,14 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, TypeError):
             return self.respond(400, b'Invalid MCP request', 'text/plain')
         from chat_tools_mcp import dispatch
-        result = dispatch(service, request)
+        if urlsplit(self.path).path == '/api/gb10-vision':
+            from gb10_vision_bridge import dispatch as vision_dispatch
+            result = vision_dispatch(request)
+        elif urlsplit(self.path).path == '/api/treasury-insights':
+            from treasury_insights_mcp import dispatch as treasury_dispatch
+            result = treasury_dispatch(service, request)
+        else:
+            result = dispatch(service, request)
         if result is None:
             return self.respond(202, b'', 'application/json')
         return self.respond(200, json.dumps(result).encode(), 'application/json')

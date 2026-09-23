@@ -1,0 +1,39 @@
+{
+  "request_id": "3a84757939f84e3ab18a751892f210cf",
+  "trace_id": "tr-0d3161b43448855acb4d7e744d14f63b",
+  "session": "3c621b8e-4abb-4a9d-ad7e-19a7aeea7b22",
+  "failure": "No visible report within 180 seconds; test disconnected, then owned stream explicitly cancelled",
+  "reasoning_budget_in_request": null,
+  "reasoning_control": true,
+  "elapsed_ms": 180181.24103546143,
+  "repair": "Bond feature selects Low (512 tokens) when reasoning preference is Default; explicit choices are preserved",
+  "validation": {
+    "status": "passed_report_and_incorrect_answer_check",
+    "session": "bbb9a520-5605-45ae-b12d-698073f34f88",
+    "traces": [
+      {
+        "request_id": "9011fa73a56441ada5989561afc5ec88",
+        "trace_id": "tr-05ba1395cc07ef331a7617fa191818c1",
+        "elapsed_ms": 65274.61361885071,
+        "complete": true,
+        "thinking_budget_tokens": 512
+      },
+      {
+        "request_id": "a97600f97e8b44ecb7ba96a57446292c",
+        "trace_id": "tr-d03e507b16e7d6c43123eb4dcf7fe07b",
+        "elapsed_ms": 10090.94500541687,
+        "complete": true,
+        "thinking_budget_tokens": 512
+      },
+      {
+        "request_id": "f954a4418ff24128a7c6c06853dc0622",
+        "trace_id": "tr-d631042a3bd1fddf719e76a2fe10653b",
+        "elapsed_ms": 50209.431171417236,
+        "complete": true,
+        "thinking_budget_tokens": 512
+      }
+    ],
+    "grading_run": "http://127.0.0.1:5210/#/experiments/35/runs/d4a388cce9c94a56acaf14dff9c83188",
+    "scope": "automated development check; not a human-reviewed example"
+  }
+}

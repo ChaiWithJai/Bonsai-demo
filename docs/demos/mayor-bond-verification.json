@@ -1,0 +1,22 @@
+{
+  "camera": "Logitech BRIO",
+  "device": "/dev/video0",
+  "capture_passed": true,
+  "native_chat_image_passed": true,
+  "ocr_review_status": "unreviewed; some handwriting transcribed too confidently",
+  "image_published": false,
+  "tests": {
+    "python": 361,
+    "subtests": 62,
+    "new_chat_desktop_mobile": "passed",
+    "native_camera": "passed",
+    "native_report_and_grading": "passed",
+    "native_report_wrapper": "passed; five dated observations returned, report generated, first exercise asked"
+  },
+  "limitations": [
+    "Camera is not calibrated",
+    "Synthetic exercise terms are not NYC bond terms",
+    "Numerical checking is not formal proof"
+  ],
+  "wrapper_session": "cedab345-ba5b-4eae-ad9a-8a6abd24443d"
+}
