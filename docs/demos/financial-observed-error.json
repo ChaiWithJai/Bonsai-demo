@@ -1,0 +1,30 @@
+{
+  "case": "financial-native-attachments-20260923",
+  "classification": "Observed numerical error, analyst-verified arithmetic; not a human review label",
+  "model_answer": "Reasoning\nToggle content\nConclusion: No \u2014 the company does not satisfy the 3.50x leverage test under the lender's definition.\nCalculation under the lender-approved definition\nItem\tAmount (USD m)\nGross funded debt\t84\nTotal cash\t24\nRestricted cash (not nettable)\t(9)\nEligible (unrestricted) cash\t15\nNet debt (84 \u2212 15)\t69\nReported LTM EBITDA\t18\nLender-approved restructuring addback\t1\nApproved EBITDA (18 + 1)\t19\nNet leverage (69 \u00f7 19)\t\u2248 3.63x\n\n3.63x > 3.50x maximum \u2192 covenant is breached.\n\nManagement claim vs. controlling source\nMeasure\tManagement (22 Sep 2026)\tLender-approved (23 Sep 2026)\nEligible cash\t24 (all netted)\t15 (9 restricted excluded)\nNet debt\t60\t69\nEBITDA\t22 (18 + 4 requested)\t19 (18 + 1 approved)\nLeverage\t\u2248 2.73x \u2014 \"satisfied\"\t\u2248 3.63x \u2014 not satisfied\n\nManagement's conclusion rests on two items the lender did not accept: (1) netting restricted cash and (2) the full 4 of requested addbacks. Management's own summary concedes the addback request \"is pending lender review. This summary does not constitute lender consent.\"\n\nSupporting quotes\n\nLender review, 23 September 2026:\n\n\"Of total cash of 24, 9 is restricted and cannot be netted against debt. Only unrestricted cash may reduce funded debt.\"\n\n\"The lender approves only 1 of the 4 requested restructuring addbacks. The remaining 3 is not approved for this measurement date.\"\n\n\"Use the lender-approved definition for the compliance calculation. A requested addback is not an approved addback.\"\n\n\"The maximum permitted net leverage ratio is 3.50 times.\"\n\nBoth documents share the measurement date (30 June 2026), so no cash from another date enters the test.\n\nManagement summary, 22 September 2026 (the claim under review):\n\n\"Gross funded debt is 84. Total cash is 24. Management reports net debt of 60.\"\n\n\"Management adds back 4 of restructuring costs, giving adjusted EBITDA of 22 and net leverage of approximately 2.73 times. Management concludes that the 3.50 times leverage test is satisfied.\"\n\n\"The addback request is pending lender review. This summary does not constitute lender consent.\"\n\nBottom line\n\nUnder the lender's controlling definition, net leverage is 3.63x against a 3.50x cap \u2014 a breach of roughly 0.13x (a breach margin of about 95 of EBITDA, or USD 95 million of net debt above the 66.5 million implied by 3.50 \u00d7 19). Management's 2.73x figure overstates eligible cash by 9 (restricted) and overstates EBITDA by 3 (unapproved addbacks); because the addbacks are \"pending\" and only 1 is approved, the 4 total addback is not available for compliance.\n\nbonsai-ui-public-ternary-bonsai2\n27B\n1,715 tokens\n1min 13s\n23.23 t/s",
+  "source_files": [
+    {
+      "path": "evals/demos/financial/lender-review.txt",
+      "sha256": "b58e3b679ea95218aafeb591ad7c8e0ec1c3f8f50f1ba9c8eb188eddf38e5b39"
+    },
+    {
+      "path": "evals/demos/financial/management-summary.txt",
+      "sha256": "d07fe80c1f2f2be9040de3fbdd1da44a6342799d6a9294543c70169612c764c2"
+    }
+  ],
+  "calculation": {
+    "net_debt": 69,
+    "approved_ebitda": 19,
+    "maximum_leverage": 3.5,
+    "maximum_net_debt": 66.5,
+    "excess_net_debt": 2.5,
+    "unit": "USD millions"
+  },
+  "failure": "The final paragraph claims USD 95 million of excess net debt. The earlier calculation of 3.63x is correct.",
+  "request_id": "d5b10b06ea8b4b7fa168e7f21357af33",
+  "trace_id": "tr-5613e17992e5f687f4189bc995a6a3ac",
+  "original_exchange": ".cache/workspace-live-v3-20260921/exchanges/d5b10b06ea8b4b7fa168e7f21357af33",
+  "activation_status": "Not captured. Existing replay rejects macOS. Standalone capture executable builds but is untested on this host.",
+  "prompt": "Review these two synthetic development documents. Does the company satisfy the stated leverage covenant under the lender definition? Calculate eligible cash, net debt, approved EBITDA and leverage. Compare the management claim with the controlling source. Quote the source passages that support your conclusion. Use only these attachments. Do not use cloud tools.",
+  "evaluation_scope": "One synthetic development example; no population error-rate claim"
+}

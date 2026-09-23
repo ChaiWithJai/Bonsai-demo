@@ -1,0 +1,15 @@
+SYNTHETIC DEMONSTRATION DOCUMENT. Not a real contract or legal advice.
+Harbor Research / Cedar Systems — signed agreement excerpts, 20 September 2026.
+
+Section 8.1: Except as provided in Section 8.2, each party's aggregate liability is limited
+to the fees paid in the twelve months before the event giving rise to the claim.
+Section 8.2: The limit in Section 8.1 does not apply to fraud or willful misconduct.
+Section 8.3: No inference about the treatment of other categories of claims should be made
+from excerpts that have not been supplied.
+
+Section 11.1: Customer data will be deleted from active systems within thirty days after termination.
+Section 11.2: Encrypted disaster-recovery backups may be retained for up to ninety days after termination.
+Access to those backups is limited to disaster recovery and legal preservation obligations.
+
+Section 12.1: A material service breach permits termination only after written notice and
+failure to cure within thirty days. A service interruption is not automatically a material breach.

@@ -2210,3 +2210,51 @@ test.describe('Native chat tool execution evidence',()=>{
   await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/87-native-chat-bond-tool.'+info.project.name+'.png')});
  });
 });
+
+test('Native New chat fetches dated Treasury evidence',async({page},info)=>{
+ test.setTimeout(180000);
+ await page.goto('/#/');
+ await page.getByRole('button',{name:'Work through bond math',exact:true}).click();
+ const responsePromise=page.waitForResponse(response=>{
+  if(!response.url().endsWith('/api/bonsai-tools') || response.request().method()!=='POST') return false;
+  try {const request=response.request().postDataJSON();return request.method==='tools/call' && request.params.name==='treasury_yields';}catch{return false;}
+ },{timeout:120000});
+ await page.locator('.conversation-chat-form textarea').fill('Fetch the official 2026 Treasury yields using treasury_yields. Report the latest observation date, retrieval date, and ten-year par yield with its source link. Keep this as market context, without changing any bond assumptions. This is a synthetic development demo.');
+ await page.getByRole('button',{name:'Send',exact:true}).click();
+ await page.getByRole('button',{name:'Allow once',exact:true}).click({timeout:60000});
+ const rpc=await (await responsePromise).json();
+ expect(rpc.result.isError).toBe(false);
+ const output=JSON.parse(rpc.result.content[0].text);
+ expect(output.result.observation_count).toBeGreaterThan(0);
+ expect(output.result.latest_observation.observation_date).toMatch(/^2026-\d{2}-\d{2}$/);
+ expect(output.result.sha256).toMatch(/^[a-f0-9]{64}$/);
+ await expect(page.getByRole('button',{name:'Stop generation',exact:true})).toHaveCount(0,{timeout:90000});
+ const answer=page.getByRole('group',{name:'Assistant message with actions'}).last();
+ await expect(answer).toContainText(output.result.latest_observation.observation_date);
+ await fs.writeFile(path.resolve('.cache/native-chat-treasury.json'),JSON.stringify({url:page.url(),output,actor:'automated_development_test'},null,2));
+ await answer.scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/90-native-treasury.'+info.project.name+'.png')});
+});
+
+for (const kind of ['financial','legal']) {
+ test('Native attachment diligence '+kind,async({page},info)=>{
+  test.setTimeout(240000);
+  await page.goto('/#/');
+  const names=kind==='financial'?['management-summary.txt','lender-review.txt']:['review-summary.txt','agreement-excerpts.txt'];
+  await page.locator('input[type=file]').first().setInputFiles(names.map(name=>path.resolve('evals/demos',kind,name)));
+  const question=kind==='financial'
+   ? 'Review these two synthetic development documents. Does the company satisfy the stated leverage covenant under the lender definition? Calculate eligible cash, net debt, approved EBITDA and leverage. Compare the management claim with the controlling source. Quote the source passages that support your conclusion. Use only these attachments. Do not use cloud tools.'
+   : 'Review these two synthetic development documents. Check the summary against the agreement. Identify each material contradiction involving liability, deletion and termination. Quote the controlling passage and explain the practical difference. Use only these attachments. Do not use cloud tools.';
+  await page.locator('.conversation-chat-form textarea').fill(question);
+  await page.getByRole('button',{name:'Send',exact:true}).click();
+  const answer=page.getByRole('group',{name:'Assistant message with actions'}).last();
+  await expect(answer).toBeVisible({timeout:30000});
+  await expect(page.getByRole('button',{name:'Stop generation',exact:true})).toHaveCount(0,{timeout:180000});
+  const text=await answer.innerText();
+  expect(text.length).toBeGreaterThan(100);
+  const record={kind,url:page.url(),files:names,prompt:question,answer:text,actor:'automated_development_test',evaluation:'Not yet reviewed for factual or citation correctness'};
+  await fs.writeFile(path.resolve('.cache/native-diligence-'+kind+'.json'),JSON.stringify(record,null,2));
+  await answer.scrollIntoViewIfNeeded();
+  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/91-native-diligence-'+kind+'.'+info.project.name+'.png')});
+ });
+}

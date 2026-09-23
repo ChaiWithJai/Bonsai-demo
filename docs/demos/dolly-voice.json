@@ -1,0 +1,11 @@
+{
+  "name": "Dolly",
+  "creator": "LollyDolly",
+  "voice_id": "ce3b16c14af54adebba5ebe50a3d4417",
+  "source_url": "https://fish.audio/m/ce3b16c14af54adebba5ebe50a3d4417/",
+  "verified_at": "2026-09-23",
+  "verification": "Official library page identifies Dolly as a British character voice. API synthesis and listening review are not yet verified.",
+  "gateway_model": "fish-audio/s2.1-pro-free",
+  "requested_languages": ["zh", "fa", "pt", "hi", "kn", "fr"],
+  "language_quality_verified": false
+}

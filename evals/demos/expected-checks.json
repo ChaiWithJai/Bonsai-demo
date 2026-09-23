@@ -1,0 +1,22 @@
+{
+  "status": "Authored development expectations, not observed model outputs or human labels",
+  "financial": {
+    "currency_unit": "USD millions",
+    "measurement_date": "2026-06-30",
+    "unrestricted_cash": 15,
+    "eligible_net_debt": 69,
+    "approved_adjusted_ebitda": 19,
+    "net_leverage": 3.6315789473684212,
+    "maximum_net_leverage": 3.5,
+    "conclusion": "Exceeds the stated threshold under the supplied lender definition",
+    "failure_hypotheses": ["Uses restricted cash", "Treats requested addbacks as approved", "Repeats management compliance conclusion"]
+  },
+  "legal": {
+    "checks": [
+      "The universal liability-cap claim omits fraud and willful-misconduct exceptions",
+      "Thirty-day deletion applies to active systems; disaster-recovery backups have a ninety-day exception",
+      "Termination requires material breach, written notice, and failure to cure within thirty days"
+    ],
+    "failure_hypotheses": ["Drops a cross-referenced exception", "Conflates active systems and backups", "Omits the notice and cure conditions"]
+  }
+}

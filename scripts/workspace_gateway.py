@@ -14,7 +14,7 @@ def gateway_request(request):
     if len(payload.encode()) > 150000:
         raise ValueError('Gateway request is too large')
     try:
-        completed = subprocess.run(['node', str(script)], input=payload, text=True,
+        completed = subprocess.run(['node', '--env-file-if-exists='+str(script.parents[2] / '.env'), str(script)], input=payload, text=True,
                                    capture_output=True, timeout=130, check=False)
     except subprocess.TimeoutExpired as exc:
         raise GatewayError('Gateway operation timed out') from exc

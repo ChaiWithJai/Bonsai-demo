@@ -9,7 +9,7 @@ The adapter currently has two operations:
 | `evaluate_evidence` | `typesafe-ai/jev` | Supported, conflicting, or insufficient classification, requiring review |
 | `narrate` | `fish-audio/s2.1-pro-free` | Audio bytes encoded as base64, with language and voice identity |
 
-Set `AI_GATEWAY_API_KEY` in the backend environment, or use Vercel OIDC authentication. Never place credentials in frontend environment variables or requests. Set `BONSAI_DOLLY_VOICE_ID` to the verified Dolly library ID before narration. No default voice is substituted. The six requested narration language codes are `zh`, `fa`, `pt`, `hi`, `kn`, and `fr`; accepting a language code does not verify voice quality or provider support.
+Set `AI_GATEWAY_API_KEY` in the backend environment, or use Vercel OIDC authentication. Never place credentials in frontend environment variables or requests. Set `BONSAI_DOLLY_VOICE_ID=ce3b16c14af54adebba5ebe50a3d4417` for [Dolly by LollyDolly](https://fish.audio/m/ce3b16c14af54adebba5ebe50a3d4417/), identified on the official library page. No default voice is substituted. The six requested narration language codes are `zh`, `fa`, `pt`, `hi`, `kn`, and `fr`; accepting a language code does not verify voice quality or provider support.
 
 Install dependencies with `npm ci --prefix scripts/workspace-tools`. The bridge uses `node` on the backend PATH. A static-only deployment cannot execute it; the Python backend needs a reachable service with Node installed. Gateway authentication occurs there.
 
@@ -30,3 +30,7 @@ Requests cannot choose another model or voice. Calls have no automatic retries a
 Verification so far covers adapter routing, configuration failures, the actual installed SDK's request serialization and response parsing through a mocked HTTP transport, and the Python process boundary. No authenticated Gateway call, Dolly synthesis, or language listening review has completed. Workstream actions, persisted Gateway results, and MLflow linkage remain to be connected before this is a finished product integration.
 
 Official contracts: [Jev integration](https://vercel.com/i/jev-integrations), [Fish Audio on Gateway](https://vercel.com/ai-gateway/models/s2.1-pro-free).
+
+## Local environment
+
+Copy the repository `.env.example` to `.env` and set `AI_GATEWAY_API_KEY` there. The Python bridge loads this file in its Node subprocess on each request. Existing process environment variables take precedence. Use a Node version supporting `--env-file-if-exists`; this setup was checked with Node 26.7.0. The file is ignored by Git. Keep credentials server-side and never use a `VITE_` prefix. Deployment systems can set the same environment variables directly without a local file.

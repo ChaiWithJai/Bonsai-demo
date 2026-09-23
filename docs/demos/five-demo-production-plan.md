@@ -60,6 +60,6 @@ Deliver Mandarin, Farsi, Portuguese, Hindi, Kannada, and French versions for all
 
 Every demo manifest must link source hashes, prompts, model/runtime identity, Jev requests/results, MLflow runs, assertions, raw recording, edit list, scripts, voice/model IDs, audio files, subtitles, and final outputs. Save errors as well as successes. No fabricated human review labels.
 
-Current dependencies: the Gateway credential is not set in the inspected shell; its actual deployment configuration is not yet located. Dolly's exact library identity and support across the requested languages are not yet verified. Existing replay routes need a runtime check before recording an activation claim. These dependencies do not prevent adapter development, calculation tests, or UI preparation.
+Current dependencies: the Gateway credential is not set in the inspected shell; its actual deployment configuration is not yet located. Dolly's library identity is recorded in dolly-voice.json; synthesis and quality across the requested languages are not yet verified. Existing replay routes need a runtime check before recording an activation claim. These dependencies do not prevent adapter development, calculation tests, or UI preparation.
 
 Only publish code checkpoints to ChaiWithJai/Bonsai-demo. Public release of videos is a separate action from creating the requested recordings.

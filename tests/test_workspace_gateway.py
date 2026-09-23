@@ -13,6 +13,8 @@ class GatewayBridgeTest(unittest.TestCase):
         self.assertTrue(result['review_required'])
         args, kwargs = run.call_args
         self.assertEqual(args[0][0], 'node')
+        self.assertTrue(args[0][1].startswith('--env-file-if-exists='))
+        self.assertTrue(args[0][1].endswith('/.env'))
         self.assertNotIn('shell', kwargs)
         self.assertIn('$(no shell)', kwargs['input'])
 

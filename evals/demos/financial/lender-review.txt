@@ -1,0 +1,12 @@
+SYNTHETIC DEMONSTRATION DOCUMENT. Not a real company or investment recommendation.
+North Quay Components — lender review, 23 September 2026.
+All amounts are USD millions. Measurement date: 30 June 2026.
+
+For the leverage test, gross funded debt is 84. Of total cash of 24, 9 is restricted
+and cannot be netted against debt. Only unrestricted cash may reduce funded debt.
+Reported last-twelve-month EBITDA is 18. The lender approves only 1 of the 4 requested
+restructuring addbacks. The remaining 3 is not approved for this measurement date.
+The maximum permitted net leverage ratio is 3.50 times.
+
+Use the lender-approved definition for the compliance calculation. A requested addback
+is not an approved addback. Do not combine cash from another date with this test.

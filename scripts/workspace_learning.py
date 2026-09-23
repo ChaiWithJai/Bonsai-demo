@@ -59,8 +59,18 @@ class LearningWorkstreams:
     def act(self, key, payload):
         folder = self.folder(key)
         operation = payload.get('operation')
-        if operation not in ('calculate_bond', 'fetch_treasury', 'evaluate_evidence', 'interpret_bond'):
+        if operation not in ('calculate_bond', 'fetch_treasury', 'evaluate_evidence', 'interpret_bond', 'review_diligence', 'revalidate_diligence'):
             raise ValueError('Unsupported learning action')
+        if operation == 'revalidate_diligence':
+            parent = payload.get('parent_action_id')
+            if not isinstance(parent, str) or not re.fullmatch(r'\d{8}T\d{12}-[a-f0-9]{32}', parent):
+                raise ValueError('Choose a saved diligence action')
+            parent_folder = folder / parent
+            if not (parent_folder / 'action.json').is_file():
+                raise ValueError('Saved diligence action not found')
+            previous = json.loads((parent_folder / 'action.json').read_text())
+            if previous['operation'] != 'review_diligence':
+                raise ValueError('Choose a diligence model attempt')
         if operation == 'calculate_bond':
             inputs = payload.get('inputs')
             required = {'face', 'coupon_rate', 'annual_yield', 'periods', 'frequency'}
@@ -101,6 +111,12 @@ class LearningWorkstreams:
                 elif operation == 'interpret_bond':
                     from workspace_bond_interpret import interpret
                     result = interpret(self.worker, self.sources, payload, target)
+                elif operation == 'review_diligence':
+                    from workspace_diligence import review
+                    result = review(self.worker, self.sources, payload, target)
+                elif operation == 'revalidate_diligence':
+                    from workspace_diligence import revalidate
+                    result = revalidate(parent_folder, target)
                 else:
                     result = gateway_request({'operation': operation, 'claim': payload.get('claim'),
                                               'evidence': payload.get('evidence')})
