@@ -1,0 +1,30 @@
+{
+  "repository": "https://github.com/ChaiWithJai/Bonsai-demo",
+  "gists": [
+    {
+      "file": "01-bond-pricing.md",
+      "title": "Price a bond from a worksheet in Bonsai",
+      "url": "https://gist.github.com/ChaiWithJai/0b8ebfa9f97faa97b7138a20b2cca9ee"
+    },
+    {
+      "file": "02-financial-diligence.md",
+      "title": "Reconcile a leverage covenant in Bonsai",
+      "url": "https://gist.github.com/ChaiWithJai/f66f84aab4141232083afab7254cfa38"
+    },
+    {
+      "file": "03-legal-review.md",
+      "title": "Review contract excerpts in Bonsai",
+      "url": "https://gist.github.com/ChaiWithJai/c1c134d1448948fa379b1d62beffce9f"
+    },
+    {
+      "file": "04-financial-error.md",
+      "title": "Inspect a financial arithmetic error in Bonsai",
+      "url": "https://gist.github.com/ChaiWithJai/ae3046a50213aba9903838256cbec6a8"
+    },
+    {
+      "file": "05-legal-error.md",
+      "title": "Inspect a legal overstatement in Bonsai",
+      "url": "https://gist.github.com/ChaiWithJai/79df3593a0744961cb49967df56bdb6b"
+    }
+  ]
+}

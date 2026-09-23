@@ -4,11 +4,11 @@ Use [ChaiWithJai/Bonsai-demo](https://github.com/ChaiWithJai/Bonsai-demo) to wor
 
 | Guide | Task | Companion cut |
 | --- | --- | ---: |
-| [Price a bond](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/01-bond-pricing.md) | Confirm worksheet inputs and inspect repricing. | 70.6 seconds |
-| [Reconcile a leverage covenant](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/02-financial-diligence.md) | Compare management and lender definitions. | 85.4 seconds |
-| [Review contract excerpts](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/03-legal-review.md) | Preserve exceptions, deadlines, and conditions. | 48.1 seconds |
-| [Inspect a financial error](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/04-financial-error.md) | Recalculate a wrong amount and inspect its trace. | 65.8 seconds |
-| [Inspect a legal overstatement](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/05-legal-error.md) | Bound a conclusion to the supplied evidence. | 52.8 seconds |
+| [Price a bond](https://gist.github.com/ChaiWithJai/0b8ebfa9f97faa97b7138a20b2cca9ee) | Confirm worksheet inputs and inspect repricing. | 70.6 seconds |
+| [Reconcile a leverage covenant](https://gist.github.com/ChaiWithJai/f66f84aab4141232083afab7254cfa38) | Compare management and lender definitions. | 85.4 seconds |
+| [Review contract excerpts](https://gist.github.com/ChaiWithJai/c1c134d1448948fa379b1d62beffce9f) | Preserve exceptions, deadlines, and conditions. | 48.1 seconds |
+| [Inspect a financial error](https://gist.github.com/ChaiWithJai/ae3046a50213aba9903838256cbec6a8) | Recalculate a wrong amount and inspect its trace. | 65.8 seconds |
+| [Inspect a legal overstatement](https://gist.github.com/ChaiWithJai/79df3593a0744961cb49967df56bdb6b) | Bound a conclusion to the supplied evidence. | 52.8 seconds |
 
 Read the financial review before its error guide, or the legal review before its error guide. The bond guide stands alone.
 

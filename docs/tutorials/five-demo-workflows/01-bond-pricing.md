@@ -62,5 +62,5 @@ The [native image workflow record](https://github.com/ChaiWithJai/Bonsai-demo/bl
 
 ## Related workflows
 
-- [Reconcile a leverage covenant](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/02-financial-diligence.md): check definitions before applying arithmetic.
-- [Inspect a financial error](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/04-financial-error.md): verify a numeric claim that follows a correct intermediate result.
+- [Reconcile a leverage covenant](https://gist.github.com/ChaiWithJai/f66f84aab4141232083afab7254cfa38): check definitions before applying arithmetic.
+- [Inspect a financial error](https://gist.github.com/ChaiWithJai/ae3046a50213aba9903838256cbec6a8): verify a numeric claim that follows a correct intermediate result.

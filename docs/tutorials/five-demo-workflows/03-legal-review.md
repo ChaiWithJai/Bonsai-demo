@@ -56,5 +56,5 @@ The [legal error record](https://github.com/ChaiWithJai/Bonsai-demo/blob/bf425c5
 
 ## Related workflows
 
-- [Inspect a legal overstatement](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/05-legal-error.md): isolate the unsupported sentence and inspect its recorded context.
-- [Reconcile a leverage covenant](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/02-financial-diligence.md): compare conflicting definitions while retaining the source evidence.
+- [Inspect a legal overstatement](https://gist.github.com/ChaiWithJai/79df3593a0744961cb49967df56bdb6b): isolate the unsupported sentence and inspect its recorded context.
+- [Reconcile a leverage covenant](https://gist.github.com/ChaiWithJai/f66f84aab4141232083afab7254cfa38): compare conflicting definitions while retaining the source evidence.

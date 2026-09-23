@@ -10,7 +10,7 @@ Figure 1. Frame at 00:39 of the edited cut. The correction is an editorial arith
 
 ## Before you start
 
-Start with [Reconcile a leverage covenant](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/02-financial-diligence.md). For the historical case, use the public [financial error record](https://github.com/ChaiWithJai/Bonsai-demo/blob/bf425c5c4195ac061dddd4e4b31f510366b6f0a6/docs/demos/financial-observed-error.json). To inspect a run interactively, use your own recording UI and its local request artifacts. A fresh clone does not contain the author's chat database or MLflow store.
+Start with [Reconcile a leverage covenant](https://gist.github.com/ChaiWithJai/f66f84aab4141232083afab7254cfa38). For the historical case, use the public [financial error record](https://github.com/ChaiWithJai/Bonsai-demo/blob/bf425c5c4195ac061dddd4e4b31f510366b6f0a6/docs/demos/financial-observed-error.json). To inspect a run interactively, use your own recording UI and its local request artifacts. A fresh clone does not contain the author's chat database or MLflow store.
 
 ## Verify the error
 
@@ -64,5 +64,5 @@ Rerun the same source packet after adding a calculation check, then compare the 
 
 ## Related workflows
 
-- [Reconcile a leverage covenant](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/02-financial-diligence.md): reproduce the input packet and review prompt.
-- [Inspect a legal overstatement](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/05-legal-error.md): contrast an arithmetic check with a claim that requires scope review.
+- [Reconcile a leverage covenant](https://gist.github.com/ChaiWithJai/f66f84aab4141232083afab7254cfa38): reproduce the input packet and review prompt.
+- [Inspect a legal overstatement](https://gist.github.com/ChaiWithJai/79df3593a0744961cb49967df56bdb6b): contrast an arithmetic check with a claim that requires scope review.

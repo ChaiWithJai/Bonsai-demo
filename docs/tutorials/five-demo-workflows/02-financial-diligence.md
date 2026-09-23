@@ -59,5 +59,5 @@ The recording shows one local model review of a synthetic packet. It demonstrate
 
 ## Related workflows
 
-- [Inspect the financial error](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/04-financial-error.md): trace the incorrect USD 95 million statement and check the calculation.
-- [Review contract excerpts](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/03-legal-review.md): apply the same claim-to-source comparison to exceptions and conditions.
+- [Inspect the financial error](https://gist.github.com/ChaiWithJai/ae3046a50213aba9903838256cbec6a8): trace the incorrect USD 95 million statement and check the calculation.
+- [Review contract excerpts](https://gist.github.com/ChaiWithJai/c1c134d1448948fa379b1d62beffce9f): apply the same claim-to-source comparison to exceptions and conditions.

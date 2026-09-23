@@ -10,7 +10,7 @@ Figure 1. Frame at 00:48 of the edited cut. The measured replay is separate from
 
 ## Before you start
 
-Read [Review contract excerpts](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/03-legal-review.md) for the synthetic documents and prompt. Use the [legal error record](https://github.com/ChaiWithJai/Bonsai-demo/blob/bf425c5c4195ac061dddd4e4b31f510366b6f0a6/docs/demos/legal-observed-error.json) to inspect the historical response without local inference. Interactive trace inspection requires your recording UI and a saved run; the author's local MLflow database is not included in the repository.
+Read [Review contract excerpts](https://gist.github.com/ChaiWithJai/c1c134d1448948fa379b1d62beffce9f) for the synthetic documents and prompt. Use the [legal error record](https://github.com/ChaiWithJai/Bonsai-demo/blob/bf425c5c4195ac061dddd4e4b31f510366b6f0a6/docs/demos/legal-observed-error.json) to inspect the historical response without local inference. Interactive trace inspection requires your recording UI and a saved run; the author's local MLflow database is not included in the repository.
 
 ## Locate the unsupported claim
 
@@ -63,5 +63,5 @@ Save the original claim, source passage, proposed correction, and reviewer decis
 
 ## Related workflows
 
-- [Review contract excerpts](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/03-legal-review.md): reproduce the source comparison that preceded the overstatement.
-- [Inspect a financial error](https://github.com/ChaiWithJai/Bonsai-demo/blob/main/docs/tutorials/five-demo-workflows/04-financial-error.md): use the same trace workflow with a deterministic arithmetic check.
+- [Review contract excerpts](https://gist.github.com/ChaiWithJai/c1c134d1448948fa379b1d62beffce9f): reproduce the source comparison that preceded the overstatement.
+- [Inspect a financial error](https://gist.github.com/ChaiWithJai/ae3046a50213aba9903838256cbec6a8): use the same trace workflow with a deterministic arithmetic check.
