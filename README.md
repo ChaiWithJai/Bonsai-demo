@@ -2,6 +2,8 @@
 
 Backend and model format compatibility: [BACKEND-SUPPORT.md](BACKEND-SUPPORT.md).
 
+For worked examples in New chat, see the [five workflow guides](docs/tutorials/five-demo-workflows/README.md): bond pricing, financial and legal document review, and inspection of recorded errors. Each guide includes source fixtures, screenshots, and expected checks.
+
 This branch includes a file-to-interface Workspace. See the [Workspace guide](docs/workspace-guide.md) for source review, generated views, and MLflow example curation.
 
 <p align="center">
