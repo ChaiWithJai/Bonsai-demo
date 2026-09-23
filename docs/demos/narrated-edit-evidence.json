@@ -1,5 +1,6 @@
 {
-  "status": "seven_review_drafts",
+  "status": "narrated_review_drafts",
+  "count": 13,
   "human_reviewed": false,
   "cuts": [
     {
@@ -31,6 +32,42 @@
       "duration_seconds": 59.2,
       "sha256": "7d2218264fa4516ab39cb59a5318c129500534db51e5541928c2c6da30d0230a",
       "timing_basis": "Hindi-hinted ASR sentence starts; original automatic detection retained separately; pronunciation and listening review pending"
+    },
+    {
+      "id": "04-financial-error-inspection-pt",
+      "duration_seconds": 63.68,
+      "sha256": "f878d4ebf851384416716c4d0b536f768ed8f1059224faab4cb29b802c30b397",
+      "timing_basis": "Portuguese-hinted ASR sentence starts and analyst scene selection; captions and pronunciation unreviewed"
+    },
+    {
+      "id": "05-legal-error-inspection-pt",
+      "duration_seconds": 59.92,
+      "sha256": "fa08b40636ea754315a41fe688ca4fae83c9122b0153d3769836d55e2bc55561",
+      "timing_basis": "Portuguese-hinted ASR sentence starts and analyst scene selection; captions and pronunciation unreviewed"
+    },
+    {
+      "id": "01-bond-learning-zh",
+      "duration_seconds": 56.88,
+      "sha256": "d74d8a4a666fa13642c547bcf269b38395c234f805bbf8a427149547e5fd627b",
+      "timing_basis": "Observed Mandarin ASR word/sentence starts; automatic transcript misrecognizes some words and the opening percentage; no approved captions or pronunciation claim"
+    },
+    {
+      "id": "01-bond-learning-pt",
+      "duration_seconds": 57.52,
+      "sha256": "339ee6fa08664a385ea655fbca58c18172bb74700193543d93acf533e3da4d92",
+      "timing_basis": "Portuguese-hinted ASR word and sentence starts; captions and pronunciation unreviewed"
+    },
+    {
+      "id": "02-financial-diligence-pt",
+      "duration_seconds": 62.682381,
+      "sha256": "0146a286ec3c71193697fcd32d631ee12d01dfc29d69080264ee730c827a394e",
+      "timing_basis": "Portuguese-hinted ASR word and sentence starts; captions and pronunciation unreviewed"
+    },
+    {
+      "id": "03-legal-diligence-pt",
+      "duration_seconds": 70.649683,
+      "sha256": "163712d229c10cada56a421083506d8f6241e50c9e53790070c0db1c980a8df2",
+      "timing_basis": "Portuguese-hinted ASR sentence starts and analyst scene selection; captions and pronunciation unreviewed"
     },
     {
       "id": "02-financial-diligence-fr",

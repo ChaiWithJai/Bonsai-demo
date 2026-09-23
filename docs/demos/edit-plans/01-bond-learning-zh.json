@@ -1,0 +1,73 @@
+{
+  "id": "01-bond-learning-zh",
+  "title": "Bond math \u00b7 Mandarin Dolly narration",
+  "audio": ".cache/demos/narration/01-bond-learning-zh/narration.mp3",
+  "audio_sha256": "707beae6a2d69e1971c49fa76430e6f08afe66543166423d47908825fe968fe4",
+  "timing_basis": "Observed Mandarin ASR word/sentence starts; automatic transcript misrecognizes some words and the opening percentage; no approved captions or pronunciation claim",
+  "scenes": [
+    {
+      "at": 0,
+      "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+      "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+      "start": 45,
+      "length": 2,
+      "label": "Price 1,000 at 5% yield"
+    },
+    {
+      "at": 7.7,
+      "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+      "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+      "start": 0,
+      "length": 4,
+      "label": "Synthetic example worksheet"
+    },
+    {
+      "at": 16.86,
+      "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+      "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+      "start": 19,
+      "length": 6,
+      "label": "Review the payment count and missing yield"
+    },
+    {
+      "at": 25.96,
+      "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+      "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+      "start": 39,
+      "length": 6,
+      "label": "Confirmed calculation"
+    },
+    {
+      "at": 30.22,
+      "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+      "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+      "start": 57,
+      "length": 4,
+      "label": "Inspect the final payment"
+    },
+    {
+      "at": 35.84,
+      "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+      "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+      "start": 61,
+      "length": 4,
+      "label": "Reprice after a 25 bp yield change"
+    },
+    {
+      "at": 41.36,
+      "source": ".cache/demos/native-treasury-20260923/raw-screen.webm",
+      "source_sha256": "36956190410a27d4981616b02880ec59fc3682784629764ced2d8d9f08b8b437",
+      "start": 23,
+      "length": 3,
+      "label": "Dated Treasury context"
+    },
+    {
+      "at": 49.32,
+      "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+      "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+      "start": 63,
+      "length": 2,
+      "label": "Try your own working"
+    }
+  ]
+}

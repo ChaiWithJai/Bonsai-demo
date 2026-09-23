@@ -1,0 +1,65 @@
+{
+  "id": "03-legal-diligence-pt",
+  "title": "Legal diligence \u00b7 Portuguese Dolly narration",
+  "audio": ".cache/demos/narration/03-legal-diligence-pt/narration.mp3",
+  "audio_sha256": "3601ba16d2c954346ac371cf28438c26a249c290c4e4a3f5a8ea2f64c64aa26f",
+  "timing_basis": "Portuguese-hinted ASR sentence starts and analyst scene selection; captions and pronunciation unreviewed",
+  "scenes": [
+    {
+      "at": 0,
+      "source": ".cache/demos/visual-edits/cards/legal-source.png",
+      "source_sha256": "d9713521379e6403547adb28bfd5371525d873abafa652d7590d8aac6374d1f0",
+      "start": 0,
+      "length": 11,
+      "label": "Synthetic agreement excerpt"
+    },
+    {
+      "at": 11.66,
+      "source": ".cache/demos/native-diligence-legal-20260923/raw-screen.webm",
+      "source_sha256": "027d2e2dae4924cd53c815846627e195f5c53a5f844e1313e4652109527ef034",
+      "start": 0,
+      "length": 5,
+      "label": "Attach the synthetic documents"
+    },
+    {
+      "at": 20.44,
+      "source": ".cache/demos/native-diligence-legal-20260923/raw-screen.webm",
+      "source_sha256": "027d2e2dae4924cd53c815846627e195f5c53a5f844e1313e4652109527ef034",
+      "start": 85,
+      "length": 14,
+      "label": "Liability and retention exceptions"
+    },
+    {
+      "at": 36.24,
+      "source": ".cache/demos/native-diligence-legal-20260923/raw-screen.webm",
+      "source_sha256": "027d2e2dae4924cd53c815846627e195f5c53a5f844e1313e4652109527ef034",
+      "start": 102,
+      "length": 10,
+      "label": "Termination conditions in the supplied clause"
+    },
+    {
+      "at": 46.2,
+      "source": ".cache/demos/native-diligence-legal-20260923/raw-screen.webm",
+      "source_sha256": "027d2e2dae4924cd53c815846627e195f5c53a5f844e1313e4652109527ef034",
+      "start": 115,
+      "length": 3,
+      "label": "Compare source passages"
+    },
+    {
+      "at": 49.5,
+      "source": ".cache/demos/native-diligence-legal-20260923/raw-screen.webm",
+      "source_sha256": "027d2e2dae4924cd53c815846627e195f5c53a5f844e1313e4652109527ef034",
+      "start": 123,
+      "length": 2,
+      "label": "Original overbroad claim retained"
+    },
+    {
+      "at": 56.4,
+      "source": ".cache/demos/visual-edits/cards/legal-proof.png",
+      "source_sha256": "aa92d6e74afa390301a873126b19273100b498c4c1d7d6c7a3579222108f6ab1",
+      "start": 0,
+      "length": 12,
+      "label": "Review the scope of the conclusion"
+    }
+  ]
+}
