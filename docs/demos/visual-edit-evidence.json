@@ -485,7 +485,7 @@
   ],
   "verification": "All 15 videos fully decoded; hashes, dimensions and expected absence of audio checked. Selected source and output frames visually inspected.",
   "remaining": [
-    "30 translated and reviewed narration scripts",
+    "Review the 30 translation drafts and their spoken timing",
     "Fish Audio Dolly synthesis through Vercel AI Gateway",
     "Language-specific subtitle layout and timing, including Farsi RTL",
     "Narrated main cuts and walkthroughs with audio/visual synchronization",

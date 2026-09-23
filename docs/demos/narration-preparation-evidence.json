@@ -1,0 +1,25 @@
+{
+  "stage": "script_preparation_complete_audio_not_started",
+  "draft_scripts": 30,
+  "languages": [
+    "zh",
+    "fa",
+    "pt",
+    "hi",
+    "kn",
+    "fr"
+  ],
+  "human_reviewed": false,
+  "voice": "ce3b16c14af54adebba5ebe50a3d4417",
+  "model": "fish-audio/s2.1-pro-free",
+  "gateway_credential_present": false,
+  "tests": "4 queue/integrity tests passed",
+  "mlflow_url": "http://127.0.0.1:5210/#/experiments/36/runs/f4d6a80f09fa405d9463f6bfc4136f1b",
+  "browser_check": {
+    "page_loaded": true,
+    "farsi_direction": "rtl",
+    "horizontal_overflow": false,
+    "paragraphs": 4,
+    "audio_or_native_speaker_review": false
+  }
+}

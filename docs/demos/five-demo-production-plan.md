@@ -63,3 +63,7 @@ Every demo manifest must link source hashes, prompts, model/runtime identity, Je
 Current dependencies: the Gateway credential is not set in the inspected shell; its actual deployment configuration is not yet located. Dolly's library identity is recorded in dolly-voice.json; synthesis and quality across the requested languages are not yet verified. The measured, teacher-forced activation diagnostics have been captured and inspected. They remain explicitly distinct from the original inference activations. These dependencies do not prevent adapter development, calculation tests, or UI preparation.
 
 Only publish code checkpoints to ChaiWithJai/Bonsai-demo. Public release of videos is a separate action from creating the requested recordings.
+
+## Narration preparation checkpoint
+
+Thirty translation drafts and a hash-checked synthesis queue are prepared. The local review page pairs each draft with its English master and silent video. See `narration-runbook.md` and `narration-preparation-evidence.json`. No speech call has run: Gateway authentication remains absent. Translation, pronunciation, subtitle, and final edit review are still required.
