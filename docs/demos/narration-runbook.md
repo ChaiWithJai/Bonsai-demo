@@ -41,3 +41,7 @@ The retired `fish-audio/s2.1-pro-free` endpoint returned HTTP 404 during the
 first authenticated pilot. The adapter now uses the paid `fish-audio/s2.1-pro`
 endpoint. Fish infers language from input text and voice; its provider ignores
 the SDK language option. Check each resulting language by listening.
+
+The user approved longer cuts on September 23, 2026. Treat 60–90 seconds as
+an initial editorial target, not a delivery gate. Preserve natural speech
+speed and extend evidence holds or scene timing as needed for each language.
