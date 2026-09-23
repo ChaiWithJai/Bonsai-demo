@@ -1,0 +1,63 @@
+{
+  "case": "legal",
+  "scope": "NEW teacher-forced diagnostic on a reconstructed recorded prefix. Not original activations, a regenerated answer, or a causal explanation.",
+  "differences": [
+    "SSE did not preserve original token IDs or channel separator",
+    "Reasoning/answer separator reconstructed as newline, closing think tag, and two newlines",
+    "Prefix and window tokenized separately",
+    "Observed answer tokens forced; greedy next-token predictions are diagnostic only",
+    "Fresh context, no production prefix cache"
+  ],
+  "marker": "A service interruption that is not a material breach gives no termination right at all.",
+  "captured_vectors": 96,
+  "forced_tokens": 32,
+  "layers": [
+    0,
+    31,
+    63
+  ],
+  "vector_width": 5120,
+  "nonfinite_values": 0,
+  "model_sha256": "3907dc1658db1f78a9826bf8d5bcb8dc65db0d466388937af57f2294fae62ec1",
+  "runtime_revision": "9a9394a895b96003ca842a6041cb28ac49a108f7",
+  "capture_binary_sha256": "7fe5beb92963811623a542018701bf3d73cecd45386eaa72bd982dc373fe06bb",
+  "observed_runtime_libraries": [
+    {
+      "path": "/Users/jaibhagat/.cache/prismml/bonsai-2-20260919/runtime/llama-prism-b10709-9a9394a/libllama.0.2.0.dylib",
+      "sha256": "0e972017d252c3f12dccae6f82274f0d74886f8f09cdbdd94b69803bb18cb348"
+    },
+    {
+      "path": "/Users/jaibhagat/.cache/prismml/bonsai-2-20260919/runtime/llama-prism-b10709-9a9394a/libggml.0.21.0.dylib",
+      "sha256": "aa84e1ce5256bf9bce26151455f25265ed50144db501e9c805bf0ce827d54319"
+    },
+    {
+      "path": "/Users/jaibhagat/.cache/prismml/bonsai-2-20260919/runtime/llama-prism-b10709-9a9394a/libggml-base.0.21.0.dylib",
+      "sha256": "47c2dbb05f300881ca79c019f3fd06546f8d08fe3a1e757e96a4520f209e34ae"
+    },
+    {
+      "path": "/Users/jaibhagat/.cache/prismml/bonsai-2-20260919/runtime/llama-prism-b10709-9a9394a/libggml-cpu.0.21.0.dylib",
+      "sha256": "e184c7b1902c131e25d272088c607212410f2d520cc9f3d582ebaa928031568a"
+    },
+    {
+      "path": "/Users/jaibhagat/.cache/prismml/bonsai-2-20260919/runtime/llama-prism-b10709-9a9394a/libggml-blas.0.21.0.dylib",
+      "sha256": "a0d2f7baa25dff0439d765f04af345e6f769111e1eaa392c32a689b17b5e2690"
+    },
+    {
+      "path": "/Users/jaibhagat/.cache/prismml/bonsai-2-20260919/runtime/llama-prism-b10709-9a9394a/libggml-metal.0.21.0.dylib",
+      "sha256": "3c19876a8ab4fce134277240ce1f0e32accfceebca8598ae612e80eb8a011a8d"
+    },
+    {
+      "path": "/Users/jaibhagat/.cache/prismml/bonsai-2-20260919/runtime/llama-prism-b10709-9a9394a/libggml-rpc.0.21.0.dylib",
+      "sha256": "8c3be5dc07b51d1c159b41327e411ead500fb646698bdf9f8d0117d31ea9bcb7"
+    }
+  ],
+  "source_request_sha256": "4cd99f46cec7737aeb76b4f36f56d1e02a00bcafbe9a15922151431d51b4c63e",
+  "source_response_sha256": "5832d9beac351b61e9715e8f07d5f844bff3299ca3492c9d6527886d3a9c9c8b",
+  "capture_sha256": "a2d2da8abffbc6a7d9a226bf8ad55eb8c9fb1e5b2f29c32d3b7573a5985042e2",
+  "mlflow": {
+    "run_id": "0fba5ba8d64a45bf8cc29a80ee5ea67e",
+    "experiment_id": "30",
+    "url": "http://127.0.0.1:5210/#/experiments/30/runs/0fba5ba8d64a45bf8cc29a80ee5ea67e"
+  },
+  "local_artifacts": ".cache/activation-macos-probe/legal-window"
+}

@@ -31,6 +31,8 @@ int main(int argc,char**argv){try{
  if(argc!=4 && argc!=5)throw std::runtime_error("usage: capture MODEL RENDERED_PROMPT_FILE OUTPUT_DIR [CONFIG_JSON]");
  json config=json::object();if(argc==5){std::ifstream f(argv[4]);f>>config;}
  const int steps=config.value("decode_steps",8), context=config.value("context",1024);
+ const auto forced=config.value("forced_tokens",std::vector<llama_token>{});
+ if(!forced.empty() && int(forced.size())!=steps)throw std::runtime_error("forced token count must equal decode steps");
  if(steps<1 || steps>64 || context<1024 || context>65536)throw std::runtime_error("diagnostic bounds exceeded");
  std::ifstream in(argv[2]);std::string prompt((std::istreambuf_iterator<char>(in)),{});if(prompt.empty())throw std::runtime_error("empty prompt");
  Capture c;c.dir=argv[3];std::filesystem::create_directories(c.dir);ggml_backend_load_all();llama_backend_init();
@@ -48,8 +50,9 @@ int main(int argc,char**argv){try{
   llama_sampler_chain_add(sampler,llama_sampler_init_temp(config.value("temperature",0.3f)));
   llama_sampler_chain_add(sampler,llama_sampler_init_dist(config.value("seed",42u)));
  }else{sampler=llama_sampler_init_greedy();}
- llama_token token=llama_sampler_sample(sampler,ctx,-1);json tokens=json::array();std::string generated;bool reached_eog=false;
- for(int step=0;step<steps;++step){if(llama_vocab_is_eog(v,token)){reached_eog=true;break;}c.enabled=true;c.step=step;c.position=n+step;c.token=token;c.text=piece(v,token);generated+=c.text;llama_sampler_accept(sampler,token);if(llama_decode(ctx,llama_batch_get_one(&token,1)))throw std::runtime_error("decode");llama_synchronize(ctx);if(!c.error.empty())throw std::runtime_error(c.error);if(c.samples.size()!=size_t((step+1)*3))throw std::runtime_error("expected3capturedlayersperstep");auto next=llama_sampler_sample(sampler,ctx,-1);tokens.push_back({{"step",step},{"input_token_id",token},{"input_token_text",c.text},{"position",c.position},{"next_token_id",next},{"next_token_text",piece(v,next)}});token=next;}
- json result={{"samples",c.samples},{"tokens",tokens},{"prompt_token_ids",pt},{"prompt_token_count",n},{"generated_text",generated},{"reached_eog",reached_eog},{"decode_steps_requested",steps},{"decode_steps_captured",tokens.size()},{"passed",!tokens.empty()}};std::ofstream output(c.dir+"/capture.json");output<<result.dump(2,' ',false,json::error_handler_t::replace)<<"\n";if(!output)throw std::runtime_error("result write");
+ for(auto t:forced)if(t<0 || t>=llama_vocab_n_tokens(v))throw std::runtime_error("invalid forced token");
+ llama_token token=forced.empty()?llama_sampler_sample(sampler,ctx,-1):forced[0];json tokens=json::array();std::string generated;bool reached_eog=false;
+ for(int step=0;step<steps;++step){if(llama_vocab_is_eog(v,token)){reached_eog=true;break;}c.enabled=true;c.step=step;c.position=n+step;c.token=token;c.text=piece(v,token);generated+=c.text;llama_sampler_accept(sampler,token);if(llama_decode(ctx,llama_batch_get_one(&token,1)))throw std::runtime_error("decode");llama_synchronize(ctx);if(!c.error.empty())throw std::runtime_error(c.error);if(c.samples.size()!=size_t((step+1)*3))throw std::runtime_error("expected3capturedlayersperstep");auto next=llama_sampler_sample(sampler,ctx,-1);tokens.push_back({{"step",step},{"input_token_id",token},{"input_token_text",c.text},{"position",c.position},{"next_token_id",next},{"next_token_text",piece(v,next)}});token=forced.empty()?next:forced[std::min(step+1,steps-1)];}
+ json result={{"samples",c.samples},{"tokens",tokens},{"prompt_token_ids",pt},{"prompt_token_count",n},{"generated_text",forced.empty()?generated:std::string("")},{"forced_text",forced.empty()?std::string(""):generated},{"teacher_forced",!forced.empty()},{"reached_eog",reached_eog},{"decode_steps_requested",steps},{"decode_steps_captured",tokens.size()},{"passed",!tokens.empty()}};std::ofstream output(c.dir+"/capture.json");output<<result.dump(2,' ',false,json::error_handler_t::replace)<<"\n";if(!output)throw std::runtime_error("result write");
  llama_sampler_free(sampler);llama_free(ctx);llama_model_free(m);llama_backend_free();std::cout<<"Captured "<<c.samples.size()<<" actual F32 activation vectors\n";return 0;
  }catch(const std::exception&e){std::cerr<<e.what()<<"\n";return 1;}}

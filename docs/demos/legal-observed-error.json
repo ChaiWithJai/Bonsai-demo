@@ -17,7 +17,13 @@
   "request_id": "8d4656672ce341f89aa1c5f9a005500b",
   "trace_id": "tr-2bda0688e47d8c0c4a574261b7122a77",
   "original_exchange": ".cache/workspace-live-v3-20260921/exchanges/8d4656672ce341f89aa1c5f9a005500b",
-  "activation_status": "Not captured; macOS replay path unverified",
+  "activation_status": "New teacher-forced diagnostic captured; not original activations or a causal explanation",
   "prompt": "Review these two synthetic development documents. Check the summary against the agreement. Identify each material contradiction involving liability, deletion and termination. Quote the controlling passage and explain the practical difference. Use only these attachments. Do not use cloud tools.",
-  "evaluation_scope": "One synthetic development example. The three authored clause conflicts were identified correctly."
+  "evaluation_scope": "One synthetic development example. The three authored clause conflicts were identified correctly.",
+  "activation_evidence": "legal-activation-evidence.json",
+  "activation_mlflow": {
+    "run_id": "0fba5ba8d64a45bf8cc29a80ee5ea67e",
+    "experiment_id": "30",
+    "url": "http://127.0.0.1:5210/#/experiments/30/runs/0fba5ba8d64a45bf8cc29a80ee5ea67e"
+  }
 }
