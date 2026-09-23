@@ -2258,3 +2258,24 @@ for (const kind of ['financial','legal']) {
   await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/91-native-diligence-'+kind+'.'+info.project.name+'.png')});
  });
 }
+
+for (const [kind, file] of [['financial','management-summary.txt'],['legal','review-summary.txt']]) {
+ test('Inspect recorded '+kind+' activation window',async({page},info)=>{
+  await page.goto('/#/observability');
+  const session=page.locator('button.obs-session').filter({hasText:file}).first();
+  await expect(session).toBeVisible({timeout:20000});
+  await session.click();
+  await page.getByRole('tab',{name:'Model weights',exact:true}).click();
+  const panel=page.getByRole('region',{name:'Instrumented replay of recorded request'});
+  await expect(panel).toContainText('RECORDED ERROR / TEACHER-FORCED DIAGNOSTIC');
+  await expect(panel).toContainText('not original activations');
+  await panel.getByRole('button',{name:'Inspect all 5120 captured values',exact:true}).click();
+  await expect(panel).toContainText('All 5120 values loaded');
+  await panel.getByRole('combobox',{name:'Activation layer'}).selectOption('31');
+  await panel.getByRole('slider',{name:'Decode step',exact:true}).fill('8');
+  await panel.getByRole('button',{name:'Inspect all 5120 captured values',exact:true}).click();
+  await expect(panel).toContainText('All 5120 values loaded');
+  await panel.locator('.activation-full-vector').scrollIntoViewIfNeeded();
+  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/92-'+kind+'-activation-window.'+info.project.name+'.png')});
+ });
+}

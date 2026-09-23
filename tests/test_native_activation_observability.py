@@ -79,6 +79,20 @@ class NativeActivationObservabilityTest(unittest.TestCase):
             (folder/'activation-replay.json').write_text(json.dumps(replay))
             self.assertNotIn('activation_replay',api.detail('native-session')['nodes'][0])
 
+    def test_teacher_forced_window_requires_recorded_response_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder,source,replay,api=self.fixture(directory)
+            replay.update(kind='new_teacher_forced_reconstructed_window',teacher_forced=True,forced_text='observed wrong answer',generated_text='')
+            source['response_sha256']=hashlib.sha256((folder/'response.bin').read_bytes()).hexdigest()
+            (folder/'activation-window-preflight.json').write_text((folder/'activation-replay-preflight.json').read_text())
+            (folder/'activation-window.json').write_text(json.dumps(replay))
+            data=api.detail('native-session')
+            self.assertEqual(data['nodes'][0]['activations']['status'],'not_captured')
+            self.assertEqual(data['nodes'][1]['name'],'Teacher-forced error window')
+            self.assertEqual(data['nodes'][1]['response']['choices'][0]['message']['content'],'observed wrong answer')
+            (folder/'response.bin').write_text('changed response')
+            self.assertNotIn('activation_replay',api.detail('native-session')['nodes'][0])
+
     def test_per_turn_comparison_replays_do_not_require_global_singleton(self):
         with tempfile.TemporaryDirectory() as directory:
             folder=Path(directory)/('b'*32); model=folder/'qwen';model.mkdir(parents=True)

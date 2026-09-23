@@ -281,15 +281,18 @@ class Observability:
                 identity = status.get('source') or status
                 valid = identity.get('native_request_id', identity.get('request_id')) == original['id'] and identity.get('request_id', original['id']) == original['id'] and identity.get('request_sha256') == expected and identity.get('session') == row.get('session')
                 original['activation_replay_status'] = status if valid else {'status': 'error', 'error': 'Replay status identity does not match this native request.'}
-            replay = self.json_file(directory / 'activation-replay.json')
+            window = self.json_file(directory / 'activation-window.json')
+            replay = window or self.json_file(directory / 'activation-replay.json')
             if not replay:
                 continue
             source = replay.get('source') or {}
-            preflight = self.json_file(directory / 'activation-replay-preflight.json')
+            preflight = self.json_file(directory / ('activation-window-preflight.json' if window else 'activation-replay-preflight.json'))
             rendered = preflight.get('rendered_prompt')
             replay_rendered = replay.get('rendered_prompt')
             rendered_hash = source.get('rendered_prompt_sha256')
-            valid = (replay.get('kind') == 'new_instrumented_real_request_replay' and replay.get('passed') is True and
+            kind_valid = replay.get('kind') == ('new_teacher_forced_reconstructed_window' if window else 'new_instrumented_real_request_replay')
+            window_valid = not window or (replay.get('teacher_forced') is True and source.get('response_sha256') == hashlib.sha256(self.read(row, 'response.bin')).hexdigest())
+            valid = (kind_valid and window_valid and replay.get('passed') is True and
                      source.get('native_request_id', source.get('request_id')) == original['id'] and source.get('request_id', original['id']) == original['id'] and
                      source.get('request_sha256') == expected and source.get('session') == row.get('session') and
                      isinstance(rendered, str) and isinstance(replay_rendered, str) and rendered_hash and
@@ -303,20 +306,20 @@ class Observability:
             replay_id = original['id'] + '_instrumented_replay'
             nodes.append({'id': replay_id, 'request_id': replay_id, 'source': 'instrumented_replay',
                 'kind': 'completion', 'category': 'instrumented_replay', 'generation_available': True,
-                'name': 'Instrumented replay of native model turn', 'original_request_id': original['id'],
+                'name': 'Teacher-forced error window' if window else 'Instrumented replay of native model turn', 'original_request_id': original['id'],
                 'request_sha256': expected, 'session': row.get('session'),
                 'trace_id': meta.get('trace_id'), 'run_id': meta.get('run_id'), 'experiment_id': meta.get('experiment_id'),
                 'trace_url': f'{self.mlflow_base_url}/#/experiments/{meta["experiment_id"]}/traces?traceId={meta["trace_id"]}' if meta.get('experiment_id') and meta.get('trace_id') else None,
                 'request': {'rendered_prompt': rendered, 'source': source, 'settings': replay.get('settings')},
-                'response': {'choices': [{'message': {'content': replay.get('generated_text', '')}, 'finish_reason': None}], 'tokens': replay.get('tokens')},
+                'response': {'choices': [{'message': {'content': replay.get('forced_text' if window else 'generated_text', '')}, 'finish_reason': None}], 'tokens': replay.get('tokens')},
                 'server': {'model': replay.get('model'), 'runtime': replay.get('runtime')}, 'settings': replay.get('settings', {}),
                 'timings': [], 'elapsed_ms': meta.get('elapsed_ms'), 'started_at': meta.get('started_at'),
                 'timestamp_source': 'replay_manifest', 'status': None, 'execution_status': 'completed', 'complete': True,
                 'tool_calls': [], 'tool_results': [], 'assessments': [], 'activation_replay': replay,
                 'activation_replay_status': {'status': 'completed'},
-                'activations': {'status': 'captured', 'scope': 'This instrumented replay only'}})
+                'activations': {'status': 'captured', 'scope': 'New teacher-forced diagnostic only' if window else 'This instrumented replay only'}})
             edges.append({'from': original['id'], 'to': replay_id, 'type': 'replay_of',
-                          'label': 'New instrumented replay of matching native request; not original activations'})
+                          'label': 'New teacher-forced window of recorded answer; reconstructed prefix' if window else 'New instrumented replay of matching native request; not original activations'})
 
     @staticmethod
     def json_file_text(text):
