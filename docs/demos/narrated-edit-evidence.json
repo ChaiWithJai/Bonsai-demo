@@ -1,0 +1,48 @@
+{
+  "status": "seven_review_drafts",
+  "human_reviewed": false,
+  "cuts": [
+    {
+      "id": "04-financial-error-inspection-fr",
+      "duration_seconds": 57.68,
+      "sha256": "280f0dc64b8138e69fab825fc6885d95c7b308f5405c9de8ca08ed552e4ff9b3",
+      "timing_basis": "French-hinted ASR sentence starts; analyst scene selection; review pending"
+    },
+    {
+      "id": "01-bond-learning-fa",
+      "duration_seconds": 73.56,
+      "sha256": "f85a83b1156e36f315b04e57a843310f3e1239fb49d3e22f33c6c21cb300e7cf",
+      "timing_basis": "Farsi-hinted ASR sentence starts; language detection mismatch retained separately; pronunciation and listening review pending"
+    },
+    {
+      "id": "01-bond-learning-fr",
+      "duration_seconds": 59.626054,
+      "sha256": "a4534ad90c67023d78534885698ed41957cd4e513d3d914cb692a1ea78913743",
+      "timing_basis": "ASR observed sentence/word starts; analyst scene selection; listening review pending"
+    },
+    {
+      "id": "05-legal-error-inspection-fr",
+      "duration_seconds": 64.0,
+      "sha256": "f0b7cf7cced68b1ea70507999c72ba6b0b8d090eb84ed35aacb5200a025f1a14",
+      "timing_basis": "French-hinted ASR sentence starts; analyst scene selection; review pending"
+    },
+    {
+      "id": "01-bond-learning-hi",
+      "duration_seconds": 59.2,
+      "sha256": "7d2218264fa4516ab39cb59a5318c129500534db51e5541928c2c6da30d0230a",
+      "timing_basis": "Hindi-hinted ASR sentence starts; original automatic detection retained separately; pronunciation and listening review pending"
+    },
+    {
+      "id": "02-financial-diligence-fr",
+      "duration_seconds": 56.491315,
+      "sha256": "0f8abdabb50fc7624f11e4aa1ea6f106b03eabca200a2307dc73e9d72d7af8cf",
+      "timing_basis": "French-hinted ASR sentence starts; automatic captions contain errors and are not approved; analyst scene selection"
+    },
+    {
+      "id": "03-legal-diligence-fr",
+      "duration_seconds": 64.36,
+      "sha256": "d6957d9e6693ab6a94027ae61284ed3e66a68aa12e101fa2b430450cd5956112",
+      "timing_basis": "French-hinted ASR sentence starts; automatic captions contain errors and are not approved; analyst scene selection"
+    }
+  ]
+}

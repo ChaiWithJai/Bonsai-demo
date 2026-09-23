@@ -105,12 +105,15 @@ def review_page(source, output):
             ident=entry['id']
             job_id=ident+'-'+language
             metadata=reusable(queued[job_id],output/job_id)
+            narrated=ROOT/'.cache/demos/narrated-edits'/job_id/'main.mp4'
+            video_src=f'../narrated-edits/{job_id}/main.mp4' if narrated.exists() else f'../visual-edits/{ident}/main-visual-draft.mp4'
+            video_label='Narrated edit · review pending' if narrated.exists() else 'Silent visual draft'
             audio=(f'<p>Dolly narration · {metadata["duration_seconds"]:.1f} seconds · listening review pending</p><audio controls preload="none" src="{job_id}/narration.mp3"></audio>' if metadata else '<p>Narration not yet available.</p>')
             text=''.join('<p>'+html.escape(p)+'</p>' for p in entry['paragraphs'])
-            cards.append(f'<details><summary>{html.escape(masters[ident]["title"])}</summary>{audio}<video controls preload="none" src="../visual-edits/{ident}/main-visual-draft.mp4"></video><div class="columns"><article lang="en"><h3>English master</h3><p>{html.escape(masters[ident]["narration"])}</p></article><article lang="{group["locale"]}" dir="{group["direction"]}"><h3>{language} · draft</h3>{text}</article></div></details>')
+            cards.append(f'<details><summary>{html.escape(masters[ident]["title"])}</summary>{audio}<p>{video_label}</p><video controls preload="none" src="{video_src}"></video><div class="columns"><article lang="en"><h3>English master</h3><p>{html.escape(masters[ident]["narration"])}</p></article><article lang="{group["locale"]}" dir="{group["direction"]}"><h3>{language} · draft</h3>{text}</article></div></details>')
         sections.append('<section><h2>'+group['locale']+'</h2>'+''.join(cards)+'</section>')
     css='body{font:17px/1.6 system-ui;background:#f3f0e9;color:#242b33;max-width:1200px;margin:32px auto;padding:0 20px}details{background:#fff9;border:1px solid #cbc7bf;border-radius:12px;padding:16px;margin:12px 0}summary{cursor:pointer;font-weight:600}.columns{display:grid;grid-template-columns:1fr 1fr;gap:32px}article{min-width:0}video{max-width:800px;width:100%;display:block;margin:20px auto}article[dir=rtl]{font-size:20px}@media(max-width:750px){.columns{grid-template-columns:1fr}}'
-    (output/'review.html').write_text('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bonsai narration review</title><style>'+css+'</style><h1>30 narration drafts</h1><p>Five demonstrations in six languages. Translations are drafts, not native-speaker approvals. Videos are silent visual edits. Available Dolly audio appears below each title. Pronunciation, subtitles and synchronization remain unreviewed.</p>'+''.join(sections)+'</html>')
+    (output/'review.html').write_text('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bonsai narration review</title><style>'+css+'</style><h1>30 narration drafts</h1><p>Five demonstrations in six languages. Translations are drafts, not native-speaker approvals. Videos are labeled as silent or narrated drafts. Available Dolly audio appears below each title. Pronunciation, subtitles and synchronization remain unreviewed.</p>'+''.join(sections)+'</html>')
 
 
 def main():
