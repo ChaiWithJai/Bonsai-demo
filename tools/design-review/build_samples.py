@@ -5,6 +5,9 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SHOTS = os.path.join(BASE, "shots")
 
 META = {
+    "86-native-newchat-features": ("new-chat", "Feature prompts remain in the native chat composer"),
+    "84-financial-diligence": ("new-chat", "Financial review with source-backed reconciliation and explicit Jev action"),
+    "85-legal-diligence": ("new-chat", "Legal exceptions beside the controlling source passages"),
     "83-newchat-bond-entry": ("new-chat", "Bond math feature available directly from New chat"),
     "82-bond-learning": ("bond-learning", "Confirmed cash flows, payment inspection and saved repricing prediction"),
     "81-source-accounting-revision": ("workspace", "Review observations recovered through explicit source accounting"),

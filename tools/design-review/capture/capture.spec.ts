@@ -2153,32 +2153,18 @@ test('Source accounting revision exposes both recovered observations',async({pag
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/81-source-accounting-revision.'+info.project.name+'.png'),fullPage:true});
 });
 
-test('Bond learning confirms inputs and preserves a repricing exercise',async({page},info)=>{
+test('New chat features retain the native composer and attachments',async({page},info)=>{
  await page.goto('/#/');
- await expect(page.getByRole('button',{name:/Bond math Bring your working/})).toBeVisible();
- await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/83-newchat-bond-entry.'+info.project.name+'.png'),fullPage:true});
  await page.getByRole('button',{name:/Bond math Bring your working/}).click();
- await page.getByLabel('Face value',{exact:true}).fill('1000');
- await page.getByLabel('Annual coupon (%)',{exact:true}).fill('5');
- await page.getByLabel('Annual yield (%)',{exact:true}).fill('5');
- await page.getByLabel('Remaining payments',{exact:true}).fill('20');
- await page.getByLabel('Your whiteboard working, in text').fill('Development test: twenty semiannual payments of 25, plus 1000 principal.');
- await page.getByRole('button',{name:'Confirm assumptions & calculate'}).click();
- await expect(page.getByTestId('bond-price')).toHaveText('1,000.00');
- await page.getByRole('button',{name:'Year 10 1,025.00 PV',exact:false}).click();
- await expect(page.getByRole('heading',{name:'Payment 20',exact:true})).toBeVisible();
- await page.getByLabel('What do you expect to happen?').fill('A higher yield lowers the present value. Development test, not human review.');
- await page.getByRole('button',{name:'Reveal the repriced bond'}).click();
- await expect(page.getByRole('heading',{name:'Your last prediction'})).toBeVisible();
- const price=await page.getByTestId('bond-price').innerText();
- expect(Number(price.replaceAll(',',''))).toBeLessThan(1000);
+ const composer=page.locator('.conversation-chat-form textarea');
+ await expect(composer).toBeVisible();
+ await expect(composer).toHaveValue(/Help me work through bond math/);
+ await expect(page.getByRole('main',{name:'Bond math chat feature'})).toHaveCount(0);
+ await expect(page.getByLabel('Face value',{exact:true})).toHaveCount(0);
+ await page.getByRole('button',{name:/Document review Compare financial or legal evidence/}).click();
+ await expect(composer).toHaveValue(/financial or legal documents/);
+ expect(page.url()).not.toContain('workspace');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  const shots=path.resolve(import.meta.dirname,'../shots');await fs.mkdir(shots,{recursive:true});
- await page.screenshot({path:path.join(shots,'82-bond-learning.'+info.project.name+'.png'),fullPage:true});
- await page.reload();
- await page.getByRole('button',{name:/Bond math Bring your working/}).click();
- await page.getByRole('button',{name:'Cash flows',exact:true}).click();
- await expect(page.getByTestId('bond-price')).toHaveText(price);
- await page.getByRole('button',{name:'Back to New chat',exact:true}).click();
- await expect(page.getByRole('button',{name:/Bond math Bring your working/})).toBeVisible();
+ await page.screenshot({path:path.join(shots,'86-native-newchat-features.'+info.project.name+'.png'),fullPage:true});
 });

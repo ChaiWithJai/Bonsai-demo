@@ -1,8 +1,7 @@
 <script lang="ts">
-  let { isEmpty = false, onChoosePrompt, onOpenBond }: {
+  let { isEmpty = false, onChoosePrompt }: {
     isEmpty: boolean;
     onChoosePrompt?: (prompt: string) => void;
-    onOpenBond?: () => void;
   } = $props();
   const workflows = [
     {number: '01', title: 'Hand off an account', detail: 'People, promises and the next step.', prompt: 'Help me prepare an account handoff. First ask which account, the outgoing and incoming owners, and the handoff date. Then use only the email threads and resources I authorize. Separate confirmed facts from gaps; include source links, open commitments, and next actions. Draft only; do not send messages.'},
@@ -16,7 +15,8 @@
     <img class="prism-wordmark" src="/prism-brand/prism-logo.svg" alt="Prism ML" />
     <p class="prism-eyebrow">BONSAI · YOUR WORK, IN CONTEXT</p>
     <p class="prism-intro">what can i take off your plate?</p>
-    <button type="button" class="bond-feature" onclick={() => onOpenBond?.()}><span>Bond math</span><strong>Bring your working. Explore the cash flows.</strong><span aria-hidden="true">↗</span></button>
+    <button type="button" class="bond-feature" onclick={() => onChoosePrompt?.('Help me work through bond math using the notes or whiteboard image I attach. First structure the face value, coupon, yield, remaining payments, and payment frequency. Leave missing or unreadable values unresolved. Show what you understood and ask me to confirm before calculating. Keep the explanation and review in this conversation.')}><span>Bond math</span><strong>Bring your working. Explore the cash flows.</strong><span aria-hidden="true">↗</span></button>
+    <button type="button" class="bond-feature" onclick={() => onChoosePrompt?.('Help me review the financial or legal documents I attach. First ask which review I need. Compare the claims against the source passages, preserve dates, units and exceptions, and show unresolved questions. Ask for my review before drawing a conclusion. Keep the evidence and review in this conversation.')}><span>Document review</span><strong>Compare financial or legal evidence.</strong><span aria-hidden="true">↗</span></button>
     <div class="prism-workflows">
       {#each workflows as workflow (workflow.number)}
         <button type="button" class="prism-workflow" onclick={() => onChoosePrompt?.(workflow.prompt)}>
