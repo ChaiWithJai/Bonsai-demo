@@ -26,7 +26,19 @@ def integrate_chat_features(original):
     greeting = '<ChatScreenGreeting {isEmpty} />'
     if greeting not in original:
         raise ValueError('Upstream greeting integration changed; review before building')
-    return original.replace(greeting, '<ChatScreenGreeting {isEmpty} onChoosePrompt={(prompt) => { initialMessage = prompt; }} />')
+    original = original.replace('<script lang="ts">', '<script lang="ts">\n\timport { mcpStore as bonsaiMcpStore } from "$lib/stores";', 1)
+    original = original.replace('</script>', '''
+    async function chooseBonsaiFeature(prompt: string) {
+        const id = 'bonsai-chat-tools-' + window.location.port;
+        if (!bonsaiMcpStore.getServers().some(server => server.id === id)) {
+            bonsaiMcpStore.addServer({id, name: 'Bonsai chat tools', enabled: true,
+                url: window.location.origin + '/api/bonsai-tools', useProxy: false});
+        }
+        await conversationsStore.preferences.setMcpServerOverride(id, true);
+        initialMessage = prompt;
+    }
+</script>''', 1)
+    return original.replace(greeting, '<ChatScreenGreeting {isEmpty} onChoosePrompt={(prompt) => { initialMessage = prompt; }} onChooseFeature={chooseBonsaiFeature} />')
 
 
 def main():

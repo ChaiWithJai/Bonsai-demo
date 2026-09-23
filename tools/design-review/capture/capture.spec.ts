@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+test.use({video:process.env.BONSAI_RECORD_DEMO ? {mode:'on',size:{width:1440,height:1000}} : 'off'});
 test('Workspace screens',async({page},info)=>{
  const shots=path.resolve(import.meta.dirname,'../shots');await fs.mkdir(shots,{recursive:true});
  await page.goto('/#/workspace');
@@ -2155,16 +2156,45 @@ test('Source accounting revision exposes both recovered observations',async({pag
 
 test('New chat features retain the native composer and attachments',async({page},info)=>{
  await page.goto('/#/');
- await page.getByRole('button',{name:/Bond math Bring your working/}).click();
+ await expect(page.getByRole('heading',{name:'What would you like to understand?'})).toBeVisible();
  const composer=page.locator('.conversation-chat-form textarea');
  await expect(composer).toBeVisible();
+ await expect(page.getByRole('dialog')).toHaveCount(0);
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/88-compact-newchat.'+info.project.name+'.png'),fullPage:true});
+ await page.getByRole('button',{name:'Work through bond math',exact:true}).click();
  await expect(composer).toHaveValue(/Help me work through bond math/);
- await expect(page.getByRole('main',{name:'Bond math chat feature'})).toHaveCount(0);
+ await expect(composer).toBeFocused();
  await expect(page.getByLabel('Face value',{exact:true})).toHaveCount(0);
- await page.getByRole('button',{name:/Document review Compare financial or legal evidence/}).click();
+ await page.getByRole('button',{name:'Compare documents',exact:true}).click();
  await expect(composer).toHaveValue(/financial or legal documents/);
+ await expect(composer).toBeFocused();
  expect(page.url()).not.toContain('workspace');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- const shots=path.resolve(import.meta.dirname,'../shots');await fs.mkdir(shots,{recursive:true});
- await page.screenshot({path:path.join(shots,'86-native-newchat-features.'+info.project.name+'.png'),fullPage:true});
+ await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/86-native-newchat-features.'+info.project.name+'.png'),fullPage:true});
+});
+
+test.describe('Native chat tool execution evidence',()=>{
+ test('Native New chat executes the checked bond tool',async({page},info)=>{
+  test.setTimeout(180000);
+  await page.goto('/#/');
+  await page.getByRole('button',{name:'Work through bond math',exact:true}).click();
+  const composer=page.locator('.conversation-chat-form textarea');
+  await expect(composer).toHaveValue(/calculate_bond/);
+  const toolResponse=page.waitForResponse(response=>{
+   if(!response.url().endsWith('/api/bonsai-tools') || response.request().method()!=='POST') return false;
+   try {const request=response.request().postDataJSON();return request.method==='tools/call' && request.params.name==='calculate_bond';}catch{return false;}
+  },{timeout:150000});
+  await composer.fill('Development test. I confirm these assumptions for this test: face 1000, annual coupon rate 0.05, annual yield 0.05, twenty remaining payments, frequency 2. Call calculate_bond once with these exact inputs, then report its price and evidence link. Do not fetch Treasury data or call other tools. This is an automated test, not a human review label.');
+  await composer.press('Enter');
+  await page.getByRole('button',{name:'Allow once',exact:true}).click({timeout:60000});
+  const response=await toolResponse;
+  const rpc=await response.json();
+  expect(rpc.result.isError).toBe(false);
+  const result=JSON.parse(rpc.result.content[0].text);
+  expect(result.result.price).toBeCloseTo(1000,8);
+  expect(result.result.payment_count).toBe(20);
+  await expect(page.getByRole('group',{name:'Assistant message with actions'}).last()).toContainText(/1,?000/,{timeout:60000});
+  await fs.writeFile(path.resolve(import.meta.dirname,'../../../.cache/native-chat-bond-tool.json'),JSON.stringify({url:page.url(),tool_result:result,actor:'automated_development_test'},null,2));
+  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/87-native-chat-bond-tool.'+info.project.name+'.png'),fullPage:true});
+ });
 });

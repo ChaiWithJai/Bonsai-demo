@@ -1,0 +1,39 @@
+{
+  "verified_at": "2026-09-23",
+  "entry": "New chat",
+  "actor": "automated_development_test",
+  "input": {
+    "face": 1000,
+    "coupon_rate": 0.05,
+    "annual_yield": 0.05,
+    "periods": 20,
+    "frequency": 2
+  },
+  "result": {
+    "price": 1000.0000000000014,
+    "payment_count": 20,
+    "modified_duration_years": 7.794581142823407
+  },
+  "mlflow_url": "http://127.0.0.1:5210/#/experiments/35/runs/2c12494086764ce4a5512a5db01d3f73",
+  "saved_evidence_url": "/api/workspace/learning/42f46ad53a6649a2a01bf62136ede6c1",
+  "raw_screen": ".cache/demos/native-bond-tool-20260923/raw-screen.webm",
+  "raw_screen_sha256": "6e7dba50b3faf7de37181485b196cbbd77da29c8a010787360cab9c26cb011e0",
+  "checks": [
+    "Native MCP discovery",
+    "Model requested calculate_bond",
+    "Single-use tool approval",
+    "Deterministic result returned",
+    "Assistant response contains price",
+    "Desktop/mobile starter stays in native composer"
+  ],
+  "limitations": [
+    "Development case, not held-out evaluation",
+    "Raw recording, not a finished demo",
+    "Gateway authentication and Dolly synthesis unverified",
+    "Interactive bond teaching view incomplete"
+  ],
+  "prior_attempt": {
+    "outcome": "Test timed out at unclicked Allow once gate",
+    "evidence": ".cache/native-chat-first-tool-attempt"
+  }
+}

@@ -196,6 +196,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlsplit(self.path).path
+        if path == '/api/bonsai-tools':
+            return self.respond(405, b'Stateless MCP uses POST', 'text/plain')
         if path.startswith('/api/workspace'):
             return self.workspace_request()
         origin = self.headers.get("Origin")
@@ -271,6 +273,8 @@ class Handler(BaseHTTPRequestHandler):
     do_HEAD = do_GET
 
     def do_POST(self):
+        if urlsplit(self.path).path == '/api/bonsai-tools':
+            return self.chat_tools_request()
         if urlsplit(self.path).path.startswith('/api/workspace'):
             return self.workspace_request()
         if urlsplit(self.path).path == "/api/activation-replay":
@@ -280,6 +284,28 @@ class Handler(BaseHTTPRequestHandler):
         return self.forward()
 
     do_DELETE = do_POST
+
+    def chat_tools_request(self):
+        origin = self.headers.get('Origin')
+        if self.headers.get('Sec-Fetch-Site') == 'cross-site' or (origin and origin not in UI_ORIGINS):
+            return self.respond(403, b'Local chat origin required', 'text/plain')
+        if self.command != 'POST':
+            return self.respond(405, b'Stateless MCP uses POST', 'text/plain')
+        service = getattr(self.server, 'workspace_learning', None)
+        if service is None:
+            return self.respond(503, b'Chat tools are not configured', 'text/plain')
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+            if not 0 < length <= 150000 or self.headers.get('Transfer-Encoding'):
+                raise ValueError('Invalid request size')
+            request = json.loads(self.rfile.read(length))
+        except (ValueError, TypeError):
+            return self.respond(400, b'Invalid MCP request', 'text/plain')
+        from chat_tools_mcp import dispatch
+        result = dispatch(service, request)
+        if result is None:
+            return self.respond(202, b'', 'application/json')
+        return self.respond(200, json.dumps(result).encode(), 'application/json')
 
     def workspace_request(self):
         worker = getattr(self.server, 'workspace', None)
