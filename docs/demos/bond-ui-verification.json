@@ -1,0 +1,77 @@
+{
+  "scope": "Confirmed text inputs, deterministic calculation, payment inspection, repricing and reload; no model extraction or Gateway call",
+  "checks": [
+    {
+      "session_id": "62d168ebbeaf41c999d9f5d1bd7b5910",
+      "action_id": "20260923T182728170326-8c51612e923f4786ac0d82b2246099f0",
+      "run_id": "6b6089f55c4b4b4f8e902929c99acc3b",
+      "mlflow_status": "FINISHED",
+      "artifacts": [
+        "evidence/action.json"
+      ],
+      "price": 1000.0000000000014,
+      "actor": "automated_development_test",
+      "human_review": false
+    },
+    {
+      "session_id": "62d168ebbeaf41c999d9f5d1bd7b5910",
+      "action_id": "20260923T182728304639-b4d79caecdd546f5aa3d95269a58aecc",
+      "run_id": "3ad094c58a6946a899b9938e2848ee93",
+      "mlflow_status": "FINISHED",
+      "artifacts": [
+        "evidence/action.json"
+      ],
+      "price": 980.7416756809134,
+      "actor": "automated_development_test",
+      "human_review": false
+    },
+    {
+      "session_id": "d0bb8b406b6a4f0ebc33a50660abe898",
+      "action_id": "20260923T182908991806-2ffe088fd9d946d7939c4e0ed0f59d19",
+      "run_id": "db406895b7614012a0f4105958310cae",
+      "mlflow_status": "FINISHED",
+      "artifacts": [
+        "evidence/action.json"
+      ],
+      "price": 1000.0000000000014,
+      "actor": "automated_development_test",
+      "human_review": false
+    },
+    {
+      "session_id": "d0bb8b406b6a4f0ebc33a50660abe898",
+      "action_id": "20260923T182909125803-c08b8f8988304674bf9a17b698e73617",
+      "run_id": "d51eb3c073aa4c499bb2343952072544",
+      "mlflow_status": "FINISHED",
+      "artifacts": [
+        "evidence/action.json"
+      ],
+      "price": 980.7416756809134,
+      "actor": "automated_development_test",
+      "human_review": false
+    },
+    {
+      "session_id": "e80cd94184494aa29e1659d898d045fd",
+      "action_id": "20260923T182910303598-d1dd599296f84b49b8e4d2de4920ac90",
+      "run_id": "ae0535a1310848e1a404c887346bb20a",
+      "mlflow_status": "FINISHED",
+      "artifacts": [
+        "evidence/action.json"
+      ],
+      "price": 1000.0000000000014,
+      "actor": "automated_development_test",
+      "human_review": false
+    },
+    {
+      "session_id": "e80cd94184494aa29e1659d898d045fd",
+      "action_id": "20260923T182910437779-085fc5e3184b447f8b88758a84a5315d",
+      "run_id": "71bab7a5156843c6a51c63ff39422281",
+      "mlflow_status": "FINISHED",
+      "artifacts": [
+        "evidence/action.json"
+      ],
+      "price": 980.7416756809134,
+      "actor": "automated_development_test",
+      "human_review": false
+    }
+  ]
+}

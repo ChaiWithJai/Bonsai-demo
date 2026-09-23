@@ -314,7 +314,19 @@ class Handler(BaseHTTPRequestHandler):
                 payload = json.loads(self.rfile.read(size))
                 if not isinstance(payload, dict):
                     raise ValueError('Expected a JSON object')
-            if parts[:3] == ['api', 'workspace', 'source-jobs']:
+            if parts[:3] == ['api', 'workspace', 'learning']:
+                learning = self.server.workspace_learning
+                if len(parts) == 3 and self.command == 'GET':
+                    result = learning.list()
+                elif len(parts) == 3 and self.command == 'POST':
+                    result = learning.create(payload.get('kind'))
+                elif len(parts) == 4 and self.command == 'GET':
+                    result = learning.get(parts[3])
+                elif len(parts) == 5 and parts[4] == 'actions' and self.command == 'POST':
+                    result = learning.act(parts[3], payload)
+                else:
+                    raise ValueError('Unknown learning route')
+            elif parts[:3] == ['api', 'workspace', 'source-jobs']:
                 jobs = self.server.workspace_source_jobs
                 if len(parts) == 3 and self.command == 'GET':
                     result = jobs.list()
@@ -665,6 +677,8 @@ def main():
             MlflowClient(tracking_uri=args.tracking_uri), args.tracking_uri, server.model_info, args.workspace_max_tokens)
         from workspace_source_jobs import SourceJobs
         server.workspace_source_jobs = SourceJobs(server.workspace, server.workspace_sources)
+        from workspace_learning import LearningWorkstreams
+        server.workspace_learning = LearningWorkstreams(server.workspace)
     print(f"Recording llama-ui: http://127.0.0.1:{args.port}; model upstream unchanged: {server.upstream}", flush=True)
     try:
         server.serve_forever()

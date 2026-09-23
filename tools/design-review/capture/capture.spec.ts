@@ -2152,3 +2152,32 @@ test('Source accounting revision exposes both recovered observations',async({pag
  await records.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/81-source-accounting-revision.'+info.project.name+'.png'),fullPage:true});
 });
+
+test('Bond learning confirms inputs and preserves a repricing exercise',async({page},info)=>{
+ await page.goto('/#/workspace');
+ const streams=page.getByRole('button',{name:/Workstreams/});
+ if(info.project.name==='mobile') {await expect(streams).toBeVisible(); await streams.click();}
+ await page.getByRole('button',{name:'Bond math tutor',exact:true}).click();
+ await page.getByLabel('Face value',{exact:true}).fill('1000');
+ await page.getByLabel('Annual coupon (%)',{exact:true}).fill('5');
+ await page.getByLabel('Annual yield (%)',{exact:true}).fill('5');
+ await page.getByLabel('Remaining payments',{exact:true}).fill('20');
+ await page.getByLabel('Your whiteboard working, in text').fill('Development test: twenty semiannual payments of 25, plus 1000 principal.');
+ await page.getByRole('button',{name:'Confirm assumptions & calculate'}).click();
+ await expect(page.getByTestId('bond-price')).toHaveText('1,000.00');
+ await page.getByRole('button',{name:'Year 10 1,025.00 PV',exact:false}).click();
+ await expect(page.getByRole('heading',{name:'Payment 20',exact:true})).toBeVisible();
+ await page.getByLabel('What do you expect to happen?').fill('A higher yield lowers the present value. Development test, not human review.');
+ await page.getByRole('button',{name:'Reveal the repriced bond'}).click();
+ await expect(page.getByRole('heading',{name:'Your last prediction'})).toBeVisible();
+ const price=await page.getByTestId('bond-price').innerText();
+ expect(Number(price.replaceAll(',',''))).toBeLessThan(1000);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const shots=path.resolve(import.meta.dirname,'../shots');await fs.mkdir(shots,{recursive:true});
+ await page.screenshot({path:path.join(shots,'82-bond-learning.'+info.project.name+'.png'),fullPage:true});
+ await page.reload();
+ if(info.project.name==='mobile') {await expect(streams).toBeVisible(); await streams.click();}
+ await page.getByRole('button',{name:'Bond math tutor',exact:true}).click();
+ await page.getByRole('button',{name:'Cash flows',exact:true}).click();
+ await expect(page.getByTestId('bond-price')).toHaveText(price);
+});

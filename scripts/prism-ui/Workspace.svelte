@@ -1,6 +1,8 @@
 <script lang="ts">
+  import WorkspaceBond from '$lib/WorkspaceBond.svelte';
   import WorkspaceProposalComparison from '$lib/WorkspaceProposalComparison.svelte';
   import { onMount } from 'svelte';
+  import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import WorkspaceModelEvidence from '$lib/WorkspaceModelEvidence.svelte';
   import WorkspaceData from '$lib/WorkspaceData.svelte';
   import WorkspaceAcceptance from '$lib/WorkspaceAcceptance.svelte';
@@ -34,7 +36,7 @@
   let draftKey = $state(0);
   let selectedRole = $state('Research analyst');
   let initialPanel = $state('conversation');
-  const editDrafts = new Map<string, {prompt:string;checks:typeof requestChecks;profile:string}>();
+  const editDrafts = new SvelteMap<string, {prompt:string;checks:typeof requestChecks;profile:string}>();
   function retainEditDraft() { if(project && !home) editDrafts.set(project.id,{prompt,checks:structuredClone($state.snapshot(requestChecks)),profile:generationProfile}); }
   function roleStream(role:string) { streamsExpanded=false; selectedRole=role; initialPanel='conversation'; newStream(); }
   function newStream() { retainEditDraft(); home = true; selectedSource = ''; selectedIntake='';selectedStreamId=''; initialPanel='conversation'; draftKey += 1; }
@@ -59,7 +61,7 @@
   let preview = $state<Data | null>(null);
   const planningHistory = $derived.by(() => {
     const chain:Data[] = [];
-    const seen = new Set<string>();
+    const seen = new SvelteSet<string>();
     let current = sourceStreams.find(item => item.workspace_id === project?.id);
     while (current && !seen.has(current.id)) {
       seen.add(current.id); chain.unshift(current);
@@ -210,7 +212,7 @@
   <aside class="stream-list" class:expanded={streamsExpanded} aria-label="Workstreams">
     <div class="stream-list-title"><h1>Workstreams</h1><button onclick={newStream} aria-label="New workstream"><Plus size={18}/></button></div>
     <label class="stream-search"><span class="sr-only">Search workstreams</span><input bind:value={streamSearch} placeholder="Search workstreams" /></label>
-    <p class="sidebar-section">Roles</p><div class="role-choices">{#each [{name:'Research analyst',initial:'R',description:'Find connections across sources'},{name:'Data analyst',initial:'D',description:'Structure data and explore patterns'},{name:'Evidence reviewer',initial:'E',description:'Check claims against their sources'}] as role (role.name)}<button title={role.description} aria-label={role.name} aria-pressed={home && selectedRole===role.name} class:selected={home && selectedRole===role.name} onclick={()=>roleStream(role.name)}><span class="role-avatar" aria-hidden="true">{role.initial}</span><span><strong>{role.name}</strong></span></button>{/each}</div><details class="shared-tools"><summary>Shared tools</summary><button onclick={()=>{if(home) initialPanel='files'; else tab='data';}}>Search attached files</button></details><p class="sidebar-section">Conversations</p>
+    <p class="sidebar-section">Roles</p><div class="role-choices">{#each [{name:'Research analyst',initial:'R',description:'Find connections across sources'},{name:'Data analyst',initial:'D',description:'Structure data and explore patterns'},{name:'Evidence reviewer',initial:'E',description:'Check claims against their sources'},{name:'Bond math tutor',initial:'B',description:'Learn through cash flows and Treasury context'}] as role (role.name)}<button title={role.description} aria-label={role.name} aria-pressed={home && selectedRole===role.name} class:selected={home && selectedRole===role.name} onclick={()=>roleStream(role.name)}><span class="role-avatar" aria-hidden="true">{role.initial}</span><span><strong>{role.name}</strong></span></button>{/each}</div><details class="shared-tools"><summary>Shared tools</summary><button onclick={()=>{if(home) initialPanel='files'; else tab='data';}}>Search attached files</button></details><p class="sidebar-section">Conversations</p>
     {#each visibleStreams as item (item.id)}<button class="stream-row" class:selected={home && selectedStreamId===item.id} onclick={()=>openStream(item)}><span class="stream-avatar">{item.role.slice(0,1)}</span><span><strong>{item.title}</strong><small>{item.role} · {item.status==='awaiting_confirmation' ? 'Your review needed' : item.stage}</small></span></button>{/each}
     {#each activeSources as item (item.id)}<button class="stream-row" class:selected={home && selectedSource === item.source_id} onclick={() => {retainEditDraft();selectedStreamId='';selectedIntake='';selectedSource=item.source_id;home=true;initialPanel='conversation';streamsExpanded=false;}}><span class="stream-avatar">B</span><span><strong>{item.filename}</strong><small>{item.status === 'awaiting_confirmation' ? 'Your review needed' : item.stage}</small></span></button>{/each}
     {#if !visibleStreams.length && !activeSources.length}<p class="stream-empty">{streamSearch ? 'No matching conversations.' : 'Start with a role, then bring your question and files.'}</p>{/if}
@@ -228,7 +230,7 @@
   {#if loading}<p role="status">Opening Workspace…</p>
   {:else if home || !project}
     <section class="start-layout" aria-label="New workstream conversation">
-      <div class="data-start">{#key selectedSource + ':' + selectedIntake + ':' + draftKey}<WorkspaceData initialIntake={selectedIntake} role={selectedRole} bind:panel={initialPanel} initialSource={selectedSource} onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>{/key}</div>
+      <div class="data-start">{#if selectedRole==='Bond math tutor'}<WorkspaceBond/>{:else}{#key selectedSource + ':' + selectedIntake + ':' + draftKey}<WorkspaceData initialIntake={selectedIntake} role={selectedRole} bind:panel={initialPanel} initialSource={selectedSource} onProject={(id) => { tab = 'preview'; choose(id).catch(e => error = String(e)); }}/>{/key}{/if}</div>
 
     </section>
   {:else}
