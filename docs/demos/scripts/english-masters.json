@@ -1,0 +1,46 @@
+{
+  "status": "Draft voiceover masters grounded in recorded development runs. Timing and spoken delivery require review after synthesis.",
+  "format": "Screen recording with voiceover. No footage of Jai or claim of his handwriting is fabricated.",
+  "demos": [
+    {
+      "id": "01-bond-learning",
+      "title": "From working notes to bond cash flows",
+      "viewer": "A finance practitioner learning bond math",
+      "narration": "This bond is worth one thousand at a five percent yield. The useful part is seeing why. I start with a clearly labeled sample worksheet. It says ten years, two payments a year, and a five percent annual coupon. Bonsai catches the mistaken payment count: twenty payments, twenty-five each. It also asks for the missing yield. After confirmation, a deterministic tool calculates the price. In the conversation, I can inspect the final coupon and principal and see their discounted value. Raising yield by twenty-five basis points lowers the price to nine hundred eighty point seven four. A separate Treasury tool supplies dated market context. Those par yields do not replace the confirmed discount rate. Try the same workflow with your own working and check every proposed assumption.",
+      "proof": ["Native worksheet-image interpretation", "Confirmed calculator result", "Inline payment and yield controls", "Dated Treasury source"],
+      "constraint": "Synthetic worksheet, regular coupon-date bond, local Bonsai 2 27B; not a complete bond-pricing system."
+    },
+    {
+      "id": "02-financial-diligence",
+      "title": "Reconcile management and lender definitions",
+      "viewer": "An analyst reviewing a financial packet",
+      "narration": "These two synthetic documents disagree about leverage. Management says the company meets the limit. The lender uses a different definition. I attach both documents in New chat and ask Bonsai to compare them. Nine million of cash is restricted, and only one million of the requested addbacks is approved. The resulting net debt is sixty-nine million, approved EBITDA is nineteen million, and leverage is about three point six three. That exceeds the stated three point five limit. The useful output is the calculation beside the source passages. But the answer later introduces a wrong dollar figure. We preserve that mistake instead of editing it away. This is a review proposal, not an investment decision. The next demonstration shows how the trace helps inspect that failure.",
+      "proof": ["Two native document attachments", "Quoted lender definition", "Correct leverage calculation", "Preserved erroneous final paragraph"],
+      "constraint": "Synthetic development case; observed financial error remains visible. No authenticated Jev result is claimed."
+    },
+    {
+      "id": "03-legal-diligence",
+      "title": "Check a summary against agreement excerpts",
+      "viewer": "A legal reviewer comparing a document packet",
+      "narration": "The summary sounds simple, but the agreement contains exceptions. This is a synthetic legal review, not a real client matter. I attach the summary and agreement excerpts in New chat. Bonsai identifies three differences. Fraud and willful misconduct are outside the stated liability cap. Active systems have a thirty-day deletion deadline, while encrypted recovery backups may remain for ninety days. Termination under the supplied clause requires a material breach, written notice, and failure to cure. The source passages make those differences inspectable. The answer also makes an overly broad statement about termination rights. That limitation stays in the record for review. The value here is a traceable comparison that a reviewer can challenge, not an automated legal determination.",
+      "proof": ["Three supplied clause conflicts", "Quoted controlling excerpts", "Preserved unsupported broader claim"],
+      "constraint": "Synthetic excerpts only. No complete-contract or legal-outcome claim."
+    },
+    {
+      "id": "04-financial-error-inspection",
+      "title": "Inspect a correct ratio and a wrong dollar claim",
+      "viewer": "An engineer operating financial agents",
+      "narration": "Bonsai calculated the leverage ratio correctly, then claimed excess debt of ninety-five million dollars. The source figures imply two point five million: sixty-nine minus three point five times nineteen. That is the actual error we are inspecting. The trace preserves the inputs, answer, model identity, and execution record. Because the weights are available, we can also run a bounded instrumented diagnostic around the recorded sentence. This view contains measured vectors from three layers across thirty-two forced tokens. It is a new run with a reconstructed prefix, not the original activations or a causal explanation of the error. The evidence helps us design a concrete check: verify derived dollar amounts with arithmetic before accepting the answer. Inspect the source, trace, and diagnostic together.",
+      "proof": ["Original 95-million claim", "Independent 2.5-million arithmetic", "Bound request and response hashes", "Measured teacher-forced diagnostic vectors"],
+      "constraint": "Diagnostic is reconstructed and teacher-forced. It does not establish the cause of the original error."
+    },
+    {
+      "id": "05-legal-error-inspection",
+      "title": "Inspect a claim that exceeds its source",
+      "viewer": "An engineer operating legal review agents",
+      "narration": "The model found the clause conflict, then went too far. It said a service interruption that is not a material breach gives no termination right at all. The supplied excerpt supports a narrower conclusion: that interruption alone does not establish a right under this clause. Other provisions were not supplied. We retain the exact statement and its source in the trace. The diagnostic then feeds recorded answer tokens through a reconstructed prefix and measures three selected layers. You can inspect token positions and the full captured vectors. These are new measurements, not a recovery of the original internal state, and they do not prove why the overstatement happened. The practical next step is a scope check: every conclusion should say what the supplied evidence establishes and what remains unknown.",
+      "proof": ["Original global termination claim", "Limited supplied clause", "Original trace", "Measured teacher-forced window"],
+      "constraint": "Analyst assessment of evidence scope, not a legal determination or causal interpretation of activations."
+    }
+  ]
+}

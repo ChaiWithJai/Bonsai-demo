@@ -1,0 +1,497 @@
+{
+  "status": "visual_drafts_rendered_narration_incomplete",
+  "render_script": "scripts/render_demo_edits.py",
+  "output_root": ".cache/demos/visual-edits",
+  "demos": [
+    {
+      "id": "01-bond-learning",
+      "status": "visual_edit_draft_audio_pending",
+      "no_human_camera_or_microphone_track": true,
+      "edits": [
+        {
+          "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+          "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+          "start_seconds": 63,
+          "source_seconds": 2,
+          "output_seconds": 5,
+          "held_frame_seconds": 3,
+          "label": "SILENT DRAFT \u00b7 Result first: inspect a yield change \u00b7 held frame",
+          "output_sha256": "59e420993bce72a44f5cbc85927436389efa105a89eba4cc8efeedfbfe96ffe4"
+        },
+        {
+          "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+          "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+          "start_seconds": 0,
+          "source_seconds": 4,
+          "output_seconds": 10,
+          "held_frame_seconds": 6,
+          "label": "SILENT DRAFT \u00b7 Synthetic sample worksheet \u00b7 held frame",
+          "output_sha256": "60957019bd1fd68adbfc8e2b4f4e877c06d57e8fc4f7870c4652df09402e32fe"
+        },
+        {
+          "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+          "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+          "start_seconds": 19,
+          "source_seconds": 8,
+          "output_seconds": 12,
+          "held_frame_seconds": 4,
+          "label": "SILENT DRAFT \u00b7 Confirm the missing yield \u00b7 held frame",
+          "output_sha256": "e4eb189ea2705fb0da0f1d6e033808ad82fb6a641675afa47c7ba6b189e5f76c"
+        },
+        {
+          "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+          "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+          "start_seconds": 31,
+          "source_seconds": 14,
+          "output_seconds": 14,
+          "held_frame_seconds": 0,
+          "label": "SILENT DRAFT \u00b7 Checked calculation in New chat \u00b7 recorded excerpt",
+          "output_sha256": "a90bf74c918dc4fcac34db643552ca211b6404e3bc1b587b66a4ca0db5a54fd1"
+        },
+        {
+          "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+          "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+          "start_seconds": 61,
+          "source_seconds": 4,
+          "output_seconds": 14,
+          "held_frame_seconds": 10,
+          "label": "SILENT DRAFT \u00b7 Inspect and reprice payments \u00b7 held frame",
+          "output_sha256": "1f7da535e932c95b0e69eb4830699e1a0ac2ceba2152bdb0e7d42889e38fb069"
+        },
+        {
+          "source": ".cache/demos/native-treasury-20260923/raw-screen.webm",
+          "source_sha256": "36956190410a27d4981616b02880ec59fc3682784629764ced2d8d9f08b8b437",
+          "start_seconds": 23,
+          "source_seconds": 3,
+          "output_seconds": 10,
+          "held_frame_seconds": 7,
+          "label": "SILENT DRAFT \u00b7 Dated Treasury context \u00b7 held frame",
+          "output_sha256": "513041b432d0f7091156e30f28fc19d36619975c9737e392d395ef53a1df2175"
+        },
+        {
+          "source": ".cache/demos/bond-image-workflow-20260923/raw-screen.webm",
+          "source_sha256": "4b99a7ad8d1e2e0f5f76c8656e432c5a099178ab248015b740165ed846f72595",
+          "start_seconds": 63,
+          "source_seconds": 2,
+          "output_seconds": 5,
+          "held_frame_seconds": 3,
+          "label": "SILENT DRAFT \u00b7 Try your own working \u00b7 held frame",
+          "output_sha256": "7c4b1c51a85259c35724b5ea5f4415709ff4137962291a787022e76f6c9e8a36"
+        }
+      ],
+      "outputs": {
+        "main-visual-draft.mp4": {
+          "sha256": "543f6994b7c6e4766fcfb80cb032ebe9e4ae80d4c743b0aa2b6468f9e45559a0",
+          "duration_seconds": 70.0
+        },
+        "short-visual-draft.mp4": {
+          "sha256": "6afb57b8030d77f3e3a915f72e5ef59a688b0aed04c5d333ac5f6e87f4150ccf",
+          "duration_seconds": 20.08
+        },
+        "walkthrough-unvoiced.mp4": {
+          "sha256": "5780761c129d49acbc5f5fa043d6abb02cd1ee3faadef6e3569149a5c9813531",
+          "duration_seconds": 92.32
+        }
+      },
+      "narration": "Blocked on AI_GATEWAY_API_KEY; no replacement voice used",
+      "review": "Automated render and visual inspection; not human signoff",
+      "supporting_evidence": [
+        {
+          "path": "docs/demos/native-bond-image-evidence.json",
+          "sha256": "bfc3a8d3caabc97a2209f0e59b61f78655f9c4f3b24acb64855b83cb19b3cbc4"
+        },
+        {
+          "path": "docs/demos/native-treasury-evidence.json",
+          "sha256": "5d05892c15962c5b284d69ae5d25cfe28c4e7a4eaa40c7793c6463ba1d8eae16"
+        },
+        {
+          "path": "docs/demos/bond-math-prd.md",
+          "sha256": "3503881d1a27d3d81450042ace9641dedb30110b7ad8e3de958f232e5570c01c"
+        },
+        {
+          "path": "docs/demos/scripts/english-masters.json",
+          "sha256": "46141ad12517770adc8deee243c59cf6a7174aba14ac194999ab4b5eb20866f7"
+        }
+      ]
+    },
+    {
+      "id": "02-financial-diligence",
+      "status": "visual_edit_draft_audio_pending",
+      "no_human_camera_or_microphone_track": true,
+      "edits": [
+        {
+          "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+          "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+          "start_seconds": 39,
+          "source_seconds": 6,
+          "output_seconds": 6,
+          "held_frame_seconds": 0,
+          "label": "SILENT DRAFT \u00b7 Result first: leverage exceeds the stated limit \u00b7 recorded excerpt",
+          "output_sha256": "85e3a9ea490d4d557fe93c468362683dbfae5f9b47c9a8406eb872fb9e5d4368"
+        },
+        {
+          "source": ".cache/demos/visual-edits/cards/financial-source.png",
+          "source_sha256": "accd48fdb33062bed151e27280c62b7a40eb9989a9a16c4d1f1b7847fa8cb48b",
+          "start_seconds": 0,
+          "source_seconds": 14,
+          "output_seconds": 14,
+          "held_frame_seconds": 14,
+          "label": "SILENT DRAFT \u00b7 Synthetic source \u00b7 still evidence",
+          "output_sha256": "853bea6e42cea377c4df66e469295da6034d5354290938d8b1cd59b4eba990ef"
+        },
+        {
+          "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+          "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+          "start_seconds": 39,
+          "source_seconds": 21,
+          "output_seconds": 21,
+          "held_frame_seconds": 0,
+          "label": "SILENT DRAFT \u00b7 Calculation and source comparison \u00b7 recorded excerpt",
+          "output_sha256": "ea745bc6266b4cfe44cf8e0ec0f41d4dfd6c0947210b71b480e27ff89427ddda"
+        },
+        {
+          "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+          "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+          "start_seconds": 73,
+          "source_seconds": 5,
+          "output_seconds": 14,
+          "held_frame_seconds": 9,
+          "label": "SILENT DRAFT \u00b7 Retain the erroneous final claim \u00b7 held frame",
+          "output_sha256": "8a8d5e9967485a28ba8bce69478164923a7e78e8085dad59263d701b23d02572"
+        },
+        {
+          "source": ".cache/demos/visual-edits/cards/financial-proof.png",
+          "source_sha256": "693bd43dcc63dd87416f76f220aa4fc8a6bba46e0f927a29b33e40c37dfa3dd2",
+          "start_seconds": 0,
+          "source_seconds": 15,
+          "output_seconds": 15,
+          "held_frame_seconds": 15,
+          "label": "SILENT DRAFT \u00b7 Check the arithmetic \u00b7 still evidence",
+          "output_sha256": "49a0a4662c22becd2964d53f36bd7b1de1b44e5eae0ff352d37f611970c5e18a"
+        }
+      ],
+      "outputs": {
+        "main-visual-draft.mp4": {
+          "sha256": "8d376ad5532bf9d3e7a4f731e42006face0a934a960edc7a949be0364220f488",
+          "duration_seconds": 70.0
+        },
+        "short-visual-draft.mp4": {
+          "sha256": "ee49337856ae62448c15b5da6439dfd7d66e497841a476b21d98b1569d4d8a69",
+          "duration_seconds": 20.08
+        },
+        "walkthrough-unvoiced.mp4": {
+          "sha256": "8506256f4a5b69446535ff1535e42154f20bee4631d7aaa325933245ab7d4eae",
+          "duration_seconds": 79.04
+        }
+      },
+      "narration": "Blocked on AI_GATEWAY_API_KEY; no replacement voice used",
+      "review": "Automated render and visual inspection; not human signoff",
+      "supporting_evidence": [
+        {
+          "path": "docs/demos/financial-observed-error.json",
+          "sha256": "283f2131eaa9231b780a888ff7050cde174a3e34d743591b2b0b2b969597116c"
+        },
+        {
+          "path": "docs/demos/financial-activation-evidence.json",
+          "sha256": "496e9ca351b55a4583299e83d16c412abf2fa9236732ae65f48209627a6e4db6"
+        },
+        {
+          "path": "docs/demos/scripts/english-masters.json",
+          "sha256": "46141ad12517770adc8deee243c59cf6a7174aba14ac194999ab4b5eb20866f7"
+        }
+      ]
+    },
+    {
+      "id": "03-legal-diligence",
+      "status": "visual_edit_draft_audio_pending",
+      "no_human_camera_or_microphone_track": true,
+      "edits": [
+        {
+          "source": ".cache/demos/native-diligence-legal-20260923/raw-screen.webm",
+          "source_sha256": "027d2e2dae4924cd53c815846627e195f5c53a5f844e1313e4652109527ef034",
+          "start_seconds": 90,
+          "source_seconds": 6,
+          "output_seconds": 6,
+          "held_frame_seconds": 0,
+          "label": "SILENT DRAFT \u00b7 Result first: summary and agreement differ \u00b7 recorded excerpt",
+          "output_sha256": "7823ad7065cb9a63366a5e6a35758a8d8042212be766735a9341660cd8566423"
+        },
+        {
+          "source": ".cache/demos/visual-edits/cards/legal-source.png",
+          "source_sha256": "d9713521379e6403547adb28bfd5371525d873abafa652d7590d8aac6374d1f0",
+          "start_seconds": 0,
+          "source_seconds": 14,
+          "output_seconds": 14,
+          "held_frame_seconds": 14,
+          "label": "SILENT DRAFT \u00b7 Synthetic source excerpt \u00b7 still evidence",
+          "output_sha256": "dfbef3b7dc273d095417c184622d1cf3ebca0f659a60f7046111887f27b8384b"
+        },
+        {
+          "source": ".cache/demos/native-diligence-legal-20260923/raw-screen.webm",
+          "source_sha256": "027d2e2dae4924cd53c815846627e195f5c53a5f844e1313e4652109527ef034",
+          "start_seconds": 85,
+          "source_seconds": 25,
+          "output_seconds": 25,
+          "held_frame_seconds": 0,
+          "label": "SILENT DRAFT \u00b7 Inspect clauses and exceptions \u00b7 recorded excerpt",
+          "output_sha256": "6302da24e2d87c15d8163189fae5becb0b9c1f8a4f91462d4adad6cff5169e5b"
+        },
+        {
+          "source": ".cache/demos/native-diligence-legal-20260923/raw-screen.webm",
+          "source_sha256": "027d2e2dae4924cd53c815846627e195f5c53a5f844e1313e4652109527ef034",
+          "start_seconds": 123,
+          "source_seconds": 2,
+          "output_seconds": 10,
+          "held_frame_seconds": 8,
+          "label": "SILENT DRAFT \u00b7 Retain the overbroad claim \u00b7 held frame",
+          "output_sha256": "6deae4b5b254b3ca67e8114a34ff8cd59bae64240a47d6bb7494d67867332ddb"
+        },
+        {
+          "source": ".cache/demos/visual-edits/cards/legal-proof.png",
+          "source_sha256": "aa92d6e74afa390301a873126b19273100b498c4c1d7d6c7a3579222108f6ab1",
+          "start_seconds": 0,
+          "source_seconds": 15,
+          "output_seconds": 15,
+          "held_frame_seconds": 15,
+          "label": "SILENT DRAFT \u00b7 Review the scope of the conclusion \u00b7 still evidence",
+          "output_sha256": "cb21dec658ac33e611862ab7e36ad6e10fc4f57464d0aa418c77fd903ec88b9f"
+        }
+      ],
+      "outputs": {
+        "main-visual-draft.mp4": {
+          "sha256": "331bdce6faccf95ad9a75664de5e1efdcb76c802a5310933b64f4967d42f3491",
+          "duration_seconds": 70.0
+        },
+        "short-visual-draft.mp4": {
+          "sha256": "306e0e3ae8a79a3e35e4d2cbc70138eb9f20446bf57c64f593eef563b4813085",
+          "duration_seconds": 20.08
+        },
+        "walkthrough-unvoiced.mp4": {
+          "sha256": "13a9158ef2b4bf28aa9c95c97c031930be75a4f74dcbdd189b79e6b938fea2f5",
+          "duration_seconds": 125.96
+        }
+      },
+      "narration": "Blocked on AI_GATEWAY_API_KEY; no replacement voice used",
+      "review": "Automated render and visual inspection; not human signoff",
+      "supporting_evidence": [
+        {
+          "path": "docs/demos/legal-observed-error.json",
+          "sha256": "f0122061e43699fc037129389557cca503250f06c95b3844c28ee7db1b0d582d"
+        },
+        {
+          "path": "docs/demos/legal-activation-evidence.json",
+          "sha256": "1c59af229db2e6a0abec166695f7ddc869eeb6051df1e00255ccf11a6aa3f6ab"
+        },
+        {
+          "path": "docs/demos/scripts/english-masters.json",
+          "sha256": "46141ad12517770adc8deee243c59cf6a7174aba14ac194999ab4b5eb20866f7"
+        }
+      ]
+    },
+    {
+      "id": "04-financial-error-inspection",
+      "status": "visual_edit_draft_audio_pending",
+      "no_human_camera_or_microphone_track": true,
+      "edits": [
+        {
+          "source": ".cache/demos/visual-edits/cards/financial-proof.png",
+          "source_sha256": "693bd43dcc63dd87416f76f220aa4fc8a6bba46e0f927a29b33e40c37dfa3dd2",
+          "start_seconds": 0,
+          "source_seconds": 10,
+          "output_seconds": 10,
+          "held_frame_seconds": 10,
+          "label": "SILENT DRAFT \u00b7 Observed error and evidence check \u00b7 still evidence",
+          "output_sha256": "f171ed6cb2dbcb843871ff8ea24c8601b157107e8483f16089fada0f18f29631"
+        },
+        {
+          "source": ".cache/demos/visual-edits/cards/financial-source.png",
+          "source_sha256": "accd48fdb33062bed151e27280c62b7a40eb9989a9a16c4d1f1b7847fa8cb48b",
+          "start_seconds": 0,
+          "source_seconds": 10,
+          "output_seconds": 10,
+          "held_frame_seconds": 10,
+          "label": "SILENT DRAFT \u00b7 Synthetic source excerpt \u00b7 still evidence",
+          "output_sha256": "6ae8d71bc91cc8a21f7750a9ec5a3efc32df2e720a482cc7740f39ab8fad1104"
+        },
+        {
+          "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+          "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+          "start_seconds": 73,
+          "source_seconds": 5,
+          "output_seconds": 12,
+          "held_frame_seconds": 7,
+          "label": "SILENT DRAFT \u00b7 Original answer \u00b7 held frame",
+          "output_sha256": "fcafd6641a9514ca357e63c0483d85706609d7ce98dcf332b162350259c5019b"
+        },
+        {
+          "source": ".cache/demos/financial-activation-inspection-20260923/raw-screen-v2.webm",
+          "source_sha256": "d4dfeee0ef8a2ae2604bfa16867c02d0760357e50c66143193ba1590e1625d15",
+          "start_seconds": 0,
+          "source_seconds": 3.56,
+          "output_seconds": 10,
+          "held_frame_seconds": 6.4399999999999995,
+          "label": "SILENT DRAFT \u00b7 Measured diagnostic interaction \u00b7 held frame",
+          "output_sha256": "3bd054fa8d70028dd7c97b9fe68ca3318bb8005e4f0a63084db280c467e61b84"
+        },
+        {
+          "source": "tools/design-review/shots/92-financial-activation-window.desktop.png",
+          "source_sha256": "3343cb5ccdc0bae0a3b758aee48f359a69c6cf01e234049c9e31a615b05a4167",
+          "start_seconds": 0,
+          "source_seconds": 18,
+          "output_seconds": 18,
+          "held_frame_seconds": 18,
+          "label": "SILENT DRAFT \u00b7 Inspect captured values \u00b7 still evidence",
+          "output_sha256": "6e13e316424c51e35eba401acfec80669065234e21da9aece33da2490fc3e290"
+        },
+        {
+          "source": ".cache/demos/visual-edits/cards/diagnostic.png",
+          "source_sha256": "95dc1a48adb7ce9de17360879344bda42fc892d86126b5fe9aaf09ed89062159",
+          "start_seconds": 0,
+          "source_seconds": 10,
+          "output_seconds": 10,
+          "held_frame_seconds": 10,
+          "label": "SILENT DRAFT \u00b7 Limits and next action \u00b7 still evidence",
+          "output_sha256": "c28ef9781d80ba1dba9d3bd461f7f6070e018d9fcbe32eb56a6e9d7a6185cfe9"
+        }
+      ],
+      "outputs": {
+        "main-visual-draft.mp4": {
+          "sha256": "057e2ab7a31cb255d3d9e0ba1fd9e10dce89e5c4906c11e37dc6832bd2262ddf",
+          "duration_seconds": 70.0
+        },
+        "short-visual-draft.mp4": {
+          "sha256": "4b991aaca3137caf5c5c33fa988dc13b708b21d4a74e0b778da490fafabf0974",
+          "duration_seconds": 20.08
+        },
+        "walkthrough-unvoiced.mp4": {
+          "sha256": "11c4fd0b40aaec4c0746bd6634e4692d61b927187265f4a50a1da041cc5fee6b",
+          "duration_seconds": 82.6
+        }
+      },
+      "narration": "Blocked on AI_GATEWAY_API_KEY; no replacement voice used",
+      "review": "Automated render and visual inspection; not human signoff",
+      "supporting_evidence": [
+        {
+          "path": "docs/demos/financial-observed-error.json",
+          "sha256": "283f2131eaa9231b780a888ff7050cde174a3e34d743591b2b0b2b969597116c"
+        },
+        {
+          "path": "docs/demos/financial-activation-evidence.json",
+          "sha256": "496e9ca351b55a4583299e83d16c412abf2fa9236732ae65f48209627a6e4db6"
+        },
+        {
+          "path": "docs/demos/scripts/english-masters.json",
+          "sha256": "46141ad12517770adc8deee243c59cf6a7174aba14ac194999ab4b5eb20866f7"
+        }
+      ]
+    },
+    {
+      "id": "05-legal-error-inspection",
+      "status": "visual_edit_draft_audio_pending",
+      "no_human_camera_or_microphone_track": true,
+      "edits": [
+        {
+          "source": ".cache/demos/visual-edits/cards/legal-proof.png",
+          "source_sha256": "aa92d6e74afa390301a873126b19273100b498c4c1d7d6c7a3579222108f6ab1",
+          "start_seconds": 0,
+          "source_seconds": 10,
+          "output_seconds": 10,
+          "held_frame_seconds": 10,
+          "label": "SILENT DRAFT \u00b7 Observed error and evidence check \u00b7 still evidence",
+          "output_sha256": "e6a001f5854cbfc1ab7400eb03f0ee803a6a16397f7b8b8660133b080a6e5abd"
+        },
+        {
+          "source": ".cache/demos/visual-edits/cards/legal-source.png",
+          "source_sha256": "d9713521379e6403547adb28bfd5371525d873abafa652d7590d8aac6374d1f0",
+          "start_seconds": 0,
+          "source_seconds": 10,
+          "output_seconds": 10,
+          "held_frame_seconds": 10,
+          "label": "SILENT DRAFT \u00b7 Synthetic source excerpt \u00b7 still evidence",
+          "output_sha256": "7a28d053c72c136123c49e54d0835b9eba0f632ce7e783a7df0447eccb034400"
+        },
+        {
+          "source": ".cache/demos/native-diligence-legal-20260923/raw-screen.webm",
+          "source_sha256": "027d2e2dae4924cd53c815846627e195f5c53a5f844e1313e4652109527ef034",
+          "start_seconds": 123,
+          "source_seconds": 2,
+          "output_seconds": 12,
+          "held_frame_seconds": 10,
+          "label": "SILENT DRAFT \u00b7 Original answer \u00b7 held frame",
+          "output_sha256": "842aee606ab9c356f74ad467914d23824435779c90542aadd2e49ca67bdc379d"
+        },
+        {
+          "source": ".cache/demos/legal-activation-inspection-20260923/raw-screen-v2.webm",
+          "source_sha256": "d2b3f2327c3426e67906745679ced50ff060b401303ac32b2ac2b11ba55e1340",
+          "start_seconds": 0,
+          "source_seconds": 3.2,
+          "output_seconds": 10,
+          "held_frame_seconds": 6.8,
+          "label": "SILENT DRAFT \u00b7 Measured diagnostic interaction \u00b7 held frame",
+          "output_sha256": "3ef6883bfb8e6aaf322ae3edb4def076d1aa94f183f64e3ee15c3da4c7cca7f3"
+        },
+        {
+          "source": "tools/design-review/shots/92-legal-activation-window.desktop.png",
+          "source_sha256": "21c19debe66afccd8870bb428429e5f2744407976596190c2734823ebc53c3b7",
+          "start_seconds": 0,
+          "source_seconds": 18,
+          "output_seconds": 18,
+          "held_frame_seconds": 18,
+          "label": "SILENT DRAFT \u00b7 Inspect captured values \u00b7 still evidence",
+          "output_sha256": "e939d9053f80931d1cc3661ad4aee609dd89d1c0c0e021dea95ea993b6ea10f5"
+        },
+        {
+          "source": ".cache/demos/visual-edits/cards/diagnostic.png",
+          "source_sha256": "95dc1a48adb7ce9de17360879344bda42fc892d86126b5fe9aaf09ed89062159",
+          "start_seconds": 0,
+          "source_seconds": 10,
+          "output_seconds": 10,
+          "held_frame_seconds": 10,
+          "label": "SILENT DRAFT \u00b7 Limits and next action \u00b7 still evidence",
+          "output_sha256": "df62ac91ce1639cf41efccc6bd8457c49d4babee98debb549c3e2a629b1c1bfb"
+        }
+      ],
+      "outputs": {
+        "main-visual-draft.mp4": {
+          "sha256": "aaba62770f254eae34c5bf66bb351140cdd307ac5d03371084f932042972c5de",
+          "duration_seconds": 70.0
+        },
+        "short-visual-draft.mp4": {
+          "sha256": "43cad06648f1f710d1b1fc7db728e40c22da70a43f72f5e054d4c15f66695530",
+          "duration_seconds": 20.08
+        },
+        "walkthrough-unvoiced.mp4": {
+          "sha256": "c13997ef457277023ca63708d3eec31441506f2ebfd7a0f32fd75e6ddfc81d09",
+          "duration_seconds": 129.16
+        }
+      },
+      "narration": "Blocked on AI_GATEWAY_API_KEY; no replacement voice used",
+      "review": "Automated render and visual inspection; not human signoff",
+      "supporting_evidence": [
+        {
+          "path": "docs/demos/legal-observed-error.json",
+          "sha256": "f0122061e43699fc037129389557cca503250f06c95b3844c28ee7db1b0d582d"
+        },
+        {
+          "path": "docs/demos/legal-activation-evidence.json",
+          "sha256": "1c59af229db2e6a0abec166695f7ddc869eeb6051df1e00255ccf11a6aa3f6ab"
+        },
+        {
+          "path": "docs/demos/scripts/english-masters.json",
+          "sha256": "46141ad12517770adc8deee243c59cf6a7174aba14ac194999ab4b5eb20866f7"
+        }
+      ]
+    }
+  ],
+  "verification": "All 15 videos fully decoded; hashes, dimensions and expected absence of audio checked. Selected source and output frames visually inspected.",
+  "remaining": [
+    "30 translated and reviewed narration scripts",
+    "Fish Audio Dolly synthesis through Vercel AI Gateway",
+    "Language-specific subtitle layout and timing, including Farsi RTL",
+    "Narrated main cuts and walkthroughs with audio/visual synchronization",
+    "Authenticated Jev evidence classifications",
+    "Human camera/voice tracks where the final editorial brief requires them"
+  ],
+  "gateway_credentials_present": false,
+  "credential_check": "Presence only; no secret value read into logs"
+}
