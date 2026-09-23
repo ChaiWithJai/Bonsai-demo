@@ -1,0 +1,113 @@
+{
+  "human_reviewed": false,
+  "cases": [
+    {
+      "id": "financial-excess",
+      "claim": "Excess net debt is USD 95 million.",
+      "evidence": "Synthetic test: Net debt is USD 69 million. Approved EBITDA is USD 19 million. Maximum permitted leverage is 3.50 times EBITDA.",
+      "expected": "conflicting",
+      "result": {
+        "operation": "evaluate_evidence",
+        "model": "typesafe-ai/jev",
+        "answer": {
+          "type": "choice",
+          "choice": "conflicting",
+          "probabilities": {
+            "conflicting": 0.66,
+            "insufficient": 0.21,
+            "supported": 0.13
+          }
+        },
+        "usage": {
+          "inputTokens": 448,
+          "outputTokens": 45,
+          "totalTokens": 493
+        },
+        "warnings": [],
+        "review_required": true
+      }
+    },
+    {
+      "id": "legal-scope",
+      "claim": "No termination right exists under any provision or legal ground.",
+      "evidence": "Synthetic excerpt, section 12.1 only: Termination for material breach requires notice and a 30-day cure period. Other provisions and legal grounds were not supplied.",
+      "expected": "insufficient",
+      "result": {
+        "operation": "evaluate_evidence",
+        "model": "typesafe-ai/jev",
+        "answer": {
+          "type": "choice",
+          "choice": "conflicting",
+          "probabilities": {
+            "supported": 0,
+            "insufficient": 0.01,
+            "conflicting": 0.99
+          }
+        },
+        "usage": {
+          "inputTokens": 448,
+          "outputTokens": 45,
+          "totalTokens": 493
+        },
+        "warnings": [],
+        "review_required": true
+      },
+      "review_note": "The test omitted the nonmaterial-interruption qualifier. Its universal no-right claim conflicts with the supplied conditional termination provision. The original expected label is not a reliable ground-truth label."
+    },
+    {
+      "id": "bond-payments",
+      "claim": "A ten-year bond paying coupons twice per year has twenty scheduled coupon payments.",
+      "evidence": "Synthetic exercise: Ten years remain, with two coupon payments in each year and no early redemption.",
+      "expected": "supported",
+      "result": {
+        "operation": "evaluate_evidence",
+        "model": "typesafe-ai/jev",
+        "answer": {
+          "type": "choice",
+          "choice": "supported",
+          "probabilities": {
+            "conflicting": 0.01,
+            "supported": 0.94,
+            "insufficient": 0.05
+          }
+        },
+        "usage": {
+          "inputTokens": 434,
+          "outputTokens": 43,
+          "totalTokens": 477
+        },
+        "warnings": [],
+        "review_required": true
+      }
+    },
+    {
+      "id": "legal-nonmaterial-interruption-scope",
+      "claim": "A service interruption that is not a material breach gives no termination right under any provision or legal ground.",
+      "evidence": "Synthetic excerpt, section 12.1 only: Termination for material breach requires notice and a 30-day cure period. Other provisions and legal grounds were not supplied.",
+      "expected": "insufficient",
+      "result": {
+        "operation": "evaluate_evidence",
+        "model": "typesafe-ai/jev",
+        "answer": {
+          "type": "choice",
+          "choice": "insufficient",
+          "probabilities": {
+            "conflicting": 0.12,
+            "insufficient": 0.88,
+            "supported": 0
+          }
+        },
+        "usage": {
+          "inputTokens": 457,
+          "outputTokens": 46,
+          "totalTokens": 503
+        },
+        "warnings": [],
+        "review_required": true
+      },
+      "human_reviewed": false
+    }
+  ],
+  "mlflow_url": "http://127.0.0.1:5210/#/experiments/36/runs/e7af4103bb6143a28e2ae98ac9368f84",
+  "interpretation": "Four synthetic smoke checks, not calibrated evaluation. The initial legal test had an overbroad claim and questionable expected label; the qualified follow-up matched insufficient. All expected labels remain analyst-authored and unreviewed."
+}
