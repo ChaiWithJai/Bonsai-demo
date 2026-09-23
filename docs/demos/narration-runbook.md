@@ -12,7 +12,7 @@ the 30-job queue and the local review page at
 Authentication belongs in the server environment or the ignored repository
 `.env`: `AI_GATEWAY_API_KEY`, or supported Vercel OIDC authentication. The public
 voice identifier must remain `BONSAI_DOLLY_VOICE_ID=ce3b16c14af54adebba5ebe50a3d4417`.
-The adapter pins `fish-audio/s2.1-pro-free`. No alternate voice is substituted.
+The adapter pins `fish-audio/s2.1-pro`. No alternate voice is substituted.
 
 Begin with a single audio check:
 
@@ -36,3 +36,8 @@ Farsi right-to-left layout, and adjust the visual edit to match the narration.
 The main cuts, short excerpts, and walkthroughs all still require their final
 sound and synchronization pass. Neither placeholder audio nor an unrelated
 voice can satisfy the requested delivery.
+
+The retired `fish-audio/s2.1-pro-free` endpoint returned HTTP 404 during the
+first authenticated pilot. The adapter now uses the paid `fish-audio/s2.1-pro`
+endpoint. Fish infers language from input text and voice; its provider ignores
+the SDK language option. Check each resulting language by listening.

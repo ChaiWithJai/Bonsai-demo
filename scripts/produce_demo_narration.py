@@ -16,7 +16,7 @@ import sys
 from workspace_gateway import gateway_request
 
 ROOT=Path(__file__).resolve().parents[1]
-MODEL='fish-audio/s2.1-pro-free'
+MODEL='fish-audio/s2.1-pro'
 LANGUAGES=('zh','fa','pt','hi','kn','fr')
 VOICE='ce3b16c14af54adebba5ebe50a3d4417'
 

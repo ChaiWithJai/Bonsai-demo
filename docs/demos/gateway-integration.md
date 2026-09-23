@@ -7,7 +7,7 @@ The adapter currently has two operations:
 | Operation | Model | Result |
 | --- | --- | --- |
 | `evaluate_evidence` | `typesafe-ai/jev` | Supported, conflicting, or insufficient classification, requiring review |
-| `narrate` | `fish-audio/s2.1-pro-free` | Audio bytes encoded as base64, with language and voice identity |
+| `narrate` | `fish-audio/s2.1-pro` | Audio bytes encoded as base64, with language and voice identity |
 
 Set `AI_GATEWAY_API_KEY` in the backend environment, or use Vercel OIDC authentication. Never place credentials in frontend environment variables or requests. Set `BONSAI_DOLLY_VOICE_ID=ce3b16c14af54adebba5ebe50a3d4417` for [Dolly by LollyDolly](https://fish.audio/m/ce3b16c14af54adebba5ebe50a3d4417/), identified on the official library page. No default voice is substituted. The six requested narration language codes are `zh`, `fa`, `pt`, `hi`, `kn`, and `fr`; accepting a language code does not verify voice quality or provider support.
 

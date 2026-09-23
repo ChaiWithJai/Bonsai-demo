@@ -1,0 +1,30 @@
+{
+  "id": "01-bond-learning-zh",
+  "demo": "01-bond-learning",
+  "language": "zh",
+  "locale": "zh-CN",
+  "direction": "ltr",
+  "request_sha256": "b996dc269ec87f07ca47582cb98080329920410875a9438ab690660f3f531406",
+  "model": "fish-audio/s2.1-pro",
+  "voice": "ce3b16c14af54adebba5ebe50a3d4417",
+  "human_reviewed": false,
+  "status": "synthesized_needs_listening_review",
+  "duration_seconds": 54.857063,
+  "audio_sha256": "707beae6a2d69e1971c49fa76430e6f08afe66543166423d47908825fe968fe4",
+  "provider": {
+    "operation": "narrate",
+    "model": "fish-audio/s2.1-pro",
+    "voice": "ce3b16c14af54adebba5ebe50a3d4417",
+    "language": "zh",
+    "media_type": "audio/mpeg",
+    "warnings": [
+      {
+        "type": "unsupported",
+        "feature": "language",
+        "details": "Fish Audio infers the language from the input text and the selected voice, and has no language parameter. The language option was ignored."
+      }
+    ]
+  },
+  "timing_fits_main_window": false,
+  "subtitle_status": "not_aligned"
+}

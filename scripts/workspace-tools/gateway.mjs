@@ -3,7 +3,7 @@ import { createGateway } from '@ai-sdk/gateway';
 import { pathToFileURL } from 'node:url';
 
 export const JEV_MODEL = 'typesafe-ai/jev';
-export const SPEECH_MODEL = 'fish-audio/s2.1-pro-free';
+export const SPEECH_MODEL = 'fish-audio/s2.1-pro';
 const languages = new Set(['zh', 'fa', 'pt', 'hi', 'kn', 'fr']);
 const criteria = {
   supported: 'The supplied source explicitly supports the claim, including its units, dates and exceptions.',
