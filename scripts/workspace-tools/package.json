@@ -1,1 +1,1 @@
-{"name":"bonsai-generative-ui","version":"0.1.0","private":true,"type":"module","scripts":{"test:harness":"node --test tests/render.test.mjs"},"dependencies":{"@playwright/test":"1.63.0","esbuild":"0.28.2","semiotic":"3.10.3","svelte":"5.57.1"}}
+{"name":"bonsai-generative-ui","version":"0.1.0","private":true,"type":"module","scripts":{"test:harness":"node --test tests/render.test.mjs"},"dependencies":{"@ai-sdk/gateway":"4.0.90","@playwright/test":"1.63.0","ai":"7.0.112","esbuild":"0.28.2","semiotic":"3.10.3","svelte":"5.57.1"}}
