@@ -4,11 +4,11 @@ Status: proposed implementation, September 23, 2026. This document describes req
 
 ## User and outcome
 
-Jai wants to learn bond math by working through a problem on a whiteboard, turning his reasoning into explicit inputs and equations, and checking it against current Treasury data. The product lives inside the existing Bonsai-demo workstreams. The first result someone can share is a view that connects his original working, a confirmed cash-flow schedule, and a verified price calculation.
+Jai wants to learn bond math by working through a problem on a whiteboard, turning his reasoning into explicit inputs and equations, and checking it against current Treasury data. The product lives as a feature available from New chat in Bonsai-demo. The first result someone can share is a view that connects his original working, a confirmed cash-flow schedule, and a verified price calculation.
 
 ## Visual interaction
 
-1. Start a bond-math workstream and attach a whiteboard photo, or enter the same working as text. Keep the original image visible beside the conversation.
+1. Open New chat and choose the bond-math feature and attach a whiteboard photo, or enter the same working as text. Keep the original image visible beside the conversation.
 2. Local Bonsai proposes the face value, coupon rate, coupon frequency, maturity, settlement assumption, yield convention, and equation. Each extracted field points back to its source. Highlight unreadable symbols and unresolved units. Ask Jai to correct and confirm the inputs before calculating.
 3. Fetch the latest available Treasury observations on demand. Show the observation date separately from the fetch time, preserve the response and its hash, and disclose stale or unavailable data. Daily published observations are not real-time tradable quotes.
 4. Draw the payment schedule and the price-versus-yield curve. Clicking a payment highlights its discount factor, contribution to price, and matching equation term. Let Jai predict the direction and size of a price change before revealing the computed result.

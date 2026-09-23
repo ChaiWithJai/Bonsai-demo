@@ -1,7 +1,8 @@
 <script lang="ts">
-  let { isEmpty = false, onChoosePrompt }: {
+  let { isEmpty = false, onChoosePrompt, onOpenBond }: {
     isEmpty: boolean;
     onChoosePrompt?: (prompt: string) => void;
+    onOpenBond?: () => void;
   } = $props();
   const workflows = [
     {number: '01', title: 'Hand off an account', detail: 'People, promises and the next step.', prompt: 'Help me prepare an account handoff. First ask which account, the outgoing and incoming owners, and the handoff date. Then use only the email threads and resources I authorize. Separate confirmed facts from gaps; include source links, open commitments, and next actions. Draft only; do not send messages.'},
@@ -15,8 +16,9 @@
     <img class="prism-wordmark" src="/prism-brand/prism-logo.svg" alt="Prism ML" />
     <p class="prism-eyebrow">BONSAI · YOUR WORK, IN CONTEXT</p>
     <p class="prism-intro">what can i take off your plate?</p>
+    <button type="button" class="bond-feature" onclick={() => onOpenBond?.()}><span>Bond math</span><strong>Bring your working. Explore the cash flows.</strong><span aria-hidden="true">↗</span></button>
     <div class="prism-workflows">
-      {#each workflows as workflow}
+      {#each workflows as workflow (workflow.number)}
         <button type="button" class="prism-workflow" onclick={() => onChoosePrompt?.(workflow.prompt)}>
           <span class="prism-workflow-number">{workflow.number}<span aria-hidden="true">↗</span></span>
           <strong>{workflow.title}</strong>
@@ -26,3 +28,7 @@
     </div>
   </section>
 {/if}
+
+<style>
+  .bond-feature{display:flex;align-items:center;gap:14px;width:100%;text-align:left;margin-top:20px;padding:15px 18px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--card) 75%,transparent);cursor:pointer}.bond-feature span:first-child{font-size:12px;color:var(--muted-foreground)}.bond-feature strong{font-size:14px;flex:1;font-weight:500}.bond-feature:focus-visible{outline:2px solid var(--ring);outline-offset:3px}@media(max-width:600px){.bond-feature{gap:9px;padding:12px}.bond-feature strong{font-size:12px}}
+</style>

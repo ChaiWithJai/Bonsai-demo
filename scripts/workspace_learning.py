@@ -12,8 +12,9 @@ from workspace_treasury import fetch_yields
 
 
 class LearningWorkstreams:
-    def __init__(self, worker):
+    def __init__(self, worker, sources=None):
         self.worker = worker
+        self.sources = sources
         self.root = worker.store.root / 'learning-workstreams'
         self.root.mkdir(exist_ok=True)
         self.lock = threading.Lock()
@@ -58,7 +59,7 @@ class LearningWorkstreams:
     def act(self, key, payload):
         folder = self.folder(key)
         operation = payload.get('operation')
-        if operation not in ('calculate_bond', 'fetch_treasury', 'evaluate_evidence'):
+        if operation not in ('calculate_bond', 'fetch_treasury', 'evaluate_evidence', 'interpret_bond'):
             raise ValueError('Unsupported learning action')
         if operation == 'calculate_bond':
             inputs = payload.get('inputs')
@@ -97,6 +98,9 @@ class LearningWorkstreams:
                     result = computed
                 elif operation == 'fetch_treasury':
                     result = fetch_yields(payload.get('year'), target / 'treasury')
+                elif operation == 'interpret_bond':
+                    from workspace_bond_interpret import interpret
+                    result = interpret(self.worker, self.sources, payload, target)
                 else:
                     result = gateway_request({'operation': operation, 'claim': payload.get('claim'),
                                               'evidence': payload.get('evidence')})

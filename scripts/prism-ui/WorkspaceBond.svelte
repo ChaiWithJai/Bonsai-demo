@@ -3,18 +3,23 @@
   type Data = Record<string, any>;
   let session = $state<Data | null>(null);
   let panel = $state('working');
+  let source = $state<Data | null>(null);
+  let proposalId = $state('');
+  const decimal = (value:number | undefined) => value===undefined ? null : value/100;
   let working = $state('');
-  let face = $state(1000);
-  let coupon = $state(5);
-  let yieldPercent = $state(5);
-  let periods = $state(20);
-  let frequency = $state(2);
+  let face = $state<number | undefined>(1000);
+  let coupon = $state<number | undefined>(5);
+  let yieldPercent = $state<number | undefined>(5);
+  let periods = $state<number | undefined>(20);
+  let frequency = $state<number | undefined>(2);
   let prediction = $state('');
   let shock = $state(25);
   let selectedPayment = $state(1);
   let busy = $state(false);
   let error = $state('');
   const actions = $derived(session?.actions ?? []);
+  const proposal = $derived(actions.findLast((a:Data)=>a.operation==='interpret_bond' && a.status==='completed'));
+
   const calculations = $derived(actions.filter((a:Data)=>a.operation==='calculate_bond' && a.status==='completed'));
   const latest = $derived(calculations.at(-1));
   const treasury = $derived(actions.findLast((a:Data)=>a.operation==='fetch_treasury' && a.status==='completed'));
@@ -32,7 +37,9 @@
     if(id) {
       session=await api('/'+id);
       const saved=session?.actions.findLast((a:Data)=>a.operation==='calculate_bond' && a.status==='completed');
-      if(saved) {face=saved.request.inputs.face;coupon=saved.request.inputs.coupon_rate*100;yieldPercent=Number((saved.request.inputs.annual_yield*100).toFixed(8));periods=saved.request.inputs.periods;frequency=saved.request.inputs.frequency;working=saved.request.working ?? '';}
+      const interpretation=session?.actions.findLast((a:Data)=>a.operation==='interpret_bond' && a.status==='completed');
+      if(interpretation) {source=interpretation.result.source;proposalId=interpretation.id;if(!saved || interpretation.id>saved.id) applyProposal(interpretation);}
+      if(saved && (!interpretation || saved.id>interpretation.id)) {face=saved.request.inputs.face;coupon=saved.request.inputs.coupon_rate*100;yieldPercent=Number((saved.request.inputs.annual_yield*100).toFixed(8));periods=saved.request.inputs.periods;frequency=saved.request.inputs.frequency;working=saved.request.working ?? '';}
     }
   }
   onMount(()=>{restore().catch(e=>error=String(e));});
@@ -48,9 +55,31 @@
   }
   async function calculate(event:SubmitEvent) {
     event.preventDefault();
-    const result=await act({operation:'calculate_bond',confirmed:true,working,
-      inputs:{face,coupon_rate:coupon/100,annual_yield:yieldPercent/100,periods,frequency}});
+    const result=await act({operation:'calculate_bond',confirmed:true,working,source_id:source?.source_id,proposal_action_id:proposalId || null,
+      inputs:{face,coupon_rate:decimal(coupon),annual_yield:decimal(yieldPercent),periods,frequency}});
     if(result) {selectedPayment=1;panel='payments';}
+  }
+  function applyProposal(action:Data) {
+    const inputs=action.result.inputs;
+    face=inputs.face ?? undefined;coupon=inputs.coupon_rate===null ? undefined : inputs.coupon_rate*100;
+    yieldPercent=inputs.annual_yield===null ? undefined : inputs.annual_yield*100;
+    periods=inputs.periods ?? undefined;frequency=inputs.frequency ?? undefined;
+    working=action.request.working ?? '';proposalId=action.id;
+  }
+  async function interpretWorking() {
+    const result=await act({operation:'interpret_bond',working,source_id:source?.source_id});
+    if(result) applyProposal(result);
+  }
+  async function attach(event:Event) {
+    const file=(event.currentTarget as HTMLInputElement).files?.[0];
+    if(!file) return;
+    if(file.size>5000000) {error='Choose a whiteboard image under 5 MB.';return;}
+    busy=true;error='';
+    try {
+      const response=await fetch('/api/workspace/sources',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Source-Filename':encodeURIComponent(file.name)},body:file});
+      const data=await response.json();if(!response.ok) throw new Error(data.error);
+      source=data;proposalId='';
+    } catch(e) {error=String(e);} finally {busy=false;}
   }
   async function reprice() {
     if(!latest || !prediction.trim()) return;
@@ -61,7 +90,7 @@
   }
 </script>
 
-<section class="bond" aria-label="Bond math learning workstream">
+<section class="bond" aria-label="Bond math learning conversation">
   <div class="intro"><p class="eyebrow">LEARN THROUGH YOUR WORKING</p><h2>Where does a bond’s price come from?</h2><p>Confirm the cash flows. Follow each payment into today’s value. Predict a change before revealing it.</p></div>
   <nav aria-label="Bond learning views">{#each [['working','Your working'],['payments','Cash flows'],['market','Treasury context'],['evidence','Activity']] as item (item[0])}<button class:active={panel===item[0]} aria-pressed={panel===item[0]} onclick={()=>panel=item[0]}>{item[1]}</button>{/each}</nav>
   {#if error}<p role="alert" class="error">{error}</p>{/if}
@@ -69,7 +98,10 @@
   {#if panel==='working'}
     <form onsubmit={calculate}>
       <label>Your whiteboard working, in text<textarea bind:value={working} placeholder="Write your equation, assumptions, and the step you want to understand." rows="4"></textarea></label>
-      <p class="muted">These inputs are entered by you. This screen does not yet extract a whiteboard image.</p>
+      <label>Attach your whiteboard image<input type="file" accept="image/png,image/jpeg,image/webp" onchange={attach} disabled={busy}/></label>
+      {#if source}<a href={'/api/workspace/sources/'+source.source_id+'/file'} target="_blank" rel="noreferrer"><img class="whiteboard" src={'/api/workspace/sources/'+source.source_id+'/file'} alt={'Original working: '+source.filename}/></a><p class="muted">{source.filename} · Original preserved. Small handwriting may be lost at the model’s image-token cap; check every proposed input.</p>{/if}
+      <button type="button" disabled={busy || (!working.trim() && !source)} onclick={interpretWorking}>Ask Bonsai to structure my working</button>
+      {#if proposal}<div class="equation"><h3>Bonsai’s proposed inputs · review required</h3><p>{proposal.result.explanation}</p>{#if proposal.result.unresolved.length}<ul>{#each proposal.result.unresolved as issue:string,i (i)}<li>{issue}</li>{/each}</ul>{/if}<p>Correct the fields below. Missing values stay blank until you supply them.</p></div>{/if}
       <div class="inputs">
         <label>Face value<input type="number" min="0.01" step="any" required bind:value={face}/></label>
         <label>Annual coupon (%)<input type="number" min="0" step="any" required bind:value={coupon}/></label>
@@ -98,5 +130,5 @@
 </section>
 
 <style>
-  .bond{max-width:1050px;margin:0 auto;padding:24px;color:var(--color-text,#242b33)}.intro{max-width:650px}.eyebrow{font-size:11px;letter-spacing:.12em;color:#63765d}h2{font-size:27px;line-height:1.2;margin:10px 0}h3{font-size:17px;margin:18px 0 10px}p{line-height:1.6}nav{display:flex;gap:5px;border-bottom:1px solid #d5d1c9;margin:24px 0;overflow:auto}button{padding:10px 14px;border:1px solid #d5d1c9;border-radius:9px;background:#f6f4ef;cursor:pointer}nav button{border:0;border-radius:0;background:none;white-space:nowrap}.active{box-shadow:inset 0 -2px #63765d;background:#e4e9df}button:disabled{opacity:.5;cursor:wait}.primary{background:#26352c;color:white;border-color:#26352c}label{display:grid;gap:7px;font-size:13px}input,select,textarea{width:100%;padding:11px;border:1px solid #cfcac1;border-radius:8px;background:#faf9f5;color:inherit;box-sizing:border-box}.inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0}.muted{font-size:12px;color:#696961}.result{display:flex;flex-direction:column;gap:5px;padding:20px;background:#e5ebdf;border-radius:12px}.result strong{font-size:38px;font-variant-numeric:tabular-nums}.payments{display:flex;gap:8px;overflow:auto;padding-bottom:10px}.payments button{display:grid;gap:4px;min-width:112px;flex-shrink:0}.payments small{color:#65665e}.equation,article{border:1px solid #d5d1c9;border-radius:10px;padding:16px;margin:16px 0}.equation h3{margin-top:0}.exercise{display:grid;gap:14px;max-width:600px}.rates{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0}.rates div{display:grid;gap:8px;padding:14px;background:#f6f4ef;border-radius:8px}.error{color:#923b30}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;max-height:400px;overflow:auto}a{text-decoration:underline}@media(max-width:600px){.bond{padding:14px}.inputs,.rates{grid-template-columns:repeat(2,1fr)}h2{font-size:23px}nav{margin:18px 0}}
+  .whiteboard{max-width:100%;max-height:360px;object-fit:contain;margin:12px 0;border-radius:10px}.bond{max-width:1050px;margin:0 auto;padding:24px;color:var(--color-text,#242b33)}.intro{max-width:650px}.eyebrow{font-size:11px;letter-spacing:.12em;color:#63765d}h2{font-size:27px;line-height:1.2;margin:10px 0}h3{font-size:17px;margin:18px 0 10px}p{line-height:1.6}nav{display:flex;gap:5px;border-bottom:1px solid #d5d1c9;margin:24px 0;overflow:auto}button{padding:10px 14px;border:1px solid #d5d1c9;border-radius:9px;background:#f6f4ef;cursor:pointer}nav button{border:0;border-radius:0;background:none;white-space:nowrap}.active{box-shadow:inset 0 -2px #63765d;background:#e4e9df}button:disabled{opacity:.5;cursor:wait}.primary{background:#26352c;color:white;border-color:#26352c}label{display:grid;gap:7px;font-size:13px}input,select,textarea{width:100%;padding:11px;border:1px solid #cfcac1;border-radius:8px;background:#faf9f5;color:inherit;box-sizing:border-box}.inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0}.muted{font-size:12px;color:#696961}.result{display:flex;flex-direction:column;gap:5px;padding:20px;background:#e5ebdf;border-radius:12px}.result strong{font-size:38px;font-variant-numeric:tabular-nums}.payments{display:flex;gap:8px;overflow:auto;padding-bottom:10px}.payments button{display:grid;gap:4px;min-width:112px;flex-shrink:0}.payments small{color:#65665e}.equation,article{border:1px solid #d5d1c9;border-radius:10px;padding:16px;margin:16px 0}.equation h3{margin-top:0}.exercise{display:grid;gap:14px;max-width:600px}.rates{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0}.rates div{display:grid;gap:8px;padding:14px;background:#f6f4ef;border-radius:8px}.error{color:#923b30}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;max-height:400px;overflow:auto}a{text-decoration:underline}@media(max-width:600px){.bond{padding:14px}.inputs,.rates{grid-template-columns:repeat(2,1fr)}h2{font-size:23px}nav{margin:18px 0}}
 </style>

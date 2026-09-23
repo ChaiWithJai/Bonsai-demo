@@ -1,0 +1,39 @@
+{
+  "session_id": "6c794221d748409ab87adb9cc5383713",
+  "action": {
+    "id": "20260923T183548697932-3334c90c5f194708adc210d7bb7bd637",
+    "operation": "interpret_bond",
+    "request": {
+      "operation": "interpret_bond",
+      "working": "Development test, not human review. My bond has face value 1000, annual coupon 5%, ten years remaining, semiannual payments. We value it exactly on a coupon date. I have not chosen a yield yet."
+    },
+    "status": "completed",
+    "created_at": "2026-09-23T18:35:48.697995+00:00",
+    "mlflow_url": "http://127.0.0.1:5210/#/experiments/35/runs/10379650e8964a77a5d317aa5285266d",
+    "run_id": "10379650e8964a77a5d317aa5285266d",
+    "result": {
+      "inputs": {
+        "face": 1000,
+        "coupon_rate": 0.05,
+        "annual_yield": null,
+        "periods": 20,
+        "frequency": 2
+      },
+      "explanation": "face: 1000 is explicitly stated as the face value. coupon_rate: 0.05 is derived from the stated 'annual coupon 5%'. annual_yield: null because the user explicitly stated 'I have not chosen a yield yet'. periods: 20 is derived from 'ten years remaining' and 'semiannual payments' (10 * 2). frequency: 2 is derived from 'semiannual payments'.",
+      "unresolved": [
+        "annual_yield is missing; the user has not selected a discount rate.",
+        "No price can be calculated without a yield."
+      ],
+      "review_required": true,
+      "source": null,
+      "proxy_trace_id": "tr-c2e906688f64400472666b3e4adb5f98",
+      "model": "bonsai-ui-public-ternary-bonsai2-27b",
+      "profile": "legacy-greedy",
+      "seed": 42,
+      "prompt_version": "bond-formalization-v1",
+      "image_detail": "Runtime image-token cap may omit small handwriting; inspect the original before confirming"
+    },
+    "finished_at": "2026-09-23T18:35:57.717864+00:00"
+  },
+  "verification_scope": "One local Bonsai text-formalization development case. Image interpretation and general accuracy are not verified by this case."
+}

@@ -678,7 +678,7 @@ def main():
         from workspace_source_jobs import SourceJobs
         server.workspace_source_jobs = SourceJobs(server.workspace, server.workspace_sources)
         from workspace_learning import LearningWorkstreams
-        server.workspace_learning = LearningWorkstreams(server.workspace)
+        server.workspace_learning = LearningWorkstreams(server.workspace, server.workspace_sources)
     print(f"Recording llama-ui: http://127.0.0.1:{args.port}; model upstream unchanged: {server.upstream}", flush=True)
     try:
         server.serve_forever()

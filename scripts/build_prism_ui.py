@@ -22,6 +22,23 @@ def stage_workspace_components(root, stage):
     shutil.copyfile(source / 'workspace-data-types.ts', library / 'workspace-data-types.ts')
 
 
+def integrate_chat_features(original):
+    greeting = '<ChatScreenGreeting {isEmpty} />'
+    loading = '{#if isServerLoading}\n\t<ServerLoadingSplash />\n{:else}'
+    if greeting not in original or loading not in original:
+        raise ValueError('Upstream chat feature integration changed; review before building')
+    original = original.replace('<script lang="ts">', '<script lang="ts">\n\timport WorkspaceBond from "$lib/WorkspaceBond.svelte";\n\tlet bondFeatureOpen = $state(false);', 1)
+    original = original.replace(greeting, '<ChatScreenGreeting {isEmpty} onChoosePrompt={(prompt) => { initialMessage = prompt; }} onOpenBond={() => { bondFeatureOpen = true; }} />')
+    return original.replace(loading, '''{#if isServerLoading}
+\t<ServerLoadingSplash />
+{:else if bondFeatureOpen && isEmpty}
+\t<main class="grow min-w-0 px-3 pt-14 md:pt-5 pb-8" aria-label="Bond math chat feature">
+\t\t<button class="rounded-lg border px-4 py-2 mx-3" onclick={() => { bondFeatureOpen = false; }}>Back to New chat</button>
+\t\t<WorkspaceBond />
+\t</main>
+{:else}''', 1)
+
+
 def main():
     root = Path(__file__).resolve().parents[1]
     candidates = [
@@ -53,10 +70,7 @@ def main():
     shutil.copyfile(root / "scripts/prism-ui/ChatScreenGreeting.svelte", greeting)
     screen = greeting.parent / "ChatScreen.svelte"
     original = screen.read_text()
-    if '<ChatScreenGreeting {isEmpty} />' not in original:
-        parser.error("Upstream greeting integration changed; review before building")
-    screen.write_text(original.replace('<ChatScreenGreeting {isEmpty} />',
-        '<ChatScreenGreeting {isEmpty} onChoosePrompt={(prompt) => { initialMessage = prompt; }} />'))
+    screen.write_text(integrate_chat_features(original))
     observability = stage / "src/routes/observability"
     observability.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(root / "scripts/prism-ui/Observability.svelte", observability / "+page.svelte")
