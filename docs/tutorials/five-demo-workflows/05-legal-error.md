@@ -1,22 +1,18 @@
-# Inspect a legal overstatement in Bonsai
+# One termination clause cannot establish every termination right
 
-Separate a supported clause comparison from an unsupported conclusion, then inspect the recorded request and a later diagnostic without treating either as proof of causation.
+The model correctly identified conditions missing from a contract summary, then made a claim broader than the supplied contract excerpts could support:
 
-Repository: [ChaiWithJai/Bonsai-demo](https://github.com/ChaiWithJai/Bonsai-demo). Source revision: `bf425c5`. Companion cut: `05-legal-error-FINAL.mp4`, 52.8 seconds. Recorded September 23, 2026.
+> A service interruption that is not a material breach gives no termination right at all.
+
+The problem is the scope of "at all." Section 12.1 describes a route to termination after material breach, notice, and failure to cure. The supplied excerpts do not establish every possible contractual or legal route.
+
+In [Bonsai-demo](https://github.com/ChaiWithJai/Bonsai-demo), the review can retain the original sentence, the source clause, and a narrower correction as separate evidence. Replacing the answer would erase the failure a later test needs to detect.
 
 ![Edited legal-error cut at 00:48 showing a separate diagnostic and the statement that cause is not established.](https://raw.githubusercontent.com/ChaiWithJai/Bonsai-demo/648c8f341bd9136032c637505c65ac996eec1726/docs/tutorials/five-demo-workflows/images/05-legal-error-cut.png)
 
 Figure 1. Frame at 00:48 of the edited cut. The measured replay is separate from the original answer.
 
-## Before you start
-
-Read [Review contract excerpts](https://gist.github.com/ChaiWithJai/c1c134d1448948fa379b1d62beffce9f) for the synthetic documents and prompt. Use the [legal error record](https://github.com/ChaiWithJai/Bonsai-demo/blob/bf425c5c4195ac061dddd4e4b31f510366b6f0a6/docs/demos/legal-observed-error.json) to inspect the historical response without local inference. Interactive trace inspection requires your recording UI and a saved run; the author's local MLflow database is not included in the repository.
-
-## Locate the unsupported claim
-
-The recorded answer states:
-
-> A service interruption that is not a material breach gives no termination right at all.
+## Compare the scope of the claim and the clause
 
 Supplied Section 12.1 states:
 
@@ -30,6 +26,10 @@ Use the narrower review finding:
 
 The finding limits the conclusion to the evidence. It does not establish whether another right exists.
 
+## Reproduce or inspect the case
+
+Read [Review contract excerpts](https://gist.github.com/ChaiWithJai/c1c134d1448948fa379b1d62beffce9f) for the synthetic documents and prompt. Use the [legal error record](https://github.com/ChaiWithJai/Bonsai-demo/blob/bf425c5c4195ac061dddd4e4b31f510366b6f0a6/docs/demos/legal-observed-error.json) to inspect the historical response without local inference. Interactive trace inspection requires your recording UI and a saved run; the author's local MLflow database is not included in the repository.
+
 ## Inspect the run in Bonsai-demo
 
 1. Open **Observability** and select the legal review conversation.
@@ -42,7 +42,7 @@ The finding limits the conclusion to the evidence. It does not establish whether
 
 Figure 2. Recorded app view of a separate teacher-forced diagnostic. The plot does not measure which values caused the overstatement.
 
-## Check the review outcome
+## Separate the review finding from the diagnostic
 
 | Check | Expected review result |
 | --- | --- |
@@ -55,13 +55,20 @@ The [legal capture record](https://github.com/ChaiWithJai/Bonsai-demo/blob/bf425
 
 Teacher forcing means supplying recorded answer tokens instead of generating a new answer. If you need a new capture, follow the [replay setup](https://github.com/ChaiWithJai/Bonsai-demo/blob/bf425c5c4195ac061dddd4e4b31f510366b6f0a6/NATIVE-UI-WORKFLOW.md#optional-replay-setup) and preserve its differences from the original execution.
 
-## Define the next check
+## Preserve the failure for the next review
 
 For a future review, require each conclusion to name the supplied provision and state what evidence is missing. Treat "no right at all" as a claim to investigate, not a phrase to ban mechanically. Broader evidence could support a broader conclusion.
 
 Save the original claim, source passage, proposed correction, and reviewer decision separately. If you rerun the model with a revised prompt, record the new attempt independently. The cut documents one observed scope error; it does not validate a general legal evaluator or demonstrate a completed repair.
 
-## Related workflows
+## Continue the review
 
 - [Review contract excerpts](https://gist.github.com/ChaiWithJai/c1c134d1448948fa379b1d62beffce9f): reproduce the source comparison that preceded the overstatement.
 - [Inspect a financial error](https://gist.github.com/ChaiWithJai/ae3046a50213aba9903838256cbec6a8): use the same trace workflow with a deterministic arithmetic check.
+
+<details>
+<summary>Recording and source revision</summary>
+
+Repository: [ChaiWithJai/Bonsai-demo](https://github.com/ChaiWithJai/Bonsai-demo). Source revision: `bf425c5`. Companion cut: `05-legal-error-FINAL.mp4`, 52.8 seconds. Recorded September 23, 2026. The companion filename identifies the original edited cut; screenshots are pinned to the published repository assets.
+
+</details>

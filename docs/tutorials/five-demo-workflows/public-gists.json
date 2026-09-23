@@ -3,27 +3,27 @@
   "gists": [
     {
       "file": "01-bond-pricing.md",
-      "title": "Price a bond from a worksheet in Bonsai",
+      "title": "A bond price starts with the payment schedule",
       "url": "https://gist.github.com/ChaiWithJai/0b8ebfa9f97faa97b7138a20b2cca9ee"
     },
     {
       "file": "02-financial-diligence.md",
-      "title": "Reconcile a leverage covenant in Bonsai",
+      "title": "The same company has two leverage ratios",
       "url": "https://gist.github.com/ChaiWithJai/f66f84aab4141232083afab7254cfa38"
     },
     {
       "file": "03-legal-review.md",
-      "title": "Review contract excerpts in Bonsai",
+      "title": "A contract summary loses the conditions that change the answer",
       "url": "https://gist.github.com/ChaiWithJai/c1c134d1448948fa379b1d62beffce9f"
     },
     {
       "file": "04-financial-error.md",
-      "title": "Inspect a financial arithmetic error in Bonsai",
+      "title": "The ratio was correct. The dollar amount was wrong.",
       "url": "https://gist.github.com/ChaiWithJai/ae3046a50213aba9903838256cbec6a8"
     },
     {
       "file": "05-legal-error.md",
-      "title": "Inspect a legal overstatement in Bonsai",
+      "title": "One termination clause cannot establish every termination right",
       "url": "https://gist.github.com/ChaiWithJai/79df3593a0744961cb49967df56bdb6b"
     }
   ]

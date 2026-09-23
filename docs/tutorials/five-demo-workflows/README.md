@@ -4,13 +4,15 @@ Use [ChaiWithJai/Bonsai-demo](https://github.com/ChaiWithJai/Bonsai-demo) to wor
 
 | Guide | Task | Companion cut |
 | --- | --- | ---: |
-| [Price a bond](https://gist.github.com/ChaiWithJai/0b8ebfa9f97faa97b7138a20b2cca9ee) | Confirm worksheet inputs and inspect repricing. | 70.6 seconds |
-| [Reconcile a leverage covenant](https://gist.github.com/ChaiWithJai/f66f84aab4141232083afab7254cfa38) | Compare management and lender definitions. | 85.4 seconds |
-| [Review contract excerpts](https://gist.github.com/ChaiWithJai/c1c134d1448948fa379b1d62beffce9f) | Preserve exceptions, deadlines, and conditions. | 48.1 seconds |
-| [Inspect a financial error](https://gist.github.com/ChaiWithJai/ae3046a50213aba9903838256cbec6a8) | Recalculate a wrong amount and inspect its trace. | 65.8 seconds |
-| [Inspect a legal overstatement](https://gist.github.com/ChaiWithJai/79df3593a0744961cb49967df56bdb6b) | Bound a conclusion to the supplied evidence. | 52.8 seconds |
+| [A bond price starts with the payment schedule](https://gist.github.com/ChaiWithJai/0b8ebfa9f97faa97b7138a20b2cca9ee) | Confirm worksheet inputs and inspect repricing. | 70.6 seconds |
+| [The same company has two leverage ratios](https://gist.github.com/ChaiWithJai/f66f84aab4141232083afab7254cfa38) | Compare management and lender definitions. | 85.4 seconds |
+| [A contract summary loses the conditions that change the answer](https://gist.github.com/ChaiWithJai/c1c134d1448948fa379b1d62beffce9f) | Preserve exceptions, deadlines, and conditions. | 48.1 seconds |
+| [The ratio was correct. The dollar amount was wrong.](https://gist.github.com/ChaiWithJai/ae3046a50213aba9903838256cbec6a8) | Recalculate a wrong amount and inspect its trace. | 65.8 seconds |
+| [One termination clause cannot establish every termination right](https://gist.github.com/ChaiWithJai/79df3593a0744961cb49967df56bdb6b) | Bound a conclusion to the supplied evidence. | 52.8 seconds |
 
 Read the financial review before its error guide, or the legal review before its error guide. The bond guide stands alone.
+
+The [editorial review](EDITORIAL-REVIEW.md) records the writing references, changes, and verification scope.
 
 ## Run the recording UI
 
