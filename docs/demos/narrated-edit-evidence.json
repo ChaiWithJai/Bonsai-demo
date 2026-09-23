@@ -1,6 +1,6 @@
 {
   "status": "narrated_review_drafts",
-  "count": 17,
+  "count": 22,
   "human_reviewed": false,
   "cuts": [
     {
@@ -52,6 +52,18 @@
       "timing_basis": "Portuguese-hinted ASR sentence starts and analyst scene selection; captions and pronunciation unreviewed"
     },
     {
+      "id": "05-legal-error-inspection-hi",
+      "duration_seconds": 63.24,
+      "sha256": "b757adad031814b72dc6ffeeab6492fc822bb23115ce74f3af2420fba028406a",
+      "timing_basis": "Hindi-hinted ASR starts and analyst scene selection; financial vector scene at 32.5 seconds is estimated within an ASR gap; captions, pronunciation and exact synchronization need listening review"
+    },
+    {
+      "id": "04-financial-error-inspection-hi",
+      "duration_seconds": 64.48,
+      "sha256": "c33a6f470a57f4a37f8330fd40329291b0306179ecb78cfc3961fabaf84f5671",
+      "timing_basis": "Hindi-hinted ASR starts and analyst scene selection; financial vector scene at 32.5 seconds is estimated within an ASR gap; captions, pronunciation and exact synchronization need listening review"
+    },
+    {
       "id": "05-legal-error-inspection-pt",
       "duration_seconds": 59.92,
       "sha256": "fa08b40636ea754315a41fe688ca4fae83c9122b0153d3769836d55e2bc55561",
@@ -70,10 +82,28 @@
       "timing_basis": "Portuguese-hinted ASR word and sentence starts; captions and pronunciation unreviewed"
     },
     {
+      "id": "03-legal-diligence-hi",
+      "duration_seconds": 69.72,
+      "sha256": "264cf8870163086f4214c2ec1251da83c4f2567ba204c5fb0abcbd707e1dca7b",
+      "timing_basis": "Hindi-hinted ASR starts and analyst scene selection; ASR gaps remain, including legal termination at 34 seconds; captions, pronunciation and exact synchronization require listening review"
+    },
+    {
       "id": "02-financial-diligence-pt",
       "duration_seconds": 62.682381,
       "sha256": "0146a286ec3c71193697fcd32d631ee12d01dfc29d69080264ee730c827a394e",
       "timing_basis": "Portuguese-hinted ASR word and sentence starts; captions and pronunciation unreviewed"
+    },
+    {
+      "id": "02-financial-diligence-zh",
+      "duration_seconds": 54.56,
+      "sha256": "d5474948fff6b41b3418d44752d0dd7920bde2ee597fb85ae192b02d0d3040b4",
+      "timing_basis": "Mandarin-hinted ASR sentence starts; captions and pronunciation unreviewed"
+    },
+    {
+      "id": "02-financial-diligence-hi",
+      "duration_seconds": 71.485624,
+      "sha256": "0004a091806bf2f3cd26ed4fade8fbf00f32d2b7d68e0ae5e3cbeb8821097b79",
+      "timing_basis": "Hindi-hinted ASR starts and analyst scene selection; ASR gaps remain, including legal termination at 34 seconds; captions, pronunciation and exact synchronization require listening review"
     },
     {
       "id": "03-legal-diligence-pt",

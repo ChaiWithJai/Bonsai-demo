@@ -1,0 +1,57 @@
+{
+  "id": "02-financial-diligence-hi",
+  "title": "Financial diligence \u00b7 Hindi Dolly narration",
+  "audio": ".cache/demos/narration/02-financial-diligence-hi/narration.mp3",
+  "audio_sha256": "ae5dac9e90ec9d25f2db02144c5c74be1892751f1668a353491e81f1c181cab0",
+  "timing_basis": "Hindi-hinted ASR starts and analyst scene selection; ASR gaps remain, including legal termination at 34 seconds; captions, pronunciation and exact synchronization require listening review",
+  "scenes": [
+    {
+      "at": 0,
+      "source": ".cache/demos/visual-edits/cards/financial-source.png",
+      "source_sha256": "accd48fdb33062bed151e27280c62b7a40eb9989a9a16c4d1f1b7847fa8cb48b",
+      "start": 0,
+      "length": 10,
+      "label": "Synthetic lender evidence"
+    },
+    {
+      "at": 13.96,
+      "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+      "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+      "start": 0,
+      "length": 5,
+      "label": "Attach the synthetic documents"
+    },
+    {
+      "at": 19.56,
+      "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+      "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+      "start": 39,
+      "length": 17,
+      "label": "Inspect definitions and leverage calculation"
+    },
+    {
+      "at": 42.46,
+      "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+      "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+      "start": 58,
+      "length": 4,
+      "label": "Keep sources beside the answer"
+    },
+    {
+      "at": 47.06,
+      "source": ".cache/demos/native-diligence-financial-20260923/raw-screen.webm",
+      "source_sha256": "206885c0df8ff787b28478dd593a8ba3aa5c8003dd8cbe658a42d0a89834a73c",
+      "start": 73,
+      "length": 5,
+      "label": "Original erroneous dollar claim retained"
+    },
+    {
+      "at": 55.76,
+      "source": ".cache/demos/visual-edits/cards/financial-proof.png",
+      "source_sha256": "693bd43dcc63dd87416f76f220aa4fc8a6bba46e0f927a29b33e40c37dfa3dd2",
+      "start": 0,
+      "length": 15,
+      "label": "Checked correction \u00b7 review required"
+    }
+  ]
+}

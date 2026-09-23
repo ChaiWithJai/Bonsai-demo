@@ -1,0 +1,65 @@
+{
+  "id": "05-legal-error-inspection-hi",
+  "title": "Legal error inspection \u00b7 Hindi Dolly narration",
+  "audio": ".cache/demos/narration/05-legal-error-inspection-hi/narration.mp3",
+  "audio_sha256": "2eac69892925a1b6abbf9654107b381fe89bb049a46d80ed0fc4d25dda032a54",
+  "timing_basis": "Hindi-hinted ASR starts and analyst scene selection; financial vector scene at 32.5 seconds is estimated within an ASR gap; captions, pronunciation and exact synchronization need listening review",
+  "scenes": [
+    {
+      "at": 0,
+      "source": ".cache/demos/native-diligence-legal-20260923/raw-screen.webm",
+      "source_sha256": "027d2e2dae4924cd53c815846627e195f5c53a5f844e1313e4652109527ef034",
+      "start": 123,
+      "length": 2,
+      "label": "Original erroneous claim"
+    },
+    {
+      "at": 13.1,
+      "source": ".cache/demos/visual-edits/cards/legal-proof.png",
+      "source_sha256": "aa92d6e74afa390301a873126b19273100b498c4c1d7d6c7a3579222108f6ab1",
+      "start": 0,
+      "length": 8,
+      "label": "Check against supplied evidence"
+    },
+    {
+      "at": 27.34,
+      "source": "tools/design-review/shots/92-legal-activation-window.desktop.png",
+      "source_sha256": "21c19debe66afccd8870bb428429e5f2744407976596190c2734823ebc53c3b7",
+      "start": 0,
+      "length": 6,
+      "label": "Inspect the saved run"
+    },
+    {
+      "at": 31.76,
+      "source": ".cache/demos/legal-activation-inspection-20260923/raw-screen-v2.webm",
+      "source_sha256": "d2b3f2327c3426e67906745679ced50ff060b401303ac32b2ac2b11ba55e1340",
+      "start": 0,
+      "length": 3,
+      "label": "Measured diagnostic interaction"
+    },
+    {
+      "at": 42.22,
+      "source": "tools/design-review/shots/92-legal-activation-window.desktop.png",
+      "source_sha256": "21c19debe66afccd8870bb428429e5f2744407976596190c2734823ebc53c3b7",
+      "start": 0,
+      "length": 6,
+      "label": "Inspect token positions and vectors"
+    },
+    {
+      "at": 46,
+      "source": ".cache/demos/visual-edits/cards/diagnostic.png",
+      "source_sha256": "95dc1a48adb7ce9de17360879344bda42fc892d86126b5fe9aaf09ed89062159",
+      "start": 0,
+      "length": 8,
+      "label": "New measurements \u00b7 not original activations"
+    },
+    {
+      "at": 53.38,
+      "source": ".cache/demos/visual-edits/cards/legal-proof.png",
+      "source_sha256": "aa92d6e74afa390301a873126b19273100b498c4c1d7d6c7a3579222108f6ab1",
+      "start": 0,
+      "length": 12,
+      "label": "Check the next answer against evidence"
+    }
+  ]
+}
