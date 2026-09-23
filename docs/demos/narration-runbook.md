@@ -45,3 +45,9 @@ the SDK language option. Check each resulting language by listening.
 The user approved longer cuts on September 23, 2026. Treat 60–90 seconds as
 an initial editorial target, not a delivery gate. Preserve natural speech
 speed and extend evidence holds or scene timing as needed for each language.
+
+For caption timing, `transcribe_demo_narration.py` uses CPU ASR and writes
+unreviewed VTT drafts. The initial Farsi pilot was detected as Welsh; a separate
+`--language-hint fa` pass produced Persian text with remaining recognition
+errors. A hint is not language verification. Original automatic results remain
+intact. Do not ship ASR captions or call pronunciation approved without review.
