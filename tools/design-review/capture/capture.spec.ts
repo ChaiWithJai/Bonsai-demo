@@ -2185,7 +2185,7 @@ test.describe('Native chat tool execution evidence',()=>{
    try {const request=response.request().postDataJSON();return request.method==='tools/call' && request.params.name==='calculate_bond';}catch{return false;}
   },{timeout:150000});
   await composer.fill('Development test. I confirm these assumptions for this test: face 1000, annual coupon rate 0.05, annual yield 0.05, twenty remaining payments, frequency 2. Call calculate_bond once with these exact inputs, then report its price and evidence link. Do not fetch Treasury data or call other tools. This is an automated test, not a human review label.');
-  await composer.press('Enter');
+  await page.getByRole('button',{name:'Send',exact:true}).click();
   await page.getByRole('button',{name:'Allow once',exact:true}).click({timeout:60000});
   const response=await toolResponse;
   const rpc=await response.json();
@@ -2194,7 +2194,19 @@ test.describe('Native chat tool execution evidence',()=>{
   expect(result.result.price).toBeCloseTo(1000,8);
   expect(result.result.payment_count).toBe(20);
   await expect(page.getByRole('group',{name:'Assistant message with actions'}).last()).toContainText(/1,?000/,{timeout:60000});
+  await expect(page.getByRole('button',{name:'Stop generation',exact:true})).toHaveCount(0,{timeout:60000});
+  const visual=page.getByRole('region',{name:'Explore bond cash flows'});
+  await expect(visual).toBeVisible();
+  await visual.getByRole('slider',{name:'Inspect payment',exact:true}).fill('20');
+  await expect(visual).toContainText('1,025.00');
+  await visual.getByText('What if yield changes?',{exact:true}).click();
+  await visual.getByRole('slider',{name:'Yield change in basis points'}).fill('25');
+  await expect(visual).toContainText('980.74');
+  await visual.getByRole('button',{name:'Reset yield'}).click();
+  await expect(visual).toContainText('1,000.00');
   await fs.writeFile(path.resolve(import.meta.dirname,'../../../.cache/native-chat-bond-tool.json'),JSON.stringify({url:page.url(),tool_result:result,actor:'automated_development_test'},null,2));
-  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/87-native-chat-bond-tool.'+info.project.name+'.png'),fullPage:true});
+  await visual.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:path.resolve(import.meta.dirname,'../shots/87-native-chat-bond-tool.'+info.project.name+'.png')});
  });
 });

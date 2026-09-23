@@ -30,10 +30,24 @@
     "Development case, not held-out evaluation",
     "Raw recording, not a finished demo",
     "Gateway authentication and Dolly synthesis unverified",
-    "Interactive bond teaching view incomplete"
+    "Complete whiteboard-to-Treasury teaching workflow remains unverified"
   ],
   "prior_attempt": {
     "outcome": "Test timed out at unclicked Allow once gate",
     "evidence": ".cache/native-chat-first-tool-attempt"
+  },
+  "inline_interaction": {
+    "desktop": "passed",
+    "mobile": "passed",
+    "checks": {
+      "final_cash_flow": 1025,
+      "price_at_25bp_increase": 980.74,
+      "price_after_reset": 1000
+    },
+    "raw_recordings": [
+      ".cache/demos/native-bond-interaction-20260923/raw-screen.webm",
+      ".cache/demos/native-bond-interaction-mobile-20260923/raw-screen.webm"
+    ],
+    "scope": "Native model tool call and interactive result; synthetic development case"
   }
 }

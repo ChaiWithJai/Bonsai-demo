@@ -73,6 +73,12 @@ def main():
     screen = greeting.parent / "ChatScreen.svelte"
     original = screen.read_text()
     screen.write_text(integrate_chat_features(original))
+    shutil.copyfile(root / "scripts/prism-ui/ChatBondResult.svelte", stage / "src/lib/ChatBondResult.svelte")
+    tool_block = stage / "src/lib/components/app/chat/ChatMessages/ChatMessage/ChatMessageToolCall/ChatMessageToolCallBlockDefault.svelte"
+    block = tool_block.read_text()
+    block = block.replace('<script lang="ts">', '<script lang="ts">\n\timport ChatBondResult from "$lib/ChatBondResult.svelte";', 1)
+    block += '\n{#if section.toolName === "calculate_bond" && section.toolResult}<ChatBondResult raw={section.toolResult} args={section.toolArgs} />{/if}\n'
+    tool_block.write_text(block)
     observability = stage / "src/routes/observability"
     observability.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(root / "scripts/prism-ui/Observability.svelte", observability / "+page.svelte")
